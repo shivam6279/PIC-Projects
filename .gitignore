@@ -64,3 +64,4 @@ Makefile
 *.rlf
 *.sdb
 *.sym
+funclist
