@@ -130,9 +130,10 @@ void main(){
     SPI_init();
     start_frame();
     for(i = 0; i < 23; i++){
-        LED_frame(0, 0, 0);
+        LED_frame(255, 0, 255);
     }
     end_frame();
+    while(1);
     while(1){
         angle = 360.0 * ((double)speed_counter)/((double)speed_offset);
         start_frame();
