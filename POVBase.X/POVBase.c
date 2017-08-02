@@ -1,45 +1,15 @@
-#define _XTAL_FREQ 48000000
+#define _XTAL_FREQ 20000000
 #include <xc.h>
-#include <pic18f4550.h>
+#include <pic16f876a.h>
 
-#pragma config PLLDIV = 12
-#pragma config CPUDIV = OSC1_PLL2
-#pragma config USBDIV = 1
 #pragma config FOSC = HS
-#pragma config FCMEN = OFF
-#pragma config IESO = OFF
-#pragma config PWRT = OFF
-#pragma config BOR = OFF
-#pragma config BORV = 2
-#pragma config VREGEN = OFF
-#pragma config WDT = OFF
-#pragma config WDTPS = 32768
-#pragma config CCP2MX = ON
-#pragma config PBADEN = OFF
-#pragma config LPT1OSC = OFF
-#pragma config MCLRE = ON
-#pragma config STVREN = OFF
+#pragma config WDTE = OFF
+#pragma config PWRTE = OFF
+#pragma config BOREN = OFF
 #pragma config LVP = OFF
-#pragma config ICPRT = OFF
-#pragma config XINST = OFF
-#pragma config CP0 = OFF
-#pragma config CP1 = OFF
-#pragma config CP2 = OFF
-#pragma config CP3 = OFF
-#pragma config CPB = OFF
 #pragma config CPD = OFF
-#pragma config WRT0 = OFF
-#pragma config WRT1 = OFF
-#pragma config WRT2 = OFF
-#pragma config WRT3 = OFF
-#pragma config WRTC = OFF
-#pragma config WRTB = OFF
-#pragma config WRTD = OFF
-#pragma config EBTR0 = OFF
-#pragma config EBTR1 = OFF
-#pragma config EBTR2 = OFF
-#pragma config EBTR3 = OFF
-#pragma config EBTRB = OFF
+#pragma config WRT = OFF
+#pragma config CP = OFF
 
 unsigned char receive;
 
@@ -72,11 +42,9 @@ void delay_ms(unsigned int x){
 void init(){
     TRISB = 4;
     TRISC = 0;
-    TRISD = 0;
-    TRISE = 0;
 }
 
-void timer_init(){
+/*void timer_init(){
     T0CS = 0;
     T0SE = 0;
     PSA = 0;
@@ -88,7 +56,7 @@ void timer_init(){
     TMR0 = 181;
     TMR0IE = 1;
     TMR0ON = 1;
-}
+}*/
 
 void interrupt ISR(){
     if(RCIF){
@@ -102,13 +70,19 @@ void interrupt ISR(){
 void main(){    
     int i;
     init();
+    __delay_ms(500);
+    for(i = 0; i < 3000; i++){
+        RC0 = 1;
+        __delay_ms(1);
+        RC0 = 0;
+        __delay_ms(1);
+    }
     while(1){
-        PORTDbits.RD2 = 0;
-        PORTDbits.RD3 = 1;
-        __delay_us(100);
-        PORTDbits.RD2 = 1;
-        PORTDbits.RD3 = 0;
-        __delay_us(100);
+        RC0 = 1;
+        __delay_ms(1);
+        __delay_us(500);
+        RC0 = 0;
+        __delay_us(500);
     }
 }
 
