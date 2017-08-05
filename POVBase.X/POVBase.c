@@ -44,19 +44,16 @@ void init(){
     TRISC = 0;
 }
 
-/*void timer_init(){
+void timer_init(){
     T0CS = 0;
     T0SE = 0;
     PSA = 0;
-    T0PS2 = 0;
-    T0PS1 = 1;
-    T0PS0 = 1;
-    IPEN = 0;
+    PS2 = 1;
+    PS1 = 1;
+    PS0 = 1;
     GIE = 1;
-    TMR0 = 181;
-    TMR0IE = 1;
-    TMR0ON = 1;
-}*/
+    TMR0IE = 1; 
+}
 
 void interrupt ISR(){
     if(RCIF){
