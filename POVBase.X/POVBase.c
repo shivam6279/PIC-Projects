@@ -70,19 +70,34 @@ void interrupt ISR(){
 void main(){    
     int i;
     init();
-    __delay_ms(500);
-    for(i = 0; i < 3000; i++){
+    __delay_ms(100);
+    for(i = 0; i < 245; i++){
         RC0 = 1;
         __delay_ms(1);
         RC0 = 0;
         __delay_ms(1);
+        __delay_us(40);
+    }
+    for(i = 0; i < 2205; i++){
+        RC0 = 1;
+        __delay_ms(2);
+        RC0 = 0;
+        __delay_us(40);
+    }
+    for(i = 0; i < 1000; i++){
+        RC0 = 1;
+        __delay_ms(1);
+        RC0 = 0;
+        __delay_ms(1);
+        __delay_us(40);
     }
     while(1){
         RC0 = 1;
         __delay_ms(1);
-        __delay_us(500);
+        __delay_us(50);
         RC0 = 0;
-        __delay_us(500);
+        __delay_us(950);
+        __delay_us(40);
     }
 }
 
