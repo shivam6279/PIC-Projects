@@ -47,21 +47,22 @@ void init(){
 void timer_init(){
     T0CS = 0;
     T0SE = 0;
-    PSA = 0;
-    PS2 = 1;
-    PS1 = 1;
-    PS0 = 1;
+    PSA = 1;
+    PS2 = 0;
+    PS1 = 0;
+    PS0 = 0;
+    //TMR0 = 156;
     GIE = 1;
     TMR0IE = 1; 
 }
 
 void interrupt ISR(){
-    if(RCIF){
-        receive = RCREG;
-    }
     if(TMR0IF){
         TMR0IF = 0;
+        RC2 = !RC2;
+        RC3 = !RC3;
     }
+    //TMR0 = 156;
 }
 
 void main(){    
@@ -88,6 +89,10 @@ void main(){
         __delay_ms(1);
         __delay_us(40);
     }
+    RC2 = 1;
+    RC3 = 0;
+    timer_init();
+    while(1);
     while(1){
         RC0 = 1;
         __delay_ms(1);
