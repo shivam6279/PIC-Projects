@@ -228,13 +228,13 @@ void main(){
     PIDreset(&Altitude_rate, 40.0, 0.0, 0.0);
     PIDreset(&GPS, 1.5, 0.05, 0.0);
     #endif
-    #ifdef big
-    PIDreset(&Roll, 1.5, 1.2, 0.0);
-    PIDreset(&Pitch, 1.5, 1.2, 0.0);
-    PIDreset(&Yaw, 1.5, 1.2, 0.0);
-    PIDreset(&Roll_rate, 2.7, 0.0, 0.0);
-    PIDreset(&Pitch_rate, 2.7, 0.0, 0.0);
-    PIDreset(&Yaw_rate, 2.7, 0.0, 0.0);
+    #ifdef big // 1.5, 1.2, 2.7
+    PIDreset(&Roll, 1.2, 1.0, 0.0);
+    PIDreset(&Pitch, 1.2, 1.0, 0.0);
+    PIDreset(&Yaw, 1.2, 1.0, 0.0);
+    PIDreset(&Roll_rate, 0.8, 0.0, 0.0);
+    PIDreset(&Pitch_rate, 0.8, 0.0, 0.0);
+    PIDreset(&Yaw_rate, 0.8, 0.0, 0.0);
     PIDreset(&Altitude, 1.8, 0.4, 0.0);
     PIDreset(&Altitude_rate, 40.0, 0.0, 0.0);
     PIDreset(&GPS, 1.5, 0.05, 0.0);
