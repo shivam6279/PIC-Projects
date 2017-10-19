@@ -91,7 +91,6 @@ unsigned char cursor = 0, arming_counter = 0, GPS_signal = 0;//Mode 'A'
 int arming_time;//Mode 'B'
 float pitch, roll, yaw, altitude, latitude, longitude, loop_mode;//Mode 'C'
 
-
 void __ISR_AT_VECTOR(_TIMER_2_VECTOR, IPL4SRS) delay_timer(void){
     IFS0bits.T2IF = 0;
     delay_counter++;

@@ -204,7 +204,26 @@ void main(){
     write_pwm(motor_up_pin, 2006);
     write_pwm(motor_down_pin, 2006);
     write_pwm(motor_left_pin, 2006);
-    write_pwm(motor_right_pin, 2006);  
+    write_pwm(motor_right_pin, 2006); 
+    
+    if(remote_y1 > 13 && remote_x1 > 13){ //display sensor readings
+        get_raw();
+        if(tx_buffer_counter == 0){     
+            tx_buffer[0] = 'D';
+            str_write_int(acc.x, 5, tx_buffer, 1);
+            str_write_int(acc.y, 5, tx_buffer, 6);
+            str_write_int(acc.z, 5, tx_buffer, 11);
+            str_write_int(gyro.x, 5, tx_buffer, 26);
+            str_write_int(gyro.y, 5, tx_buffer, 31);
+            str_write_int(gyro.z, 5, tx_buffer, 36);
+            str_write_int(compass.x, 5, tx_buffer, 41);
+            str_write_int(compass.y, 5, tx_buffer, 46);
+            str_write_int(compass.z, 5, tx_buffer, 51);
+            tx_buffer[56] = '\r';
+            tx_buffer[57] = '\0';
+            tx_buffer_counter++;
+        }
+    }
     
     #ifdef micro
     PIDreset(&Roll, 1.5, 1.2, 0.0);

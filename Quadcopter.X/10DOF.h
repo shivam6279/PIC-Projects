@@ -190,6 +190,26 @@ void get_acc(){
     }
 }
 
+void get_raw(){
+    unsigned char temp[6];
+    i2c5_read_registers(0xD0, 0x3B, temp, 6);
+    acc.y = (signed short)(temp[0] << 8 | temp[1]);
+    acc.x = (signed short)(temp[2] << 8 | temp[3]) * (-1);
+    acc.z = (signed short)(temp[4] << 8 | temp[5]) * (-1);
+    i2c5_read_registers(0xD0, 0x43, temp, 6);
+    gyro.y = (signed short)(temp[0] << 8 | temp[1]);
+    gyro.x = (signed short)(temp[2] << 8 | temp[3]);
+    gyro.z = (signed short)(temp[4] << 8 | temp[5]);
+    i2c5_write_registers(0xD0, (unsigned char[2]){0x6A, 0x00}, 2);
+    i2c5_write_registers(0xD0, (unsigned char[2]){0x37, 0x02}, 2);
+    i2c5_read_registers(0x3C, 0x03, temp, 6);
+    i2c5_write_registers(0xD0, (unsigned char[2]){0x6A, 0x20}, 2);
+    i2c5_write_registers(0xD0, (unsigned char[2]){0x37, 0x00}, 2);
+    compass.y = (signed short)(temp[0] << 8 | temp[1]);//y
+    compass.z = (signed short)(temp[2] << 8 | temp[3]);
+    compass.x = (signed short)(temp[4] << 8 | temp[5]);//x
+}
+
 void get_gyro(){
     unsigned char temp[6];
     unsigned char i;
