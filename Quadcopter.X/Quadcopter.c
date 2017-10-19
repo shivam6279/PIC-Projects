@@ -125,7 +125,7 @@ unsigned long int delay_counter = 0;
 int remote_x1 = 0, remote_y1 = 0, remote_x2 = 0, remote_y2 = 0, safety_counter = 0;
 unsigned char receive1, receive1_flag = 0, receive5, dial1, dial2, tx_buffer_counter = 0;
 bool left_switch = 0, right_switch = 0, Xbee_signal = 0;
-char tx_buffer[60];
+char tx_buffer[100];
 //-----------------------------------------GPS--------------------------------------------
 double latitude = 0.0, longitude = 0.0;
 float GPS_altitude = 0.0;
@@ -207,21 +207,26 @@ void main(){
     write_pwm(motor_right_pin, 2006); 
     
     if(remote_y1 > 13 && remote_x1 > 13){ //display sensor readings
-        get_raw();
-        if(tx_buffer_counter == 0){     
-            tx_buffer[0] = 'D';
-            str_write_int(acc.x, 5, tx_buffer, 1);
-            str_write_int(acc.y, 5, tx_buffer, 6);
-            str_write_int(acc.z, 5, tx_buffer, 11);
-            str_write_int(gyro.x, 5, tx_buffer, 26);
-            str_write_int(gyro.y, 5, tx_buffer, 31);
-            str_write_int(gyro.z, 5, tx_buffer, 36);
-            str_write_int(compass.x, 5, tx_buffer, 41);
-            str_write_int(compass.y, 5, tx_buffer, 46);
-            str_write_int(compass.z, 5, tx_buffer, 51);
-            tx_buffer[56] = '\r';
-            tx_buffer[57] = '\0';
-            tx_buffer_counter++;
+        T6CONbits.ON = 1;
+        write_RGB_led(4095, 0, 3800);
+        while(1){
+            get_raw();
+            if(tx_buffer_counter == 0){     
+                tx_buffer[0] = 'D';
+                str_write_int(acc.x, 6, tx_buffer, 1);
+                str_write_int(acc.y, 6, tx_buffer, 8);
+                str_write_int(acc.z, 6, tx_buffer, 15);
+                str_write_int(gyro.x, 6, tx_buffer, 22);
+                str_write_int(gyro.y, 6, tx_buffer, 29);
+                str_write_int(gyro.z, 6, tx_buffer, 36);
+                str_write_int(compass.x, 6, tx_buffer, 43);
+                str_write_int(compass.y, 6, tx_buffer, 50);
+                str_write_int(compass.z, 6, tx_buffer, 57);
+                str_write_int((int)(180.0/3.14*atan2(compass.y, compass.x)), 6, tx_buffer, 57);
+                tx_buffer[64] = '\r';
+                tx_buffer[65] = '\0';
+                tx_buffer_counter++;
+            }
         }
     }
     

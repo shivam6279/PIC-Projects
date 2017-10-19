@@ -66,22 +66,22 @@
 #ifdef big
 #define MAX_BUFFER_SIZE 10
 
-#define gyro_x_offset 105
-#define gyro_y_offset -220
-#define gyro_z_offset -7
+#define gyro_x_offset 110
+#define gyro_y_offset -245
+#define gyro_z_offset -78
 
 #define gyro_x_gain 98
 #define gyro_y_gain -98
 #define gyro_z_gain 106
 
-#define compass_x_min -190.0f
-#define compass_x_max 650.0f
+#define compass_x_min 110.0f
+#define compass_x_max 470.0f
 
-#define compass_y_min -240.0f
-#define compass_y_max 405.0f
+#define compass_y_min -230.0f
+#define compass_y_max 90.0f
 
-#define compass_z_min -650.0f
-#define compass_z_max -80.0f
+#define compass_z_min -840.0f
+#define compass_z_max 50.0f
 
 #define compass_x_offset (compass_x_max + compass_x_min) / 2
 #define compass_y_offset (compass_y_max + compass_y_min) / 2
