@@ -90,6 +90,7 @@ float pid_p = 0, pid_i = 0, pid_d = 0, altitude_p, altitude_i, altitude_d;//Mode
 unsigned char cursor = 0, arming_counter = 0, GPS_signal = 0;//Mode 'A'
 int arming_time;//Mode 'B'
 float pitch, roll, yaw, altitude, latitude, longitude, loop_mode;//Mode 'C'
+int acc_x, acc_y, acc_z, gyro_x, gyro_y, gyro_z, compass_x, compass_y, compass_z;//Mode 'D' 
 
 void __ISR_AT_VECTOR(_TIMER_2_VECTOR, IPL4SRS) delay_timer(void){
     IFS0bits.T2IF = 0;
@@ -141,7 +142,28 @@ void __ISR_AT_VECTOR(_UART1_RX_VECTOR, IPL6SRS) Xbee(void){
                     longitude = 100 * (float)(rx_buffer[43] - 48) + 10 * (float)(rx_buffer[44] - 48) + (float)(rx_buffer[45] - 48) + 0.1 * (float)(rx_buffer[47] - 48) + 0.01 * (float)(rx_buffer[48] - 48) + 0.001 * (float)(rx_buffer[49] - 48) + 0.0001 * (float)(rx_buffer[50] - 48) + 0.00001 * (float)(rx_buffer[51] - 47) + 0.000001 * (float)(rx_buffer[52] - 48) + 0.0000001 * (float)(rx_buffer[53] - 47) + 0.00000001 * (float)(rx_buffer[54] - 48);
                     if(rx_buffer[42] == '-') longitude *= (-1);
                     loop_mode = rx_buffer[55];
-
+                }
+                else if(mode == 'D'){
+                    acc_x = 100000*(rx_buffer[2] - 48) + 10000*(rx_buffer[3] - 48) + 1000*(rx_buffer[4] - 48) + 100*(rx_buffer[5] - 48) + 10*(rx_buffer[6] - 48) + (rx_buffer[7] - 48);
+                    if(rx_buffer[1] == '-') acc_x *= (-1);
+                    acc_y = 100000*(rx_buffer[9] - 48) + 10000*(rx_buffer[10] - 48) + 1000*(rx_buffer[11] - 48) + 100*(rx_buffer[12] - 48) + 10*(rx_buffer[13] - 48) + (rx_buffer[14] - 48);
+                    if(rx_buffer[8] == '-') acc_y *= (-1);
+                    acc_z = 100000*(rx_buffer[16] - 48) + 10000*(rx_buffer[17] - 48) + 1000*(rx_buffer[18] - 48) + 100*(rx_buffer[19] - 48) + 10*(rx_buffer[20] - 48) + (rx_buffer[21] - 48);
+                    if(rx_buffer[15] == '-') acc_z *= (-1);
+                    
+                    gyro_x = 100000*(rx_buffer[23] - 48) + 10000*(rx_buffer[24] - 48) + 1000*(rx_buffer[25] - 48) + 100*(rx_buffer[26] - 48) + 10*(rx_buffer[27] - 48) + (rx_buffer[28] - 48);
+                    if(rx_buffer[22] == '-') gyro_x *= (-1);
+                    gyro_y = 100000*(rx_buffer[30] - 48) + 10000*(rx_buffer[31] - 48) + 1000*(rx_buffer[32] - 48) + 100*(rx_buffer[33] - 48) + 10*(rx_buffer[34] - 48) + (rx_buffer[35] - 48);
+                    if(rx_buffer[29] == '-') gyro_y *= (-1);
+                    gyro_z = 100000*(rx_buffer[37] - 48) + 10000*(rx_buffer[38] - 48) + 1000*(rx_buffer[39] - 48) + 100*(rx_buffer[40] - 48) + 10*(rx_buffer[41] - 48) + (rx_buffer[42] - 48);
+                    if(rx_buffer[36] == '-') gyro_z *= (-1);
+                    
+                    compass_x = 100000*(rx_buffer[44] - 48) + 10000*(rx_buffer[45] - 48) + 1000*(rx_buffer[46] - 48) + 100*(rx_buffer[47] - 48) + 10*(rx_buffer[48] - 48) + (rx_buffer[49] - 48);
+                    if(rx_buffer[43] == '-') compass_x *= (-1);
+                    compass_y = 100000*(rx_buffer[51] - 48) + 10000*(rx_buffer[52] - 48) + 1000*(rx_buffer[53] - 48) + 100*(rx_buffer[54] - 48) + 10*(rx_buffer[55] - 48) + (rx_buffer[56] - 48);
+                    if(rx_buffer[50] == '-') compass_y *= (-1);
+                    compass_z = 100000*(rx_buffer[58] - 48) + 10000*(rx_buffer[59] - 48) + 1000*(rx_buffer[60] - 48) + 100*(rx_buffer[61] - 48) + 10*(rx_buffer[62] - 48) + (rx_buffer[63] - 48);
+                    if(rx_buffer[57] == '-') compass_z *= (-1);
                 }
                 else if(mode == 'Z'){
                     buffer_counter = 1;
@@ -325,6 +347,28 @@ void main(){
                 ColorLCD_write_float(altitude, 3, 2, 11 * 6, 5 * 8, 0x0000);
                 ColorLCD_write_float(latitude, 2, 6, 11 * 6, 6 * 8, 0x0000);
                 ColorLCD_write_float(longitude, 2, 6, 12 * 6, 7 * 8, 0x0000);
+            }
+            
+            if(mode == 'D'){
+                ColorLCD_write_str("Calibration", 0, 0, 0xF80F);
+                ColorLCD_write_str("Acc x:", 0, 1*8, 0xF80F);
+                ColorLCD_write_str("Acc y:", 0, 2*8, 0xF80F);
+                ColorLCD_write_str("Acc z:", 0, 3*8, 0xF80F);
+                ColorLCD_write_str("Gyro x:", 0, 4*8, 0xF80F);
+                ColorLCD_write_str("Gyro y:", 0, 5*8, 0xF80F);
+                ColorLCD_write_str("Gyro z:", 0, 6*8, 0xF80F);
+                ColorLCD_write_str("Compass x:", 0, 7*8, 0xF80F);
+                ColorLCD_write_str("Compass y:", 0, 8*8, 0xF80F);
+                ColorLCD_write_str("Compass z:", 0, 9*8, 0xF80F);
+                ColorLCD_write_int(acc_x, 6, 7*6, 1*8, 0x0000);
+                ColorLCD_write_int(acc_y, 6, 7*6, 2*8, 0x0000);
+                ColorLCD_write_int(acc_z, 6, 7*6, 3*8, 0x0000);
+                ColorLCD_write_int(gyro_x, 6, 8*6, 4*8, 0x0000);
+                ColorLCD_write_int(gyro_y, 6, 8*6, 5*8, 0x0000);
+                ColorLCD_write_int(gyro_z, 6, 8*6, 6*8, 0x0000);
+                ColorLCD_write_int(compass_x, 6, 11*6, 7*8, 0x0000);
+                ColorLCD_write_int(compass_y, 6, 11*6, 8*8, 0x0000);
+                ColorLCD_write_int(compass_z, 6, 11*6, 9*8, 0x0000);
             }
 
             //--------------------------Display input data: analog sticks, potentiometers and switch values------------------------
