@@ -222,7 +222,6 @@ void main(){
                 str_write_int(compass.x, 6, tx_buffer, 43);
                 str_write_int(compass.y, 6, tx_buffer, 50);
                 str_write_int(compass.z, 6, tx_buffer, 57);
-                str_write_int((int)(180.0/3.14*atan2(compass.y, compass.x)), 6, tx_buffer, 57);
                 tx_buffer[64] = '\r';
                 tx_buffer[65] = '\0';
                 tx_buffer_counter++;
@@ -258,7 +257,7 @@ void main(){
     PIDreset(&Yaw, 1.2, 1.0, 0.0);
     PIDreset(&Roll_rate, 0.8, 0.0, 0.0);
     PIDreset(&Pitch_rate, 0.8, 0.0, 0.0);
-    PIDreset(&Yaw_rate, 0.8, 0.0, 0.0);
+    PIDreset(&Yaw_rate, 1.2, 0.0, 0.0);
     PIDreset(&Altitude, 1.8, 0.4, 0.0);
     PIDreset(&Altitude_rate, 40.0, 0.0, 0.0);
     PIDreset(&GPS, 1.5, 0.05, 0.0);
