@@ -11,28 +11,20 @@
 #pragma config WRT = OFF
 #pragma config CP = OFF
 
-unsigned char receive;
+#define reed_pin PORTBbits.RB1
+
+unsigned char receive, reed_flag = 1, timer_counter;
+unsigned long int speed_counter = 0;
+float speed;
 
 void pwm_init(){
     CCP1CON = 12;
-    CCP2CON = 60;
+    //CCP2CON = 60;
     PR2 = 74;
     T2CON = 7;
     CCPR1L = 0;
-    CCPR2L = 0;
+    //CCPR2L = 0;
 }
-
-/*void timer_init(){
-    T0CS = 0;
-    T0SE = 0;
-    GIE = 1;
-    PSA = 0;
-    PS2 = 1;
-    PS1 = 1;
-    PS0 = 1;
-    TMR0 = 0;
-    TMR0IE = 1;
-}*/
 
 void delay_ms(unsigned int x){
     unsigned int i;
@@ -56,19 +48,66 @@ void timer_init(){
     TMR0IE = 1; 
 }
 
+void timer1_init(){
+    T1CKPS0 = 0;
+    T1CKPS1 = 0;
+    T1OSCEN = 0;
+    TMR1CS = 0;
+    TMR1ON = 1;
+    TMR1L = 0x63;
+    TMR1H = 0xFF;
+    GIE = 1;
+    TMR1IE = 1; 
+}
+
 void interrupt ISR(){
     if(TMR0IF){
         TMR0IF = 0;
         RC2 = !RC2;
         RC3 = !RC3;
+        timer_counter++;
+        //TMR0 = 156;
     }
-    //TMR0 = 156;
+    if(TMR1IF){
+        TMR1IF = 0;
+        speed_counter++;
+        if(reed_pin == 0 && reed_flag == 1){
+            reed_flag = 0;
+            speed = 60 / (float)speed_counter * 4006.41;
+            speed_counter = 0;
+        }
+        else if(reed_pin == 1){
+            reed_flag = 1;
+        }
+        TMR1L = 0x63;
+        TMR1H = 0xFF;
+    }
 }
 
 void main(){    
+    float output, t_speed = 0.0, p_speed, sum = 0.0;
+    unsigned int pwm;
     int i;
     init();
-    __delay_ms(100);
+    delay_ms(10);
+    timer_init();
+    timer1_init();
+    pwm_init();
+    while(1){
+        timer_counter = 0;
+        p_speed = t_speed;
+        t_speed = speed;
+        sum += 0.005* (t_speed - 1000.0);
+        output = 1.0 * (t_speed - 1000.0) + 1.0 * sum + 1.0 * (t_speed - p_speed) / 0.005;
+        if(output < 0.0) pwm = 0;
+        else if(output > 1023.0) pwm = 1023;
+        else pwm = (unsigned int)output;
+        CCP1CONbits.CCP1X = (pwm >> 1) & 1;
+        CCP1CONbits.CCP1Y = pwm & 1;
+        CCPR1L = pwm >> 2;
+        while(timer_counter < 98);
+    }
+    /*__delay_ms(100);
     for(i = 0; i < 245; i++){
         RC0 = 1;
         __delay_ms(1);
@@ -100,6 +139,6 @@ void main(){
         RC0 = 0;
         __delay_us(950);
         __delay_us(40);
-    }
+    }*/
 }
 
