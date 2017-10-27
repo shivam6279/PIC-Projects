@@ -13,17 +13,16 @@
 
 #define reed_pin PORTBbits.RB1
 
-unsigned char receive, reed_flag = 1, timer_counter;
+unsigned char receive, reed_flag = 1, timer_counter = 0;
 unsigned long int speed_counter = 0;
 float speed;
 
 void pwm_init(){
-    CCP1CON = 12;
+    CCP2CON = 12;
     //CCP2CON = 60;
     PR2 = 74;
     T2CON = 7;
-    CCPR1L = 0;
-    //CCPR2L = 0;
+    CCPR2L = 0;
 }
 
 void delay_ms(unsigned int x){
@@ -90,9 +89,12 @@ void main(){
     int i;
     init();
     delay_ms(10);
+    RC2 = 0;
+    RC3 = 1;
     timer_init();
     timer1_init();
     pwm_init();
+    while(1);
     while(1){
         timer_counter = 0;
         p_speed = t_speed;
@@ -102,9 +104,9 @@ void main(){
         if(output < 0.0) pwm = 0;
         else if(output > 1023.0) pwm = 1023;
         else pwm = (unsigned int)output;
-        CCP1CONbits.CCP1X = (pwm >> 1) & 1;
-        CCP1CONbits.CCP1Y = pwm & 1;
-        CCPR1L = pwm >> 2;
+        CCP2CONbits.CCP2X = (pwm >> 1) & 1;
+        CCP2CONbits.CCP2Y = pwm & 1;
+        CCPR2L = pwm >> 2;
         while(timer_counter < 98);
     }
     /*__delay_ms(100);
