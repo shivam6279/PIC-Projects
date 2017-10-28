@@ -123,20 +123,113 @@ void interrupt ISR(){
 }
 
 void main(){    
-    int i;
-    double angle;
+    int i, j;
+    double angle, t;
     delay_ms(100);
     init();
     timer_init(2);
     SPI_init();
     delay_ms(200);
-    while(1){
+    /*while(1){
         start_frame();
-        for(i = 0; i < 28; i++){
-            LED_frame(255, 0, 255);
+        if(PORTBbits.RB2 == 0){
+            for(i = 0; i < 28; i++){
+                LED_frame(255, 0, 255);
+            }
+        }
+        else{
+            for(i = 0; i < 28; i++){
+                LED_frame(0, 0, 0);
+            }
         }
         end_frame();
-        delay_ms(50);
+    }*/
+    while(1){
+        for(i = 0; i < 14; i++){
+            start_frame();
+            for(j = 0; j < 14; j++){
+                if(j == i){
+                    LED_frame(255, 0, 255);
+                }
+                else{
+                    LED_frame(0, 0, 0);
+                }
+            }
+            for(j = 0; j < 14; j++){
+                if(j == (13 - i)){
+                    LED_frame(255, 0, 255);
+                }
+                else{
+                    LED_frame(0, 0, 0);
+                }
+            }
+            delay_ms(50);
+        }
+        for(i = 13; i >= 0; i--){
+            start_frame();
+            for(j = 0; j < 14; j++){
+                if(j == i){
+                    LED_frame(255, 0, 255);
+                }
+                else{
+                    LED_frame(0, 0, 0);
+                }
+            }
+            for(j = 0; j < 14; j++){
+                if(j == (13 - i)){
+                    LED_frame(255, 0, 255);
+                }
+                else{
+                    LED_frame(0, 0, 0);
+                }
+            }
+            delay_ms(50);
+        }
+    }
+    while(1){
+        angle = 360.0 * ((double)speed_counter)/((double)speed_offset);
+        
+        for(i = 1; i < 120; i++){
+            if(angle <= 3.0 * (float)i){
+                start_frame();
+                t = (float)i * 2.125;
+                if(i < 20){
+                    for(j = 0; j < 14; j++){
+                        LED_frame(255, (unsigned int)t, 0);
+                    }
+                }
+                else if(i < 40){
+                    for(j = 0; j < 14; j++){
+                        LED_frame(255 - (unsigned int)t, 255, 0);
+                    }
+                }
+                else if(i < 60){
+                    for(j = 0; j < 14; j++){
+                        LED_frame(0, 255, (unsigned int)t);
+                    }
+                }
+                else if(i < 80){
+                    for(j = 0; j < 14; j++){
+                        LED_frame(0, 255 - (unsigned int)t, 255);
+                    }
+                }
+                else if(i < 100){
+                    for(j = 0; j < 14; j++){
+                        LED_frame((unsigned int)t, 0, 255);
+                    }
+                }
+                else{
+                    for(j = 0; j < 14; j++){
+                        LED_frame(255, 0, 255 - (unsigned int)t);
+                    }
+                }
+                for(j = 0; j < 14; j++){
+                        LED_frame(0, 0, 0);
+                    }
+                end_frame();
+                break;
+            }
+        }
     }
     while(1){
         angle = 360.0 * ((double)speed_counter)/((double)speed_offset);
@@ -147,14 +240,14 @@ void main(){
             for(i = 0; i < 5; i++){
                 LED_frame(255, 0, 0);
             }
-            for(i = 0; i < 18; i++){
+            for(i = 0; i < 23; i++){
                 LED_frame(0, 0, 0);
             }
         }
         else if(angle > 3.0 && angle < 6.0){
             LED_frame(0, 0, 0);
             LED_frame(255, 0, 0);
-            for(i = 0; i < 21; i++){
+            for(i = 0; i < 26; i++){
                 LED_frame(0, 0, 0);
             }
         }
@@ -162,14 +255,14 @@ void main(){
             LED_frame(0, 0, 0);
             LED_frame(0, 0, 0);
             LED_frame(255, 0, 0);
-            for(i = 0; i < 20; i++){
+            for(i = 0; i < 25; i++){
                 LED_frame(0, 0, 0);
             }
         }
         else if(angle > 9.0 && angle < 12.0){
             LED_frame(0, 0, 0);
             LED_frame(255, 0, 0);
-            for(i = 0; i < 21; i++){
+            for(i = 0; i < 26; i++){
                 LED_frame(0, 0, 0);
             }
         }
@@ -177,13 +270,13 @@ void main(){
             for(i = 0; i < 5; i++){
                 LED_frame(255, 0, 0);
             }
-            for(i = 0; i < 18; i++){
+            for(i = 0; i < 23; i++){
                 LED_frame(0, 0, 0);
             }
         }
         
         if(angle > 180.0 && angle < 183.0){
-            for(i = 0; i < 18; i++){
+            for(i = 0; i < 23; i++){
                 LED_frame(0, 0, 0);
             }
             for(i = 0; i < 5; i++){
@@ -191,7 +284,7 @@ void main(){
             }
         }
         else if(angle > 183.0 && angle < 186.0){
-            for(i = 0; i < 18; i++){
+            for(i = 0; i < 23; i++){
                 LED_frame(0, 0, 0);
             }
             LED_frame(0, 0, 0);
@@ -201,7 +294,7 @@ void main(){
             LED_frame(0, 0, 0);
         }
         else if(angle > 186.0 && angle < 189.0){
-            for(i = 0; i < 18; i++){
+            for(i = 0; i < 23; i++){
                 LED_frame(0, 0, 0);
             }
             LED_frame(0, 0, 0);
@@ -211,7 +304,7 @@ void main(){
             LED_frame(0, 0, 0);
         }
         else if(angle > 189.0 && angle < 192.0){
-            for(i = 0; i < 18; i++){
+            for(i = 0; i < 23; i++){
                 LED_frame(0, 0, 0);
             }
             LED_frame(0, 0, 0);
@@ -221,7 +314,7 @@ void main(){
             LED_frame(0, 0, 0);
         }
         else if(angle > 192.0 && angle < 195.0){
-            for(i = 0; i < 18; i++){
+            for(i = 0; i < 23; i++){
                 LED_frame(0, 0, 0);
             }
             for(i = 0; i < 5; i++){
@@ -234,7 +327,7 @@ void main(){
             for(i = 0; i < 5; i++){
                 LED_frame(0, 255, 0);
             }
-            for(i = 0; i < 18; i++){
+            for(i = 0; i < 23; i++){
                 LED_frame(0, 0, 0);
             }
         }
@@ -244,7 +337,7 @@ void main(){
             LED_frame(0, 0, 0);
             LED_frame(0, 0, 0);
             LED_frame(0, 2550, 0);
-            for(i = 0; i < 18; i++){
+            for(i = 0; i < 23; i++){
                 LED_frame(0, 0, 0);
             }
         }
@@ -252,13 +345,13 @@ void main(){
             for(i = 0; i < 5; i++){
                 LED_frame(0, 255, 0);
             }
-            for(i = 0; i < 18; i++){
+            for(i = 0; i < 23; i++){
                 LED_frame(0, 0, 0);
             }
         }
         
         else if(angle > 198.0 && angle < 201.0){
-            for(i = 0; i < 18; i++){
+            for(i = 0; i < 23; i++){
                 LED_frame(0, 0, 0);
             }
             for(i = 0; i < 5; i++){
@@ -266,7 +359,7 @@ void main(){
             }
         }
         else if(angle > 201.0 && angle < 210.0){
-            for(i = 0; i < 18; i++){
+            for(i = 0; i < 23; i++){
                 LED_frame(0, 0, 0);
             }
             LED_frame(0, 255, 0);
@@ -276,7 +369,7 @@ void main(){
             LED_frame(0, 255, 0);
         }
         else if(angle > 210.0 && angle < 213.0){
-            for(i = 0; i < 18; i++){
+            for(i = 0; i < 23; i++){
                 LED_frame(0, 0, 0);
             }
             for(i = 0; i < 5; i++){
@@ -289,7 +382,7 @@ void main(){
             for(i = 0; i < 5; i++){
                 LED_frame(0, 0, 255);
             }
-            for(i = 0; i < 18; i++){
+            for(i = 0; i < 23; i++){
                 LED_frame(0, 0, 0);
             }
         }
@@ -299,7 +392,7 @@ void main(){
             LED_frame(0, 0, 255);
             LED_frame(0, 0, 0);
             LED_frame(0, 0, 255);
-            for(i = 0; i < 18; i++){
+            for(i = 0; i < 23; i++){
                 LED_frame(0, 0, 0);
             }
         }
@@ -309,7 +402,7 @@ void main(){
             LED_frame(0, 0, 255);
             LED_frame(0, 0, 0);
             LED_frame(0, 0, 255);
-            for(i = 0; i < 18; i++){
+            for(i = 0; i < 23; i++){
                 LED_frame(0, 0, 0);
             }
         }
@@ -319,13 +412,13 @@ void main(){
             LED_frame(0, 0, 255);
             LED_frame(0, 0, 255);
             LED_frame(0, 0, 255);
-            for(i = 0; i < 18; i++){
+            for(i = 0; i < 23; i++){
                 LED_frame(0, 0, 0);
             }
         }  
         
         else if(angle > 216.0 && angle < 219.0){
-            for(i = 0; i < 18; i++){
+            for(i = 0; i < 23; i++){
                 LED_frame(0, 0, 0);
             }
             for(i = 0; i < 5; i++){
@@ -333,7 +426,7 @@ void main(){
             }
         }
         else if(angle > 219.0 && angle < 225.0){
-            for(i = 0; i < 18; i++){
+            for(i = 0; i < 23; i++){
                 LED_frame(0, 0, 0);
             }
             LED_frame(0, 0, 255);
@@ -343,7 +436,7 @@ void main(){
             LED_frame(0, 0, 0);
         }
         else if(angle > 225.0 && angle < 228.0){
-            for(i = 0; i < 18; i++){
+            for(i = 0; i < 23; i++){
                 LED_frame(0, 0, 0);
             }
             
@@ -354,7 +447,7 @@ void main(){
             LED_frame(0, 0, 0);
         }
         else if(angle > 228.0 && angle < 231.0){
-            for(i = 0; i < 18; i++){
+            for(i = 0; i < 23; i++){
                 LED_frame(0, 0, 0);
             }
             LED_frame(0, 0, 255);
@@ -369,7 +462,7 @@ void main(){
             for(i = 0; i < 5; i++){
                 LED_frame(255, 255, 0);
             }
-            for(i = 0; i < 18; i++){
+            for(i = 0; i < 238; i++){
                 LED_frame(0, 0, 0);
             }
         }
@@ -379,7 +472,7 @@ void main(){
             LED_frame(255, 255, 0);
             LED_frame(0, 0, 0);
             LED_frame(0, 0, 0);
-            for(i = 0; i < 18; i++){
+            for(i = 0; i < 23; i++){
                 LED_frame(0, 0, 0);
             }
         }  
@@ -389,7 +482,7 @@ void main(){
             LED_frame(0, 0, 0);
             LED_frame(255, 255, 0);
             LED_frame(0, 0, 0);
-            for(i = 0; i < 18; i++){
+            for(i = 0; i < 23; i++){
                 LED_frame(0, 0, 0);
             }
         }   
@@ -399,13 +492,13 @@ void main(){
             LED_frame(0, 0, 0);
             LED_frame(0, 0, 0);
             LED_frame(255, 255, 0);
-            for(i = 0; i < 18; i++){
+            for(i = 0; i < 23; i++){
                 LED_frame(0, 0, 0);
             }
         }
         
         else if(angle > 234.0 && angle < 237.0){
-            for(i = 0; i < 18; i++){
+            for(i = 0; i < 23; i++){
                 LED_frame(0, 0, 0);
             }
             for(i = 0; i < 5; i++){
@@ -413,7 +506,7 @@ void main(){
             }
         }
         else if(angle > 237.0 && angle < 240.0){
-            for(i = 0; i < 18; i++){
+            for(i = 0; i < 23; i++){
                 LED_frame(0, 0, 0);
             }
             LED_frame(0, 0, 0);
@@ -423,7 +516,7 @@ void main(){
             LED_frame(0, 0, 0);
         }  
         else if(angle > 240.0 && angle < 243.0){
-            for(i = 0; i < 18; i++){
+            for(i = 0; i < 23; i++){
                 LED_frame(0, 0, 0);
             }
             LED_frame(0, 0, 0);
@@ -433,7 +526,7 @@ void main(){
             LED_frame(0, 0, 0);
         }   
         else if(angle > 243.0 && angle < 246.0){
-            for(i = 0; i < 18; i++){
+            for(i = 0; i < 23; i++){
                 LED_frame(0, 0, 0);
             }
             LED_frame(255, 255, 0);
@@ -450,7 +543,7 @@ void main(){
             LED_frame(0, 0, 0);
             LED_frame(0, 0, 0);
             LED_frame(255, 0, 255);
-            for(i = 0; i < 18; i++){
+            for(i = 0; i < 23; i++){
                 LED_frame(0, 0, 0);
             }
         }
@@ -460,7 +553,7 @@ void main(){
             LED_frame(255, 0, 255);
             LED_frame(255, 0, 255);
             LED_frame(255, 0, 255);
-            for(i = 0; i < 18; i++){
+            for(i = 0; i < 23; i++){
                 LED_frame(0, 0, 0);
             }
         }
@@ -470,13 +563,13 @@ void main(){
             LED_frame(0, 0, 0);
             LED_frame(0, 0, 0);
             LED_frame(255, 0, 255);
-            for(i = 0; i < 18; i++){
+            for(i = 0; i < 23; i++){
                 LED_frame(0, 0, 0);
             }
         }
         
         else if(angle > 249.0 && angle < 255.0){
-            for(i = 0; i < 18; i++){
+            for(i = 0; i < 23; i++){
                 LED_frame(0, 0, 0);
             }
             LED_frame(255, 0, 255);
@@ -486,7 +579,7 @@ void main(){
             LED_frame(255, 0, 255);
         }
         else if(angle > 255.0 && angle < 258.0){
-            for(i = 0; i < 18; i++){
+            for(i = 0; i < 23; i++){
                 LED_frame(0, 0, 0);
             }
             LED_frame(255, 0, 255);
@@ -496,7 +589,7 @@ void main(){
             LED_frame(255, 0, 255);
         }
         else if(angle > 258.0 && angle < 264.0){
-            for(i = 0; i < 18; i++){
+            for(i = 0; i < 23; i++){
                 LED_frame(0, 0, 0);
             }
             LED_frame(255, 0, 255);
@@ -513,7 +606,7 @@ void main(){
             LED_frame(0, 255, 255);
             LED_frame(0, 255, 255);
             LED_frame(0, 255, 255);
-            for(i = 0; i < 18; i++){
+            for(i = 0; i < 23; i++){
                 LED_frame(0, 0, 0);
             }
         }
@@ -523,7 +616,7 @@ void main(){
             LED_frame(0, 0, 0);
             LED_frame(0, 255, 255);
             LED_frame(0, 0, 0);
-            for(i = 0; i < 18; i++){
+            for(i = 0; i < 23; i++){
                 LED_frame(0, 0, 0);
             }
         }
@@ -533,7 +626,7 @@ void main(){
             LED_frame(0, 255, 255);
             LED_frame(0, 0, 0);
             LED_frame(0, 0, 0);
-            for(i = 0; i < 18; i++){
+            for(i = 0; i < 23; i++){
                 LED_frame(0, 0, 0);
             }
         }
@@ -543,7 +636,7 @@ void main(){
             LED_frame(0, 0, 0);
             LED_frame(0, 0, 0);
             LED_frame(0, 0, 0);
-            for(i = 0; i < 18; i++){
+            for(i = 0; i < 23; i++){
                 LED_frame(0, 0, 0);
             }
         }
@@ -553,13 +646,13 @@ void main(){
             LED_frame(0, 255, 255);
             LED_frame(0, 255, 255);
             LED_frame(0, 255, 255);
-            for(i = 0; i < 18; i++){
+            for(i = 0; i < 23; i++){
                 LED_frame(0, 0, 0);
             }
         }
         
         else if(angle > 267.0 && angle < 270.0){
-            for(i = 0; i < 18; i++){
+            for(i = 0; i < 23; i++){
                 LED_frame(0, 0, 0);
             }
             LED_frame(0, 255, 255);
@@ -569,7 +662,7 @@ void main(){
             LED_frame(0, 255, 255);
         }
         else if(angle > 270.0 && angle < 273.0){
-            for(i = 0; i < 18; i++){
+            for(i = 0; i < 23; i++){
                 LED_frame(0, 0, 0);
             }
             LED_frame(0, 0, 0);
@@ -579,7 +672,7 @@ void main(){
             LED_frame(0, 0, 0);
         }
         else if(angle > 273.0 && angle < 276.0){
-            for(i = 0; i < 18; i++){
+            for(i = 0; i < 23; i++){
                 LED_frame(0, 0, 0);
             }
             LED_frame(0, 0, 0);
@@ -589,7 +682,7 @@ void main(){
             LED_frame(0, 0, 0);
         }
         else if(angle > 276.0 && angle < 279.0){
-            for(i = 0; i < 18; i++){
+            for(i = 0; i < 23; i++){
                 LED_frame(0, 0, 0);
             }
             LED_frame(0, 0, 0);
@@ -599,7 +692,7 @@ void main(){
             LED_frame(0, 0, 0);
         }
         else if(angle > 279.0 && angle < 282.0){
-            for(i = 0; i < 18; i++){
+            for(i = 0; i < 23; i++){
                 LED_frame(0, 0, 0);
             }
             LED_frame(0, 255, 255);
@@ -616,7 +709,7 @@ void main(){
             LED_frame(255, 255, 255);
             LED_frame(255, 255, 255);
             LED_frame(255, 255, 255);
-            for(i = 0; i < 18; i++){
+            for(i = 0; i < 23; i++){
                 LED_frame(0, 0, 0);
             }
         }
@@ -626,7 +719,7 @@ void main(){
             LED_frame(0, 0, 0);
             LED_frame(0, 0, 0);
             LED_frame(255, 255, 255);
-            for(i = 0; i < 18; i++){
+            for(i = 0; i < 23; i++){
                 LED_frame(0, 0, 0);
             }
         }
@@ -636,7 +729,7 @@ void main(){
             LED_frame(255, 255, 255);
             LED_frame(0, 0, 0);
             LED_frame(255, 255, 255);
-            for(i = 0; i < 18; i++){
+            for(i = 0; i < 23; i++){
                 LED_frame(0, 0, 0);
             }
         }
@@ -646,13 +739,13 @@ void main(){
             LED_frame(255, 255, 255);
             LED_frame(0, 0, 0);
             LED_frame(255, 255, 255);
-            for(i = 0; i < 18; i++){
+            for(i = 0; i < 23; i++){
                 LED_frame(0, 0, 0);
             }
         }
         
         else if(angle > 285.0 && angle < 288.0){
-            for(i = 0; i < 18; i++){
+            for(i = 0; i < 23; i++){
                 LED_frame(0, 0, 0);
             }
             LED_frame(255, 255, 255);
@@ -662,7 +755,7 @@ void main(){
             LED_frame(255, 255, 255);
         }
         else if(angle > 288.0 && angle < 291.0){
-            for(i = 0; i < 18; i++){
+            for(i = 0; i < 23; i++){
                 LED_frame(0, 0, 0);
             }
             LED_frame(255, 255, 255);
@@ -672,7 +765,7 @@ void main(){
             LED_frame(255, 255, 255);
         }
         else if(angle > 291.0 && angle < 297.0){
-            for(i = 0; i < 18; i++){
+            for(i = 0; i < 23; i++){
                 LED_frame(0, 0, 0);
             }
             LED_frame(255, 255, 255);
@@ -682,7 +775,7 @@ void main(){
             LED_frame(255, 255, 255);
         }
         else if(angle > 297.0 && angle < 300.0){
-            for(i = 0; i < 18; i++){
+            for(i = 0; i < 23; i++){
                 LED_frame(0, 0, 0);
             }
             LED_frame(255, 255, 255);
@@ -693,7 +786,7 @@ void main(){
         }
         
         else{
-            for(i = 0; i < 23; i++){
+            for(i = 0; i < 28; i++){
                 LED_frame(0, 0, 0);
             }
         }
