@@ -92,9 +92,21 @@ void main(){
     RC2 = 0;
     RC3 = 1;
     timer_init();
-    timer1_init();
-    pwm_init();
+    //timer1_init();
+    //pwm_init();
     while(1);
+    RC2 = 0;
+    RC3 = 0;
+    while(1){
+        RC3 = 1;
+        __delay_us(1000);
+        RC3 = 0;
+        //__delay_us(10);
+        RC2 = 1;
+        __delay_us(1000);
+        RC2 = 0;
+        //__delay_us(10);
+    }
     while(1){
         timer_counter = 0;
         p_speed = t_speed;
@@ -109,38 +121,5 @@ void main(){
         CCPR2L = pwm >> 2;
         while(timer_counter < 98);
     }
-    /*__delay_ms(100);
-    for(i = 0; i < 245; i++){
-        RC0 = 1;
-        __delay_ms(1);
-        RC0 = 0;
-        __delay_ms(1);
-        __delay_us(40);
-    }
-    for(i = 0; i < 2205; i++){
-        RC0 = 1;
-        __delay_ms(2);
-        RC0 = 0;
-        __delay_us(40);
-    }
-    for(i = 0; i < 1000; i++){
-        RC0 = 1;
-        __delay_ms(1);
-        RC0 = 0;
-        __delay_ms(1);
-        __delay_us(40);
-    }
-    RC2 = 1;
-    RC3 = 0;
-    timer_init();
-    while(1);
-    while(1){
-        RC0 = 1;
-        __delay_ms(1);
-        __delay_us(50);
-        RC0 = 0;
-        __delay_us(950);
-        __delay_us(40);
-    }*/
 }
 

@@ -30,11 +30,13 @@
 #pragma config PMDL1WAY = OFF
 #pragma config IOL1WAY = OFF
 
+#define strip_length 73.0
+const float brightness = 0.1;
+
 unsigned long int delay_counter = 0;
 
-const int strip_length = 23;
-
-int morph_counter;
+int morph_counter = 0;
+int fabulous_counter = 0;
 
 void init(){
     //IO pins
@@ -107,10 +109,13 @@ void end_frame(){
 }
 
 void LED_frame(unsigned char red, unsigned char green, unsigned char blue){
+    float r = (float)red * brightness;
+    float g = (float)green * brightness;
+    float b = (float)blue * brightness;
     SPI_write(255);
-    SPI_write(blue);
-    SPI_write(green);
-    SPI_write(red);
+    SPI_write(b);
+    SPI_write(g);
+    SPI_write(r);
 }
 
 void morph(){
@@ -156,6 +161,84 @@ void morph(){
     }
 }
 
+
+void fabulous(){
+    int j, k, r, g, b;
+    const float ka = 255.0 / strip_length * 6;
+    start_frame();
+    for(j = fabulous_counter, k = 0; j < strip_length; j++, k++){
+        if(j < 12){
+            r = 255;
+            g = (int)(float)(ka * j);
+            b = 0;
+        }
+        else if(j < 24){
+            r = (int)(float)(ka * (12 - (j - 12)));
+            g = 255;
+            b = 0;
+        }
+        else if(j < 36){
+            r = 0;
+            g = 255;
+            b = (int)(float)(ka * (j - 36));
+        }
+        else if(j < 49){
+            r = 0;
+            g = (int)(float)(ka * (12 - (j - 36)));
+            b = 255;
+        }
+        else if(j < 61){
+            r = (int)(float)(ka * (j - 49));
+            g = 0;
+            b = 255;
+        }
+        else{
+            r = 255;
+            g = 0;
+            b = (int)(float)(ka * (12 - (j - 61)));
+        }
+        LED_frame(r, g, b);
+    }
+    for(j = 0; j < fabulous_counter; j++, k++){
+        if(j < 12){
+            r = 255;
+            g = (int)(float)(ka * j);
+            b = 0;
+        }
+        else if(j < 24){
+            r = (int)(float)(ka * (12 - (j - 12)));
+            g = 255;
+            b = 0;
+        }
+        else if(j < 36){
+            r = 0;
+            g = 255;
+            b = (int)(float)(ka * (j - 36));
+        }
+        else if(j < 49){
+            r = 0;
+            g = (int)(float)(ka * (12 - (j - 36)));
+            b = 255;
+        }
+        else if(j < 61){
+            r = (int)(float)(ka * (j - 49));
+            g = 0;
+            b = 255;
+        }
+        else{
+            r = 255;
+            g = 0;
+            b = (int)(float)(ka * (12 - (j - 61)));
+        }
+        LED_frame(r, g, b);
+    }
+    end_frame();
+    fabulous_counter ++;
+    if(fabulous_counter == strip_length){
+        fabulous_counter = 0;
+    }
+}
+
 void main(){
     int i;
     init();
@@ -163,15 +246,11 @@ void main(){
     
     delay_ms(200);
     SPI_init();
+    SPI1BRG = 5;
+    
     morph_counter = 0;
-    /*while(1){
-        morph();
+    while(1){
+        fabulous();
         delay_ms(10);
-    }*/
-    start_frame();
-    for(i = 0; i < 23; i++){
-        LED_frame(255, 0, 255);
     }
-    end_frame();
-    while(1);
 }
