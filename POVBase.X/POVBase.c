@@ -99,11 +99,11 @@ void main(){
     RC3 = 0;
     while(1){
         RC3 = 1;
-        __delay_us(1000);
+        __delay_us(200);
         RC3 = 0;
         //__delay_us(10);
         RC2 = 1;
-        __delay_us(1000);
+        __delay_us(200);
         RC2 = 0;
         //__delay_us(10);
     }

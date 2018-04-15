@@ -246,7 +246,7 @@ void main(){
     
     delay_ms(200);
     SPI_init();
-    SPI1BRG = 5;
+    SPI2BRG = 5;
     
     morph_counter = 0;
     while(1){
