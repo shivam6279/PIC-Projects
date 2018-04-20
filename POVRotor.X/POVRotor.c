@@ -35,6 +35,11 @@ const float brightness = 0.1;
 
 unsigned long int delay_counter = 0;
 
+struct led{
+    unsigned char red, green, blue;
+};
+
+struct led buffer[(int)strip_length];
 int morph_counter = 0;
 int fabulous_counter = 0;
 
@@ -165,7 +170,7 @@ void morph(){
 void fabulous(){
     int j, k, r, g, b;
     const float ka = 255.0 / strip_length * 6;
-    start_frame();
+    //start_frame();
     for(j = fabulous_counter, k = 0; j < strip_length; j++, k++){
         if(j < 12){
             r = 255;
@@ -197,7 +202,10 @@ void fabulous(){
             g = 0;
             b = (int)(float)(ka * (12 - (j - 61)));
         }
-        LED_frame(r, g, b);
+        //LED_frame(r, g, b);
+        buffer[k].red = r;
+        buffer[k].green = g;
+        buffer[k].blue = b;
     }
     for(j = 0; j < fabulous_counter; j++, k++){
         if(j < 12){
@@ -230,9 +238,12 @@ void fabulous(){
             g = 0;
             b = (int)(float)(ka * (12 - (j - 61)));
         }
-        LED_frame(r, g, b);
+        //LED_frame(r, g, b);
+        buffer[k].red = r;
+        buffer[k].green = g;
+        buffer[k].blue = b;
     }
-    end_frame();
+    //end_frame();
     fabulous_counter ++;
     if(fabulous_counter == strip_length){
         fabulous_counter = 0;
@@ -240,17 +251,35 @@ void fabulous(){
 }
 
 void main(){
-    int i;
+    int i, j;
     init();
+    TRISDbits.TRISD2 = 1;
     timer2_init();
     
     delay_ms(200);
     SPI_init();
     SPI2BRG = 5;
+    delay_ms(200);
+    
+    start_frame();
+    for(i = 0; i < strip_length; i++){
+        LED_frame(255, 255, 255);
+    }
+    end_frame();
+    delay_ms(500);
     
     morph_counter = 0;
     while(1){
         fabulous();
-        delay_ms(10);
+        start_frame();
+        for(i = 0; i < (int)strip_length; i+=2){
+            LED_frame(buffer[i].red, buffer[i].green, buffer[i].blue);
+        }
+        LED_frame(buffer[i-2].red, buffer[i-2].green, buffer[i-2].blue);
+        for(i = (int)strip_length - 1; i >= 2; i-=2){
+            LED_frame(buffer[i].red, buffer[i].green, buffer[i].blue);
+        }
+        end_frame();
+        delay_ms(8);
     }
 }

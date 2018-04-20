@@ -91,21 +91,25 @@ void main(){
     delay_ms(10);
     RC2 = 0;
     RC3 = 1;
-    timer_init();
+    //timer_init();
     //timer1_init();
-    //pwm_init();
-    while(1);
+    pwm_init();
+    pwm = 256;
+    CCP2CONbits.CCP2X = (pwm >> 1) & 1;
+    CCP2CONbits.CCP2Y = pwm & 1;
+    CCPR2L = pwm >> 2;
+    
     RC2 = 0;
     RC3 = 0;
     while(1){
         RC3 = 1;
-        __delay_us(200);
+        __delay_us(12);
         RC3 = 0;
-        //__delay_us(10);
+        __delay_us(1);
         RC2 = 1;
-        __delay_us(200);
+        __delay_us(10);
         RC2 = 0;
-        //__delay_us(10);
+        __delay_us(1);
     }
     while(1){
         timer_counter = 0;
