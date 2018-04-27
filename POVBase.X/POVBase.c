@@ -88,28 +88,26 @@ void main(){
     unsigned int pwm;
     int i;
     init();
-    delay_ms(10);
     RC2 = 0;
-    RC3 = 1;
+    RC3 = 0;
+    delay_ms(10);
     //timer_init();
     //timer1_init();
     pwm_init();
-    pwm = 256;
+    pwm = 260;
     CCP2CONbits.CCP2X = (pwm >> 1) & 1;
     CCP2CONbits.CCP2Y = pwm & 1;
     CCPR2L = pwm >> 2;
     
-    RC2 = 0;
-    RC3 = 0;
     while(1){
         RC3 = 1;
         __delay_us(12);
         RC3 = 0;
-        __delay_us(1);
+        __delay_us(5);
         RC2 = 1;
         __delay_us(10);
         RC2 = 0;
-        __delay_us(1);
+        __delay_us(6);
     }
     while(1){
         timer_counter = 0;

@@ -31,7 +31,17 @@
 #pragma config IOL1WAY = OFF
 
 #define strip_length 73.0
-const float brightness = 0.1;
+const float brightness = 0.2;
+
+void init();
+void delay_ms(unsigned int x);
+void timer2_init();
+void timer3_init(float frequency);
+void start_frame();
+void end_frame();
+void LED_frame(unsigned char red, unsigned char green, unsigned char blue);
+void fabulous();
+void morph();
 
 unsigned long int delay_counter = 0;
 
@@ -43,84 +53,214 @@ struct led buffer[(int)strip_length];
 int morph_counter = 0;
 int fabulous_counter = 0;
 
-void init(){
-    //IO pins
-    TRISB = 0xE040;
-    TRISC = 0;
-    TRISD = 0;
-    TRISE = 0xF0;
-    TRISF = 0;
-    TRISG = 0x0180;
-    ANSELB = 0xC000;
-    ANSELE = 0xF0;
-    ANSELG = 0x0180;
-    
-    PRECONbits.PREFEN = 3;
-    PRECONbits.PFMWS = 2;
-    SYSKEY = 0xAA996655;//Unlocking
-    SYSKEY = 0x556699AA;//Sequence
-    OSCCONbits.FRCDIV = 0;
-    OSCCONbits.COSC = 1;
-    OSCTUNbits.TUN = 0;
-    //SYSKEY = 0x33333333;//Locking sequence
-    
-    PRISS = 0x76543210;
-    INTCONbits.MVEC = 1;
-    
-    PB2DIVbits.ON = 1;
-    PB2DIVbits.PBDIV = 1;//PBCLK2 at 100mhz
-    
-    PB3DIVbits.ON = 1;
-    PB3DIVbits.PBDIV = 1;//PBCLK3 at 100mhz
-    
-    __asm__("ei");//Enable interrupts
-}
+#define speed_buffer_size 10
+volatile unsigned long int speed_offset_buffer[speed_buffer_size];
+volatile unsigned long int speed_counter = 0, speed_offset = 0;
+unsigned char flag = 1;
 
 void __ISR_AT_VECTOR(_TIMER_2_VECTOR, IPL4SRS) delay_timer(void){
     IFS0bits.T2IF = 0;
     delay_counter++;
 }
 
-void delay_ms(unsigned int x){
-    delay_counter = 0;
-    T2CONbits.TON = 1;
-    while(delay_counter < x);
-    T2CONbits.TON = 0;
+void __ISR_AT_VECTOR(_TIMER_3_VECTOR, IPL4SRS) safety_timer(void){
+    int i;
+    IFS0bits.T3IF = 0;
+    speed_counter++;
+    if(PORTDbits.RD2 == 0 && flag == 1){
+        for(i = 1; i < speed_buffer_size; i++){
+            speed_offset_buffer[i] = speed_offset_buffer[i - 1];
+        }
+        speed_offset_buffer[0] = speed_counter;
+        for(i = 0, speed_offset = 0; i < speed_buffer_size; i++){
+            speed_offset += speed_offset_buffer[i] / speed_buffer_size;
+        }
+        speed_counter = 0;
+        flag = 0;
+    }
+    else if(PORTDbits.RD2 == 1){
+        flag = 1;
+    }
 }
 
-void timer2_init(){
-    T2CONbits.TON = 0;
-    T2CONbits.TCKPS = 5;//1Khz
-    PR2 = 3125;
-    TMR2 = 0;
-    IPC2bits.T2IP = 4;
-    IFS0bits.T2IF = 0;
-    IEC0bits.T2IE = 1;
-    T2CONbits.TON = 0;
-}
-
-void start_frame(){
-    SPI_write(0);
-    SPI_write(0);
-    SPI_write(0);
-    SPI_write(0);
-}
-
-void end_frame(){
-    SPI_write(255);
-    SPI_write(255);
-    SPI_write(255);
-    SPI_write(255);
-}
-
-void LED_frame(unsigned char red, unsigned char green, unsigned char blue){
-    float r = (float)red * brightness;
-    float g = (float)green * brightness;
-    float b = (float)blue * brightness;
-    SPI_write(255);
-    SPI_write(b);
-    SPI_write(g);
-    SPI_write(r);
+void main(){
+    int i, j, k;
+    unsigned char red, green, blue;
+    double angle, t;
+    init();
+    
+    TRISDbits.TRISD2 = 1;
+    for(i = 0; i < speed_buffer_size; i++){
+        speed_offset_buffer[i] = 0;
+    }
+    timer2_init();
+    timer3_init(10000);
+    
+    delay_ms(200);
+    SPI_init();
+    SPI2BRG = 5;
+    delay_ms(200);
+    
+    start_frame();
+    for(i = 0; i < (int)strip_length; i++){
+        LED_frame(255, 255, 255);
+    }
+    end_frame();
+    delay_ms(50);
+    
+    while(1){
+        angle = 360.0 * ((double)speed_counter)/((double)speed_offset);
+        for(i = 0; i < (int)strip_length; i++){
+            buffer[i].red = 0;
+            buffer[i].green = 0;
+            buffer[i].blue = 0;
+        }
+        if(angle > 80.0 && angle < 100.0){
+            for(i = 0; i < (int)strip_length / 2; i++){
+                buffer[i].red = 255;
+                buffer[i].green = 0;
+                buffer[i].blue = 255;
+            }
+        }
+        else if(angle > 260.0 && angle < 280.0){
+            for(i = (int)strip_length / 2 + 1; i < (int)strip_length; i++){
+                buffer[i].red = 255;
+                buffer[i].green = 0;
+                buffer[i].blue = 255;
+            }
+        }
+        start_frame();
+        for(i = 0; i < (int)strip_length; i++){
+            LED_frame(buffer[i].red, buffer[i].green, buffer[i].blue);
+        }
+        end_frame();
+    }
+    //--------------------------------------------------------------------------
+    /*
+    for(i = 0; i < 9; i++){
+        buffer[i].red = 255;
+        buffer[i].green = 0;
+        buffer[i].blue = 0;
+        buffer[(int)strip_length - i].red = 255;
+        buffer[(int)strip_length - i].green = 0;
+        buffer[(int)strip_length - i].blue = 0;
+    }
+    for(i = 9; i < 17; i++){
+        buffer[i].red = 240;
+        buffer[i].green = 240;
+        buffer[i].blue = 240;
+        buffer[(int)strip_length - i].red = 240;
+        buffer[(int)strip_length - i].green = 240;
+        buffer[(int)strip_length - i].blue = 240;
+    }
+    for(i = 17; i < 25; i++){
+        buffer[i].red = 255;
+        buffer[i].green = 0;
+        buffer[i].blue = 0;
+        buffer[(int)strip_length - i].red = 255;
+        buffer[(int)strip_length - i].green = 0;
+        buffer[(int)strip_length - i].blue = 0;
+    }    
+    for(i = 31; i < 37; i++){
+        buffer[i].red = 240;
+        buffer[i].green = 240;
+        buffer[i].blue = 240;
+        buffer[(int)strip_length - i].red = 240;
+        buffer[(int)strip_length - i].green = 240;
+        buffer[(int)strip_length - i].blue = 240;
+    }   
+    start_frame();
+    for(i = 0; i < (int)strip_length; i++){
+        LED_frame(buffer[i].red, buffer[i].green, buffer[i].blue);
+    }
+    end_frame();
+    while(1){
+        angle = 360.0 * ((double)speed_counter)/((double)speed_offset);
+        for(i = 25; i < 31; i++){
+            buffer[i].red = 0;
+            buffer[i].green = 45;
+            buffer[i].blue = 92;
+            buffer[(int)strip_length - i].red = 0;
+            buffer[(int)strip_length - i].green = 45;
+            buffer[(int)strip_length - i].blue = 92;
+        }
+        
+        for(j = 0; j < 6; j++){
+            if(((int)angle%71 > 11.5*j && (int)angle%71 < (71 - 11.5*j))){
+                if(j > 5){
+                    buffer[25].red = 240;
+                    buffer[25].green = 240;
+                    buffer[25].blue = 240;
+                    buffer[(int)strip_length - 25].red = 240;
+                    buffer[(int)strip_length - 25].green = 240;
+                    buffer[(int)strip_length - 25].blue = 240;
+                }
+                if(j > 4){
+                    buffer[26].red = 240;
+                    buffer[26].green = 240;
+                    buffer[26].blue = 240;
+                    buffer[(int)strip_length - 26].red = 240;
+                    buffer[(int)strip_length - 26].green = 240;
+                    buffer[(int)strip_length - 26].blue = 240;
+                }
+                if(j > 3){
+                    buffer[27].red = 240;
+                    buffer[27].green = 240;
+                    buffer[27].blue = 240;
+                    buffer[(int)strip_length - 27].red = 240;
+                    buffer[(int)strip_length - 27].green = 240;
+                    buffer[(int)strip_length - 27].blue = 240;
+                }
+                if(j > 2){
+                    buffer[28].red = 240;
+                    buffer[28].green = 240;
+                    buffer[28].blue = 240;
+                    buffer[(int)strip_length - 28].red = 240;
+                    buffer[(int)strip_length - 28].green = 240;
+                    buffer[(int)strip_length - 28].blue = 240;
+                }
+                if(j > 1){
+                    buffer[29].red = 240;
+                    buffer[29].green = 240;
+                    buffer[29].blue = 240;
+                    buffer[(int)strip_length - 29].red = 240;
+                    buffer[(int)strip_length - 29].green = 240;
+                    buffer[(int)strip_length - 29].blue = 240; 
+                }
+                if(j > 0){
+                    buffer[30].red = 240;
+                    buffer[30].green = 240;
+                    buffer[30].blue = 240;
+                    buffer[(int)strip_length - 30].red = 240;
+                    buffer[(int)strip_length - 30].green = 240;
+                    buffer[(int)strip_length - 30].blue = 240; 
+                }
+            }
+        }
+        
+        start_frame();
+        for(i = 0; i < (int)strip_length; i++){
+            LED_frame(buffer[i].red, buffer[i].green, buffer[i].blue);
+        }
+        end_frame();
+    }
+    
+    fabulous_counter = 0;
+    //--------------------------------------------------------------------------
+    */
+    while(1){
+        fabulous();
+        start_frame();
+        for(i = 0; i < (int)strip_length; i+=2){
+            LED_frame(buffer[i].red, buffer[i].green, buffer[i].blue);
+        }
+        LED_frame(buffer[i-2].red, buffer[i-2].green, buffer[i-2].blue);
+        for(i = (int)strip_length - 1; i >= 2; i-=2){
+            LED_frame(buffer[i].red, buffer[i].green, buffer[i].blue);
+        }
+        end_frame();
+        delay_ms(12);
+    }
 }
 
 void morph(){
@@ -250,36 +390,94 @@ void fabulous(){
     }
 }
 
-void main(){
-    int i, j;
-    init();
-    TRISDbits.TRISD2 = 1;
-    timer2_init();
+void init(){
+    //IO pins
+    TRISB = 0xE040;
+    TRISC = 0;
+    TRISD = 0;
+    TRISE = 0xF0;
+    TRISF = 0;
+    TRISG = 0x0180;
+    ANSELB = 0xC000;
+    ANSELE = 0xF0;
+    ANSELG = 0x0180;
     
-    delay_ms(200);
-    SPI_init();
-    SPI2BRG = 5;
-    delay_ms(200);
+    PRECONbits.PREFEN = 3;
+    PRECONbits.PFMWS = 2;
+    SYSKEY = 0xAA996655;//Unlocking
+    SYSKEY = 0x556699AA;//Sequence
+    OSCCONbits.FRCDIV = 0;
+    OSCCONbits.COSC = 1;
+    OSCTUNbits.TUN = 0;
+    //SYSKEY = 0x33333333;//Locking sequence
     
-    start_frame();
-    for(i = 0; i < strip_length; i++){
-        LED_frame(255, 255, 255);
-    }
-    end_frame();
-    delay_ms(500);
+    PRISS = 0x76543210;
+    INTCONbits.MVEC = 1;
     
-    morph_counter = 0;
-    while(1){
-        fabulous();
-        start_frame();
-        for(i = 0; i < (int)strip_length; i+=2){
-            LED_frame(buffer[i].red, buffer[i].green, buffer[i].blue);
-        }
-        LED_frame(buffer[i-2].red, buffer[i-2].green, buffer[i-2].blue);
-        for(i = (int)strip_length - 1; i >= 2; i-=2){
-            LED_frame(buffer[i].red, buffer[i].green, buffer[i].blue);
-        }
-        end_frame();
-        delay_ms(8);
-    }
+    PB2DIVbits.ON = 1;
+    PB2DIVbits.PBDIV = 1;//PBCLK2 at 100mhz
+    
+    PB3DIVbits.ON = 1;
+    PB3DIVbits.PBDIV = 1;//PBCLK3 at 100mhz
+    
+    __asm__("ei");//Enable interrupts
+}
+
+void delay_ms(unsigned int x){
+    delay_counter = 0;
+    T2CONbits.TON = 1;
+    while(delay_counter < x);
+    T2CONbits.TON = 0;
+}
+
+void timer2_init(){
+    T2CONbits.TON = 0;
+    T2CONbits.TCKPS = 5;//1Khz
+    PR2 = 3125;
+    TMR2 = 0;
+    IPC2bits.T2IP = 4;
+    IFS0bits.T2IF = 0;
+    IEC0bits.T2IE = 1;
+    T2CONbits.TON = 0;
+}
+
+void timer3_init(float frequency){
+    float t = 100000000.0 / frequency; unsigned char pre = 0;
+    while(t > 65535){ t /= 2.0; pre++; }
+    t = (int)t;
+    while((int)t % 2 == 0 && pre < 8){ t /= 2.0; pre++; }
+    if(pre == 7){ t *= 2.0; pre--; }
+    if(pre == 8) pre = 7;
+    T3CONbits.ON = 0;
+    T3CONbits.TCKPS = pre;
+    PR3 = (int)t - 1;
+    TMR3 = 0;
+    IPC3bits.T3IP = 4;
+    IFS0bits.T3IF = 0;
+    IEC0bits.T3IE = 1;
+    T3CONbits.ON = 1;
+}
+
+void start_frame(){
+    SPI_write(0);
+    SPI_write(0);
+    SPI_write(0);
+    SPI_write(0);
+}
+
+void end_frame(){
+    SPI_write(255);
+    SPI_write(255);
+    SPI_write(255);
+    SPI_write(255);
+}
+
+void LED_frame(unsigned char red, unsigned char green, unsigned char blue){
+    float r = (float)red * brightness;
+    float g = (float)green * brightness;
+    float b = (float)blue * brightness;
+    SPI_write(255);
+    SPI_write(b);
+    SPI_write(g);
+    SPI_write(r);
 }
