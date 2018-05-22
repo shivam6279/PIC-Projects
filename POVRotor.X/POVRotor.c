@@ -5,7 +5,7 @@
 #include "bitbang_i2c.h"
 #include "USART.h"
 #include "SPI.h"
-    
+
 #pragma config FNOSC = SPLL 
 #pragma config FSOSCEN = OFF    
 #pragma config POSCMOD = OFF    
@@ -50,51 +50,67 @@ struct led{
 };
 
 struct led buffer[(int)strip_length];
+struct led p_buffer[(int)strip_length];
+unsigned char buffer_magnet_flag = 0;
 int morph_counter = 0;
 int fabulous_counter = 0;
 
-#define speed_buffer_size 10
-volatile unsigned long int speed_offset_buffer[speed_buffer_size];
-volatile unsigned long int speed_counter = 0, speed_offset = 0;
-unsigned char flag = 1;
+#define speed_history_size 4
+
+unsigned long int speed_history[speed_history_size];
+unsigned int speed_history_i = 0;
+unsigned long int magnet_counter = 0, speed_counter = 0, omega = 0, raw_omega;
+unsigned char magnet_flag = 1;
 
 void __ISR_AT_VECTOR(_TIMER_2_VECTOR, IPL4SRS) delay_timer(void){
     IFS0bits.T2IF = 0;
     delay_counter++;
 }
 
-void __ISR_AT_VECTOR(_TIMER_3_VECTOR, IPL4SRS) safety_timer(void){
+void __ISR_AT_VECTOR(_TIMER_3_VECTOR, IPL4SRS) speed_timer(void){
     int i;
     IFS0bits.T3IF = 0;
+    magnet_counter++;
     speed_counter++;
-    if(PORTDbits.RD2 == 0 && flag == 1){
-        for(i = 1; i < speed_buffer_size; i++){
-            speed_offset_buffer[i] = speed_offset_buffer[i - 1];
+    if(PORTDbits.RD2 == 0 && magnet_flag == 1){
+        speed_history[speed_history_i] = magnet_counter;
+        raw_omega = magnet_counter;
+        for(i = 0, omega = 0; i < speed_history_size; i++){
+            omega += speed_history[i];
         }
-        speed_offset_buffer[0] = speed_counter;
-        for(i = 0, speed_offset = 0; i < speed_buffer_size; i++){
-            speed_offset += speed_offset_buffer[i] / speed_buffer_size;
-        }
-        speed_counter = 0;
-        flag = 0;
+        omega /= speed_history_size;
+        speed_history_i = (speed_history_i + 1) % speed_history_size;
+        
+        magnet_counter = 0;
+        magnet_flag = 0;
     }
     else if(PORTDbits.RD2 == 1){
-        flag = 1;
+        magnet_flag = 1;
     }
+    if(speed_counter >= omega){
+        speed_counter = 0;
+    }
+}
+
+long int mag(long int a){
+    if(a < 0) return -a;
+    else return a;
 }
 
 void main(){
     int i, j, k;
+    int r, g, b;
     unsigned char red, green, blue;
     double angle, t;
+    float morph_counter = 0;
     init();
     
     TRISDbits.TRISD2 = 1;
-    for(i = 0; i < speed_buffer_size; i++){
-        speed_offset_buffer[i] = 0;
+    for(i = 0; i < speed_history_size; i++){
+        speed_history[i] = 0;
     }
     timer2_init();
-    timer3_init(10000);
+    timer3_init(200000);
     
     delay_ms(200);
     SPI_init();
@@ -108,32 +124,112 @@ void main(){
     end_frame();
     delay_ms(50);
     
+    
+    /*long int temp1, temp2;
     while(1){
-        angle = 360.0 * ((double)speed_counter)/((double)speed_offset);
+        temp1 = mag(speed_history[speed_history_i] - speed_history[(speed_history_i - 1) % speed_history_size]);
+        temp2 = raw_omega;
         for(i = 0; i < (int)strip_length; i++){
             buffer[i].red = 0;
             buffer[i].green = 0;
             buffer[i].blue = 0;
         }
-        if(angle > 80.0 && angle < 100.0){
-            for(i = 0; i < (int)strip_length / 2; i++){
+        for(i = 0; i < 32; i++){
+            if(temp1 & 1){
                 buffer[i].red = 255;
-                buffer[i].green = 0;
+            } 
+            if(temp2 & 1){
                 buffer[i].blue = 255;
-            }
+            } 
+            temp1 = temp1 >> 1;
+            temp2 = temp2 >> 1;
         }
-        else if(angle > 260.0 && angle < 280.0){
-            for(i = (int)strip_length / 2 + 1; i < (int)strip_length; i++){
-                buffer[i].red = 255;
-                buffer[i].green = 0;
-                buffer[i].blue = 255;
-            }
-        }
+        
         start_frame();
         for(i = 0; i < (int)strip_length; i++){
             LED_frame(buffer[i].red, buffer[i].green, buffer[i].blue);
         }
         end_frame();
+        buffer_magnet_flag = 0;
+    }*/
+    
+    while(1){
+        angle = 365.0 * ((double)speed_counter)/((double)omega);
+        
+        if(morph_counter < 256){
+            r = 255;
+            g = morph_counter;
+            b = 0;
+        }
+        else if(morph_counter < 512){
+            r = 255 - (morph_counter - 256);
+            g = 255;
+            b = 0;
+        }
+        else if(morph_counter < 768){
+            r = 0;
+            g = 255;
+            b = morph_counter - 512;
+        }
+        else if(morph_counter < 1024){
+            r = 0;
+            g = 255 - (morph_counter - 768);
+            b = 255;
+        }
+        else if(morph_counter < 1280){
+            r = morph_counter - 1024;
+            g = 0;
+            b = 255;
+        }
+        else{
+            r = 255;
+            g = 0;
+            b = 255 - (morph_counter - 1280);
+        }
+        
+        for(i = 0; i < (int)strip_length; i++){
+            p_buffer[i].red = buffer[i].red;
+            p_buffer[i].green = buffer[i].green;
+            p_buffer[i].blue = buffer[i].blue;
+        }
+        for(i = 0; i < (int)strip_length; i++){
+            buffer[i].red = 0;
+            buffer[i].green = 0;
+            buffer[i].blue = 0;
+        }
+        if(angle > 89.0 && angle < 91.0){
+            for(i = 0; i < (int)strip_length / 2; i++){
+                buffer[i].red = r;
+                buffer[i].green = g;
+                buffer[i].blue = b;
+            }
+            morph_counter += 2;
+            if(morph_counter >= 1536.0) morph_counter = 0.0;
+        }
+        else if(angle > 269.0 && angle < 271.0){
+            for(i = (int)strip_length / 2 + 1; i < (int)strip_length; i++){
+                buffer[i].red = r;
+                buffer[i].green = g;
+                buffer[i].blue = b;
+            }
+            morph_counter += 2;
+            if(morph_counter >= 1536.0) morph_counter = 0.0;
+        }
+        for(i = 0; i < (int)strip_length; i++){
+            if(buffer[i].red != p_buffer[i].red || buffer[i].green != p_buffer[i].green || buffer[i].blue != p_buffer[i].blue){
+                buffer_magnet_flag = 1;
+                break;
+            }
+        }
+        
+        if(buffer_magnet_flag == 1){
+            start_frame();
+            for(i = 0; i < (int)strip_length; i++){
+                LED_frame(buffer[i].red, buffer[i].green, buffer[i].blue);
+            }
+            end_frame();
+            buffer_magnet_flag = 0;
+        }
     }
     //--------------------------------------------------------------------------
     /*
@@ -175,7 +271,7 @@ void main(){
     }
     end_frame();
     while(1){
-        angle = 360.0 * ((double)speed_counter)/((double)speed_offset);
+        angle = 360.0 * ((double)magnet_counter)/((double)omega);
         for(i = 25; i < 31; i++){
             buffer[i].red = 0;
             buffer[i].green = 45;
@@ -466,6 +562,8 @@ void start_frame(){
 }
 
 void end_frame(){
+    SPI_write(255);
+    SPI_write(255);
     SPI_write(255);
     SPI_write(255);
     SPI_write(255);

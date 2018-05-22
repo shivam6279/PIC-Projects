@@ -8,12 +8,7 @@
 void ColorLCD_writecommand(unsigned char c);
 void ColorLCD_writedata(unsigned char c);
 void ColorLCD_setxy(unsigned int x0, unsigned int y0, unsigned int x1, unsigned int y1);
-void ColorLCD_fillRect(unsigned int x, unsigned int y, unsigned int w, unsigned int h, unsigned int color);
-void ColorLCD_draw_pixel(unsigned int x, unsigned int y, unsigned int color);
 void ColorLCD_init();
-void ColorLCD_write_str(char *str, unsigned int x, unsigned int y, unsigned int color);
-void ColorLCD_write_int(int a, unsigned char precision, unsigned int x, unsigned int y, unsigned int color);
-void ColorLCD_write_float(double a, unsigned char left, unsigned char right, unsigned int x, unsigned int y, unsigned int color);
 
 const unsigned char characters[][5]={
     {0x00,0x00,0x00,0x00,0x00},//  
@@ -140,20 +135,6 @@ void ColorLCD_setxy(unsigned int x0, unsigned int y0, unsigned int x1, unsigned 
     ColorLCD_writecommand(0x2C); 
 }
 
-void ColorLCD_fillRect(unsigned int x, unsigned int y, unsigned int w, unsigned int h, unsigned int color){
-    unsigned char hi = color >> 8, lo = color & 0xFF;
-    ColorLCD_setxy(x, y, (x + w - 1), (y + h - 1));    
-    DC = 1;
-    CS = 0;
-    for(y = h; y > 0; y--){
-      for(x = w; x > 0; x--){
-        SPI_write(hi);
-        SPI_write(lo);
-      }
-    }
-    CS = 1;
-}
-
 void ColorLCD_init(){
     ColorLCD_writecommand(0xEF);
     ColorLCD_writedata(0x03);
@@ -259,89 +240,6 @@ void ColorLCD_init(){
     ColorLCD_writedata(0x0F); 
 
     ColorLCD_writecommand(0x11);    //Exit Sleep 
-}
-
-void ColorLCD_draw_pixel(unsigned int x, unsigned int y, unsigned int color){
-    ColorLCD_setxy(x, y, (x + 1), (y + 1));
-    DC = 1;
-    CS = 0;
-    SPI_write(color >> 8);
-    SPI_write(color & 0xFF);
-    CS = 1;
-}
-
-void ColorLCD_write_str(char *str, unsigned int x, unsigned int y, unsigned int color){
-    unsigned int j, k, len = strlen(str);
-    int i;
-    char *t;
-    ColorLCD_setxy(x, y, x + ((len * 6) - 1), (y + 7));
-    DC = 1;
-    CS = 0;
-    for(i = 0; i < 8; i++){
-        t = str;
-        for(j = 0; j < len; j++, t++){
-            for(k = 0; k < 5; k++){
-                if((characters[*t - 32][k] >> i) & 1){
-                    SPI_write(color >> 8);
-                    SPI_write(color & 0xFF);
-                }
-                else{
-                    SPI_write(0xFF);
-                    SPI_write(0xFF);
-                }
-            }
-            SPI_write(0xFF);
-            SPI_write(0xFF);
-        }
-    }
-    CS = 1;
-}
-
-void ColorLCD_write_int(int a, unsigned char precision, unsigned int x, unsigned int y, unsigned int color){
-    char temp[10];
-    unsigned char i = 1;
-    if(a < 0){
-        a *= (-1);
-        temp[0] = '-';
-    }
-    else{
-        temp[0] = '+';
-    }
-    if(precision >= 7) temp[i++] = (((a / 1000000) % 10) + 48);
-    if(precision >= 6) temp[i++] = (((a / 100000) % 10) + 48);
-    if(precision >= 5) temp[i++] = (((a / 10000) % 10) + 48);
-    if(precision >= 4) temp[i++] = (((a / 1000) % 10) + 48);
-    if(precision >= 3) temp[i++] = (((a / 100) % 10) + 48);
-    if(precision >= 2) temp[i++] = (((a / 10) % 10) + 48);
-    if(precision >= 1) temp[i++] = ((a % 10) + 48);
-    temp[i] = '\0';
-    ColorLCD_write_str(temp, x, y, color);
-}
-
-void ColorLCD_write_float(double a, unsigned char left, unsigned char right, unsigned int x, unsigned int y, unsigned int color){
-    char temp[20];
-    unsigned char i = 1, j;
-    long int tens = 10;
-    if(a < 0){
-        a *= (-1);
-        temp[0] = '-';
-    }
-    else{
-        temp[0] = '+';
-    }
-    if(left >= 6) temp[i++] = (((int)(a / 100000) % 10) + 48);
-    if(left >= 5) temp[i++] = (((int)(a / 10000) % 10) + 48);
-    if(left >= 4) temp[i++] = (((int)(a / 1000) % 10) + 48);
-    if(left >= 3) temp[i++] = (((int)(a / 100) % 10) + 48);
-    if(left >= 2) temp[i++] = (((int)(a / 10) % 10) + 48);
-    if(left >= 1) temp[i++] = (((int)a % 10) + 48);
-    temp[i++] = '.';
-    for(j = 0; j < right; j++){
-        temp[i++] = (((long int)(a * tens) % 10) + 48);
-        tens *= 10;
-    }
-    temp[i] = '\0';
-    ColorLCD_write_str(temp, x, y, color);
 }
 
 #endif

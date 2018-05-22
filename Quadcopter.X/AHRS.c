@@ -1,0 +1,89 @@
+#include "AHRS.h"
+#include "10DOF.h"
+#include "GPS.h"
+#include <math.h>
+
+void MultiplyVectorQuarternion(float q[4], XYZ r, XYZ *v){
+    v->x = r.x * (1.0 - 2.0 * q[2] * q[2] - 2.0 * q[3] * q[3]) + r.y * (2.0 * q[1] * q[2] - 2.0 * q[3] * q[0]) + r.z * (2.0 * q[1]* q[3] + 2.0 * q[2] * q[0]);
+    v->y = r.x * (2.0 * q[1] * q[2] + 2.0 * q[3] * q[0]) + r.y * (1.0 - 2.0 * q[1] * q[1] - 2.0 * q[3] * q[3]) + r.z * (2.0 * q[2]* q[3] - 2.0 * q[1] * q[0]);
+    v->z = r.x * (2.0 * q[1] * q[3] - 2.0 * q[2] * q[0]) + r.y * (2.0 * q[2] * q[3] + 2.0 * q[1] * q[0]) + r.z * (1.0 - 2.0 * q[1]* q[1] - 2.0 * q[2] * q[2]);
+}
+
+void MatrixInit(float *a) {
+    
+}
+
+void MadgwickQuaternionUpdate(float q[], XYZ acc, XYZ gy, XYZ mag, float deltat){
+    float q1 = q[0];
+    float q2 = q[1];
+    float q3 = q[2];
+    float q4 = q[3]; 
+    XYZ a, g, m;
+    float norm, hx, hy, _2bx, _2bz, s1, s2, s3, s4, qDot1, qDot2, qDot3, qDot4, _2q1mx, _2q1my, _2q1mz, _2q2mx, _4bx, _4bz;
+    float _2q1 = 2.0f * q1;
+    float _2q2 = 2.0f * q2;
+    float _2q3 = 2.0f * q3;
+    float _2q4 = 2.0f * q4;
+    float _2q1q3 = 2.0f * q1 * q3;
+    float _2q3q4 = 2.0f * q3 * q4;
+    float q1q1 = q1 * q1;
+    float q1q2 = q1 * q2;
+    float q1q3 = q1 * q3;
+    float q1q4 = q1 * q4;
+    float q2q2 = q2 * q2;
+    float q2q3 = q2 * q3;
+    float q2q4 = q2 * q4;
+    float q3q3 = q3 * q3;
+    float q3q4 = q3 * q4;
+    float q4q4 = q4 * q4;
+    
+    norm = sqrt(acc.x * acc.x + acc.y * acc.y + acc.z * acc.z); 
+    a.x = acc.x / norm; 
+    a.y = acc.y / norm; 
+    a.z = acc.z / norm;
+    
+    g.x = gy.x / RAD_TO_DEGREES; 
+    g.y = gy.y / RAD_TO_DEGREES; 
+    g.z = gy.z / RAD_TO_DEGREES; 
+    
+    norm = sqrt(mag.x * mag.x + mag.y * mag.y + mag.z * mag.z);
+    m.x = mag.x / norm; 
+    m.y = mag.y / norm; 
+    m.z = mag.z / norm;
+    
+    _2q1mx = 2.0f * q1 * m.x; 
+    _2q1my = 2.0f * q1 * m.y;
+    _2q1mz = 2.0f * q1 * m.z; 
+    _2q2mx = 2.0f * q2 * m.x;
+    
+    hx = m.x * q1q1 - _2q1my * q4 + _2q1mz * q3 + m.x * q2q2 + _2q2 * m.y * q3 + _2q2 * m.z * q4 - m.x * q3q3 - m.x * q4q4;
+    hy = _2q1mx * q4 + m.y * q1q1 - _2q1mz * q2 + _2q2mx * q3 - m.y * q2q2 + m.y * q3q3 + _2q3 * m.z * q4 - m.y * q4q4;
+    _2bx = sqrt(hx * hx + hy * hy); 
+    _2bz = -_2q1mx * q3 + _2q1my * q2 + m.z * q1q1 + _2q2mx * q4 - m.z * q2q2 + _2q3 * m.y * q4 - m.z * q3q3 + m.z * q4q4; _4bx = 2.0f * _2bx; _4bz = 2.0f * _2bz;
+    s1 = -_2q3 * (2.0f * q2q4 - _2q1q3 - a.x) + _2q2 * (2.0f * q1q2 + _2q3q4 - a.y) - _2bz * q3 * (_2bx * (0.5f - q3q3 - q4q4) + _2bz * (q2q4 - q1q3) - m.x) + (-_2bx * q4 + _2bz * q2) * (_2bx * (q2q3 - q1q4) + _2bz * (q1q2 + q3q4) - m.y) + _2bx * q3 * (_2bx * (q1q3 + q2q4) + _2bz * (0.5f - q2q2 - q3q3) - m.z);
+    s2 = _2q4 * (2.0f * q2q4 - _2q1q3 - a.x) + _2q1 * (2.0f * q1q2 + _2q3q4 - a.y) - 4.0f * q2 * (1.0f - 2.0f * q2q2 - 2.0f * q3q3 - a.z) + _2bz * q4 * (_2bx * (0.5f - q3q3 - q4q4) + _2bz * (q2q4 - q1q3) - m.x) + (_2bx * q3 + _2bz * q1) * (_2bx * (q2q3 - q1q4) + _2bz * (q1q2 + q3q4) - m.y) + (_2bx * q4 - _4bz * q2) * (_2bx * (q1q3 + q2q4) + _2bz * (0.5f - q2q2 - q3q3) - m.z);
+    s3 = -_2q1 * (2.0f * q2q4 - _2q1q3 - a.x) + _2q4 * (2.0f * q1q2 + _2q3q4 - a.y) - 4.0f * q3 * (1.0f - 2.0f * q2q2 - 2.0f * q3q3 - a.z) + (-_4bx * q3 - _2bz * q1) * (_2bx * (0.5f - q3q3 - q4q4) + _2bz * (q2q4 - q1q3) - m.x) + (_2bx * q2 + _2bz * q4) * (_2bx * (q2q3 - q1q4) + _2bz * (q1q2 + q3q4) - m.y) + (_2bx * q1 - _4bz * q3) * (_2bx * (q1q3 + q2q4) + _2bz * (0.5f - q2q2 - q3q3) - m.z);
+    s4 = _2q2 * (2.0f * q2q4 - _2q1q3 - a.x) + _2q3 * (2.0f * q1q2 + _2q3q4 - a.y) + (-_4bx * q4 + _2bz * q2) * (_2bx * (0.5f - q3q3 - q4q4) + _2bz * (q2q4 - q1q3) - m.x) + (-_2bx * q1 + _2bz * q3) * (_2bx * (q2q3 - q1q4) + _2bz * (q1q2 + q3q4) - m.y) + _2bx * q2 * (_2bx * (q1q3 + q2q4) + _2bz * (0.5f - q2q2 - q3q3) - m.z);
+   
+    norm = sqrt(s1 * s1 + s2 * s2 + s3 * s3 + s4 * s4); 
+    s1 /= norm; 
+    s2 /= norm; 
+    s3 /= norm; 
+    s4 /= norm;
+    
+    qDot1 = 0.5f * (-q2 * g.x - q3 * g.y - q4 * g.z) - beta * s1; 
+    qDot2 = 0.5f * (q1 * g.x + q3 * g.z - q4 * g.y) - beta * s2; 
+    qDot3 = 0.5f * (q1 * g.y - q2 * g.z + q4 * g.x) - beta * s3; 
+    qDot4 = 0.5f * (q1 * g.z + q2 * g.y - q3 * g.x) - beta * s4;
+    
+    q1 += qDot1 * deltat; 
+    q2 += qDot2 * deltat; 
+    q3 += qDot3 * deltat; 
+    q4 += qDot4 * deltat;
+    
+    norm = sqrt(q1 * q1 + q2 * q2 + q3 * q3 + q4 * q4); 
+    q[0] = q1 / norm; 
+    q[1] = q2 / norm; 
+    q[2] = q3 / norm; 
+    q[3] = q4 / norm;
+}

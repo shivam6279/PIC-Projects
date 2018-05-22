@@ -1,0 +1,120 @@
+#include "pic32.h"
+#include <xc.h>
+
+void PICInit(){
+    TRISB = 0; 
+    TRISC = 0; 
+    TRISD = 0; 
+    TRISE = 0; 
+    TRISF = 0;
+    ANSELB = 0;
+    LATBbits.LATB15 = 0;
+    TRISBbits.TRISB15 = 1;
+    
+    PRECONbits.PREFEN = 3;
+    PRECONbits.PFMWS = 2;
+    SYSKEY = 0xAA996655;//Unlocking
+    SYSKEY = 0x556699AA;//Sequence
+    OSCCONbits.FRCDIV = 0;
+    OSCCONbits.COSC = 1;
+    OSCTUNbits.TUN = 0;
+    //SYSKEY = 0x33333333;//Locking sequence
+    
+    PRISS = 0x76543210;
+    INTCONbits.MVEC = 1;
+    
+    PB2DIVbits.ON = 1;
+    PB2DIVbits.PBDIV = 1;//PBCLK2 at 100mhz
+    PB3DIVbits.ON = 1;
+    PB3DIVbits.PBDIV = 1;//PBCLK3 at 100mhz
+    __asm__("ei");//Enable interrupts
+}
+
+void delay_ms(unsigned int x){
+    delay_counter = 0;
+    T2CONbits.ON = 1;
+    while(delay_counter < x);
+    T2CONbits.ON = 0;
+}
+
+void timer2_init(float frequency){
+    float t = 100000000.0 / frequency; unsigned char pre = 0;
+    while(t > 65535){ t /= 2.0; pre++; }
+    t = (int)t;
+    while((int)t % 2 == 0 && pre < 8){ t /= 2.0; pre++; }
+    if(pre == 7) { t *= 2.0; pre--; }
+    if(pre == 8) pre = 7;
+    T2CONbits.ON = 0;
+    T2CONbits.TCKPS = pre;
+    PR2 = (int)t - 1;
+    TMR2 = 0;
+    IPC2bits.T2IP = 4;
+    IFS0bits.T2IF = 0;
+    IEC0bits.T2IE = 1;
+}
+
+void timer3_init(float frequency){
+    float t = 100000000.0 / frequency; unsigned char pre = 0;
+    while(t > 65535){ t /= 2.0; pre++; }
+    t = (int)t;
+    while((int)t % 2 == 0 && pre < 8){ t /= 2.0; pre++; }
+    if(pre == 7){ t *= 2.0; pre--; }
+    if(pre == 8) pre = 7;
+    T3CONbits.ON = 0;
+    T3CONbits.TCKPS = pre;
+    PR3 = (int)t - 1;
+    TMR3 = 0;
+    IPC3bits.T3IP = 4;
+    IFS0bits.T3IF = 0;
+    IEC0bits.T3IE = 1;
+    T3CONbits.ON = 1;
+}
+
+void timer4_init(float frequency){
+    float t = 100000000.0 / frequency; unsigned char pre = 0;
+    while(t > 65535){ t /= 2.0; pre++; }
+    t = (int)t;
+    while((int)t % 2 == 0 && pre < 8){ t /= 2.0; pre++; }
+    if(pre == 7){ t *= 2.0; pre--; }
+    if(pre == 8) pre = 7;
+    T4CONbits.ON = 0;
+    T4CONbits.TCKPS = pre;
+    PR4 = (int)t - 1;
+    TMR4 = 0;
+    IPC4bits.T4IP = 7;
+    IFS0bits.T4IF = 0;
+    IEC0bits.T4IE = 1;
+}
+
+void timer5_init(float frequency){
+    float t = 100000000.0 / frequency; unsigned char pre = 0;
+    while(t > 65535){ t /= 2.0; pre++; }
+    t = (int)t;
+    while((int)t % 2 == 0 && pre < 8){ t /= 2.0; pre++; }
+    if(pre == 7){ t *= 2.0; pre--; }
+    if(pre == 8) pre = 7;
+    T5CONbits.ON = 0;
+    T5CONbits.TCKPS = pre;
+    PR5 = (int)t - 1;
+    TMR5 = 0;
+    IPC6bits.T5IP = 4;
+    IFS0bits.T5IF = 0;
+    IEC0bits.T5IE = 1;
+    T5CONbits.ON = 1;
+}
+
+void timer6_init(float frequency){
+    float t = 100000000.0 / frequency; unsigned char pre = 0;
+    while(t > 65535){ t /= 2.0; pre++; }
+    t = (int)t;
+    while((int)t % 2 == 0 && pre < 8){ t /= 2.0; pre++; }
+    if(pre == 7){ t *= 2.0; pre--; }
+    if(pre == 8) pre = 7;
+    T6CONbits.ON = 0;
+    T6CONbits.TCKPS = pre;
+    PR6 = (int)t - 1;
+    TMR6 = 0;
+    IPC7bits.T6IP = 4;
+    IFS0bits.T6IF = 0;
+    IEC0bits.T6IE = 1;
+}
