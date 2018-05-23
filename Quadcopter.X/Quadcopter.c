@@ -50,7 +50,7 @@ void main(){
     PID pitch_rate, roll_rate, yaw_rate, altitude_rate;
     XYZ acc_comp;                                                                   //Til-compensated acceleration
     int i;                                                                          //General purpose loop counter
-    unsigned char BMP_loop_timer;                                                   //Counter to for the BMP delays
+    unsigned char BMP_loop_timer, tx_buffer_timer = 0;                                                   //Counter to for the BMP delays
     float q[4];                                                                     //Quaternion
     float take_off_altitude;                                                        //Offsets
     float heading, take_off_heading, yaw_difference;                                //yaw
@@ -64,6 +64,31 @@ void main(){
     
     Init();
     
+    WriteRGBLed(4095, 0, 0);    
+    while(1) {
+        i2c5_write_registers(0xEE, (unsigned char[2]){0xF4, 0x2E}, 2);
+        delay_ms(6);
+        GetRawTemperature();//After 5ms read temperature
+        i2c5_write_registers(0xEE, (unsigned char[2]){0xF4, 0x34 + OVERSAMPLING * 64}, 2);//Initiate pressure read
+        #if OVERSAMPLING == 0 
+        delay_ms(6);
+        #elif OVERSAMPLING == 1 
+        delay_ms(9);
+        #elif OVERSAMPLING == 2   
+        delay_ms(15);
+        #elif OVERSAMPLING == 3   
+        delay_ms(27);
+        #endif
+        altitude.error = GetAltitude();
+        USART1_send('Z');
+        USART1_send_str("Altitude: ");
+        USART1_write_float(altitude.error, 3, 3);
+        USART1_send_str("m\n");
+        USART1_send_str("Temp: ");
+        USART1_write_float(GetTemperature(), 3, 3);
+        USART1_send_str(" degrees\r");
+    }
+    
     WriteRGBLed(4095, 0, 0);    //Red
     if(remote_y2 > 29 && remote_x2 > 13) { //Calibrate ESCs
         CalibrateESC();
@@ -73,10 +98,15 @@ void main(){
     if(remote_y1 > 13 && remote_x1 > 13) { //display sensor readings
         T6CONbits.ON = 1;
         WriteRGBLed(4095, 0, 3800); //Purple
+        T2CONbits.ON = 1;
         while(1) {
             SendCalibrationData();
+            delay_counter = 0;
+            tx_flag = 1;
+            while(delay_counter < 25);
         }
     }
+    
     
     #ifdef micro
     PIDSet(&roll, 1.5, 1.2, 0.0);
@@ -160,7 +190,7 @@ void main(){
             altitude_buffer[i] = GetAltitude();
             take_off_altitude += altitude_buffer[i];
         }
-        take_off_altitude /= ALTITUDE_BUFFER_SIZE;
+        take_off_altitude /= (float)ALTITUDE_BUFFER_SIZE;
         
         //Read initial heading
         take_off_heading = -atan2(2.0f * (q[1] * q[2] + q[0] * q[3]), q[0] * q[0] + q[1] * q[1] - q[2] * q[2] - q[3] * q[3]) * RAD_TO_DEGREES - HEADINGOFFSET;
@@ -364,9 +394,9 @@ void main(){
             
             //--------------------------------------------------------Send Data to remote-----------------------------------------------------------------------------
             
-            if(tx_buffer_index++ == 24) {    
+            if(tx_buffer_timer++ == 24) {    
                 SendFlightData(roll, pitch, yaw, altitude, loop_mode);
-                tx_buffer_index = 0;
+                tx_buffer_timer = 0;
                 tx_flag = 1;
             }
             

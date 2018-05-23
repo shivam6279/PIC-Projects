@@ -6,21 +6,18 @@
 
 void SendCalibrationData() {
     GetRawIMU();
-    if(tx_buffer_index == 0) {     
-        tx_buffer[0] = 'D';
-        StrWriteInt(acc.x, 6, tx_buffer, 1);
-        StrWriteInt(acc.y, 6, tx_buffer, 8);
-        StrWriteInt(acc.z, 6, tx_buffer, 15);
-        StrWriteInt(gyro.x, 6, tx_buffer, 22);
-        StrWriteInt(gyro.y, 6, tx_buffer, 29);
-        StrWriteInt(gyro.z, 6, tx_buffer, 36);
-        StrWriteInt(compass.x, 6, tx_buffer, 43);
-        StrWriteInt(compass.y, 6, tx_buffer, 50);
-        StrWriteInt(compass.z, 6, tx_buffer, 57);
-        tx_buffer[64] = '\r';
-        tx_buffer[65] = '\0';
-        tx_buffer_index++;
-    }
+    tx_buffer[0] = 'D';
+    StrWriteInt(acc.x, 6, tx_buffer, 1);
+    StrWriteInt(acc.y, 6, tx_buffer, 8);
+    StrWriteInt(acc.z, 6, tx_buffer, 15);
+    StrWriteInt(gyro.x, 6, tx_buffer, 22);
+    StrWriteInt(gyro.y, 6, tx_buffer, 29);
+    StrWriteInt(gyro.z, 6, tx_buffer, 36);
+    StrWriteInt(compass.x, 6, tx_buffer, 43);
+    StrWriteInt(compass.y, 6, tx_buffer, 50);
+    StrWriteInt(compass.z, 6, tx_buffer, 57);
+    tx_buffer[64] = '\r';
+    tx_buffer[65] = '\0';
 }
 
 void SendFlightData(PID roll, PID pitch, PID yaw, PID altitude, char loop_mode) { 
@@ -34,5 +31,4 @@ void SendFlightData(PID roll, PID pitch, PID yaw, PID altitude, char loop_mode) 
     tx_buffer[55] = loop_mode;
     tx_buffer[56] = '\r';
     tx_buffer[57] = '\0';     
-    //USART1_send_str(tx_buffer);
 }

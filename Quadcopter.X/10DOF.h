@@ -61,22 +61,22 @@
 
 #ifdef big
 
-#define GYRO_X_OFFSET 110
-#define GYRO_Y_OFFSET -245
-#define GYRO_Z_OFFSET -78
+#define GYRO_X_OFFSET 112
+#define GYRO_Y_OFFSET -250
+#define GYRO_Z_OFFSET -60
 
 #define GYRO_X_GAIN 98
 #define GYRO_Y_GAIN -98
 #define GYRO_Z_GAIN 106
 
-#define COMPASS_X_MIN 110.0f
-#define COMPASS_X_MAX 470.0f
+#define COMPASS_X_MIN -349.0f
+#define COMPASS_X_MAX 860.0f
 
-#define COMPASS_Y_MIN -230.0f
-#define COMPASS_Y_MAX 90.0f
+#define COMPASS_Y_MIN -560.0f
+#define COMPASS_Y_MAX 370.0f
 
 #define COMPASS_Z_MIN -840.0f
-#define COMPASS_Z_MAX 50.0f
+#define COMPASS_Z_MAX 80.0f
 
 #define COMPASS_X_OFFSET (COMPASS_X_MAX + COMPASS_X_MIN) / 2
 #define COMPASS_Y_OFFSET (COMPASS_Y_MAX + COMPASS_Y_MIN) / 2
@@ -104,6 +104,7 @@ extern void GetCompass();
 //BMP180
 extern void BMP180Init();
 extern void GetRawTemperature();
+extern float GetTemperature();
 extern float GetAltitude();
 
 extern void GetRawIMU();

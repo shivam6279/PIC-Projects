@@ -162,7 +162,7 @@ void GetCompass(){
 
 //-----------------------------------------BMP180---------------------------------
 
-void BMP180Init(){
+void BMP180Init() {
     unsigned char temp[22];
     i2c5_read_registers(0xEE, 0xAA, temp, 22);
     ac1 = (signed short)(temp[0] << 8 | temp[1]);
@@ -178,7 +178,7 @@ void BMP180Init(){
     md = (signed short)(temp[20] << 8 | temp[21]);
 }
 
-void GetRawTemperature(){
+void GetRawTemperature() {
     float X1, X2;
     unsigned char t[2];
     i2c5_read_registers(0xEE, 0xF6, t, 2);
@@ -188,7 +188,7 @@ void GetRawTemperature(){
     B5 = X1 + X2;
 }
 
-float get_temperature() {
+float GetTemperature() {
     float temp;
     temp = (B5 + 8) / 16.0f;
     temp /= 10;

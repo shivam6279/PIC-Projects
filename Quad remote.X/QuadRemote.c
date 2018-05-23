@@ -9,81 +9,17 @@
 #include "ili9341.h"
 #include "draw.h"
 #include "pic32.h"
-
-// Device Config Bits in  DEVCFG1:		
-#pragma config FNOSC = SPLL	
-#pragma config FSOSCEN = OFF	
-//#pragma config FWDTEN = OFF  
-#pragma config POSCMOD = OFF	
-#pragma config OSCIOFNC = ON	
-
-// Device Config Bits in  DEVCFG2:		
-#pragma config FPLLICLK = PLL_FRC	
-#pragma config FPLLIDIV = DIV_1	
-#pragma config FPLLMULT = MUL_50	
-#pragma config FPLLODIV = DIV_2	
-#pragma config FPLLRNG = RANGE_5_10_MHZ	
-#pragma config FWDTEN = OFF           
-#pragma config FDMTEN = OFF  
-
-#pragma config DEBUG = OFF              // Background Debugger Enable (Debugger is disabled)
-#pragma config JTAGEN = OFF             // JTAG Enable (JTAG Disabled)
-#pragma config ICESEL = ICS_PGx1        // ICE/ICD Comm Channel Select (Communicate on PGEC2/PGED2)
-#pragma config TRCEN = ON               // Trace Enable (Trace features in the CPU are enabled)
-#pragma config BOOTISA = MIPS32         // Boot ISA Selection (Boot code and Exception code is MIPS32)
-#pragma config FECCCON = OFF_UNLOCKED   // Dynamic Flash ECC Configuration (ECC and Dynamic ECC are disabled (ECCCON bits are writable))
-#pragma config FSLEEP = OFF             // Flash Sleep Mode (Flash is powered down when the device is in Sleep mode)
-#pragma config DBGPER = ALLOW_PG2       // Debug Mode CPU Access Permission (Allow CPU access to Permission Group 2 permission regions)
-#pragma config EJTAGBEN = NORMAL  
-
-#pragma config PGL1WAY = OFF
-#pragma config PMDL1WAY = OFF
-#pragma config IOL1WAY = OFF
-
-
-// x1_pin AN12 - RG8
-// x2_pin AN9 - RB14
-// y1_pin AN13 - RG7
-// y2_pin AN10 - RB15
-//#define dail1_pin
-//#define dail2_pin
-#define x1_offset 20350.0
-#define x1_min 0.0
-#define x1_max 40950.0
-#define y1_offset 20400.0
-#define y1_min 0.0
-#define y1_max 40950.0
-#define x2_offset 19900.0
-#define x2_min 0.0
-#define x2_max 40950.0
-#define y2_min 0.0
-#define y2_max 40320.0
-
-// ts_xl AN18 - E4
-// ts_x2 AN15 - E7
-// ts_y1 AN17 - E5
-// ts_y2 AN16 - E6
-#define ts_x_min 614
-#define ts_x_max 3436
-#define ts_y_min 390
-#define ts_y_max 3116
-
-#define switch1_pin PORTBbits.RB6
-#define switch2_pin PORTBbits.RB13
-
-#define LCD_backlight_pin PORTGbits.RG6
-#define speaker_pin LATCbits.LATC14
+#include "touchscreen.h"
+#include "inputdata.h"
+#include "settings.h"
+#include "pragma.h"
 
 void speaker_tone(float);
 void adc_init();
 void get_adc_values();
 void get_touchscreen();
 
-int analog1_x, analog2_x, analog1_y, analog2_y, c;
-int dial1 = 0, dial2 = 0;
-int ts_x, ts_y;
-
-char serial_monitor[30][54];
+volatile char serial_monitor[30][54];
 
 unsigned char receive1;
 char rx_buffer[60];
@@ -99,13 +35,12 @@ int arming_time;//Mode 'B'
 float pitch, roll, yaw, altitude, latitude, longitude, loop_mode;//Mode 'C'
 int acc_x, acc_y, acc_z, gyro_x, gyro_y, gyro_z, compass_x, compass_y, compass_z;//Mode 'D' 
 
-void main(){
-    int pre_x1 = 10, pre_y1 = 10, tx1, ty1;
-    int pre_dial1 = 3, pre_dial2 = 3;
-    int pre_ts_x, pre_ts_y;
+void main() {
     bool rx_signal_flag = 1;
     int i, j;
     unsigned char pre_cursor = 100, pre_mode = 0;
+    
+    char monitor[30][54], pre_monitor[30][54];
     
     init();
     adc_init();
@@ -131,26 +66,19 @@ void main(){
     ColorLCD_writecommand(0x29);    //Display on  
     FillRect(0, 0, 320, 250, 0xFFFF);//Clear screen   
     
-    WriteStr("Dial2", 200, 135, 0x0000);//Dial2    
-    FillRect(267, 0, 3, 320, 0xF000);//Throttle divide
-    FillRect(25, 135, 87, 87, 0xF000);//Analog indicator box
-    FillRect(27, 137, 83, 83, 0xFFFF);//?
-    FillRect(114, 143, 64, 24, 0x0000);//Dial 1 box
-    FillRect(116, 145, 60, 20, 0xFFFF);//?
-    FillRect(134, 145, 3, 20, 0x0000);//?
-    FillRect(155, 145, 3, 20, 0x0000);//?
-    WriteStr("Dial1", 130, 135, 0x0000);//Dial1
-    FillRect(184, 143, 64, 24, 0x0000);//Dial2 box
-    FillRect(186, 145, 60, 20, 0xFFFF);//?
-    FillRect(204, 145, 3, 20, 0x0000);//?
-    FillRect(225, 145, 3, 20, 0x0000);//?
+    DrawDisplayBounds();
+    FillRect(270, (float)(31 - analog2_y) * 240.0/31.0, 50, (float)(analog2_y) * 240.0/31.0, 0xFFA0);
+    FillRect(270, 0, 50, (float)(31 - analog2_y) * 240.0/31.0,0xFFFF);
     
     while(1) {
         if(mode == 0 && rx_signal_flag == 1) {
             FillRect(0, 8, 250, 9 * 8, 0xFFFF);
             rx_signal_flag = 0;
         }
-        else if(mode != 0) {
+        else if(mode != 0 && rx_signal == 0) {
+            DrawDisplayBounds();
+        }
+        if(mode != 0) {
             rx_signal_flag = 1;
         }
         if(mode != 'Z') {
@@ -246,71 +174,37 @@ void main(){
                 WriteInt(compass_y, 6, 11*6, 8*8, 0x0000);
                 WriteInt(compass_z, 6, 11*6, 9*8, 0x0000);
             }
+            
+            ShowInputData();
         }
 
         //------------------------------------------------------Serial Monitor mode-------------------------------------------------
 
         else {
             if(pre_mode != mode) FillRect(0, 0, 320, 250, 0xFFFF);
-            for(i = 0; i < 30; i++){
-                if(serial_monitor[i][0] != '\0') WriteStr(serial_monitor[i], 0, i * 8, 0x0000);
-            }
             pre_mode = mode;
-        }
-        
-        //--------------------------Display input data: analog sticks, potentiometers and switch values------------------------
-
-        get_touchscreen();
-        if(ts_y > 145 && ts_y < (145 + 20)){
-            if(ts_x > 116 && ts_x < (116 + 18)) dial1 = 0;
-            else if(ts_x > (116 + 21) && ts_x < (116 + 18 + 21)) dial1 = 1;
-            else if(ts_x > (116 + 21 * 2) && ts_x < (116 + 18 + 21 * 2)) dial1 = 2;
-
-            else if(ts_x > 186 && ts_x < (186 + 18)) dial2 = 0;
-            else if(ts_x > (186 + 21) && ts_x < (186 + 18 + 21)) dial2 = 1;
-            else if(ts_x > (186 + 21 * 2) && ts_x < (186 + 18 + 21 * 2)) dial2 = 2;
-        }
-
-        tx1 = analog1_x;
-        ty1 = analog1_y;
-        if(analog2_y){
-            if(analog2_y == 31) FillRect(270, 0, 50, 320, 0xFFA0);
-            else FillRect(270, ((float)(31 - analog2_y) * 7.75), 50, ((float)(31 - analog2_y) * 7.75), 0xFFA0);
-        }
-        if(analog2_y != 31) FillRect(270, 0, 50, ((float)(31 - analog2_y) * 7.75), 0xFFFF);
-        if(pre_x1 != tx1 || pre_y1 != ty1){
-            for(i = 0; i <= 5; i++) DrawCircle(68 + ((float)pre_x1 * 2.4), 178 - ((float)pre_y1 * 2.4), i, 0xFFFF);
-            FillRect(27, 178, 83, 1, 0xF000);
-            FillRect(68.5, 137, 1, 83, 0xF000);
-            for(i = 0; i <= 5; i++) DrawCircle(68 + ((float)tx1 * 2.4), 178 - ((float)ty1 * 2.4), i, 0x0000);
-        }
-        if(pre_dial1 != dial1){
-            if(pre_dial1 >=0 && pre_dial1 < 3) FillRect(116 + (pre_dial1 * 21), 145, 18, 20, 0xFFFF);
-            if(dial1 == 0) FillRect(116 + (dial1 * 21), 145, 18, 20, 0xF800);
-            else if(dial1 == 1) FillRect(116 + (dial1 * 21), 145, 18, 20, 0x07E0);
-            else if(dial1 == 2) FillRect(116 + (dial1 * 21), 145, 18, 20, 0x001F);
-        }
-        if(pre_dial2 != dial2){
-            if(pre_dial2 >=0 && pre_dial2 < 3) FillRect(186 + (pre_dial2 * 21), 145, 18, 20, 0xFFFF);
-            if(dial2 == 0) FillRect(186 + (dial2 * 21), 145, 18, 20, 0xF800);
-            else if(dial2 == 1) FillRect(186 + (dial2 * 21), 145, 18, 20, 0x07E0);
-            else if(dial2 == 2) FillRect(186 + (dial2 * 21), 145, 18, 20, 0x001F);
-        }
-        WriteFloat(analog2_x, 2, 1, 24 * 6, 23 * 8, 0x0000);
-        WriteInt(!switch1_pin, 2, 24 * 6, 24 * 8, 0x0000);
-        WriteInt(!switch2_pin, 2, 24 * 6, 25 * 8, 0x0000);
-
-        pre_x1 = tx1;
-        pre_y1 = ty1;
-        pre_dial1 = dial1;
-        pre_dial2 = dial2;
+            
+            for(j = 0; j < 30; j++) {
+                for(i = 0; serial_monitor[j][i] != '\0'; i++) {
+                    monitor[j][i] = serial_monitor[j][i];
+                }
+                monitor[j][i] = '\0';
+            }
+            
+            for(i = 0; i < 30; i++) {
+                if(monitor[i][0] != '\0' && strcmp(monitor[i], pre_monitor[i])) WriteStr(monitor[i], 0, i * 8, 0x0000);
+            }
+            
+            for(i = 0; i < 30; i++) {
+                strcpy(monitor[i], pre_monitor[i]);
+            }
+        }    
     }
 }
 
 void __ISR_AT_VECTOR(_UART1_RX_VECTOR, IPL6SRS) Xbee(void){
     int i, j;
     IFS3bits.U1RXIF = 0; 
-    c = 0;
     do {
         receive1 = U1RXREG & 0xFF;
         if(receive1 == '\r') {
@@ -351,9 +245,9 @@ void __ISR_AT_VECTOR(_UART1_RX_VECTOR, IPL6SRS) Xbee(void){
                     if(rx_buffer[15] == '-') yaw *= (-1);
                     altitude = 100 * (float)(rx_buffer[23] - 48) + 10 * (float)(rx_buffer[24] - 48) + (float)(rx_buffer[25] - 48) + 0.1 * (float)(rx_buffer[27] - 48) + 0.01 * (float)(rx_buffer[28] - 48);
                     if(rx_buffer[22] == '-') altitude *= (-1);
-                    latitude = 100 * (float)(rx_buffer[30] - 48) + 10 * (float)(rx_buffer[31] - 48) + (float)(rx_buffer[32] - 48) + 0.1 * (float)(rx_buffer[34] - 48) + 0.01 * (float)(rx_buffer[35] - 48) + 0.001 * (float)(rx_buffer[36] - 48) + 0.0001 * (float)(rx_buffer[37] - 48) + 0.00001 * (float)(rx_buffer[38] - 47) + 0.000001 * (float)(rx_buffer[39] - 48) + 0.0000001 * (float)(rx_buffer[40] - 47) + 0.00000001 * (float)(rx_buffer[41] - 48);
+                    latitude = 100 * (float)(rx_buffer[30] - 48) + 10 * (float)(rx_buffer[31] - 48) + (float)(rx_buffer[32] - 48) + 0.1 * (float)(rx_buffer[34] - 48) + 0.01 * (float)(rx_buffer[35] - 48) + 0.001 * (float)(rx_buffer[36] - 48) + 0.0001 * (float)(rx_buffer[37] - 48) + 0.00001 * (float)(rx_buffer[38] - 48) + 0.000001 * (float)(rx_buffer[39] - 48) + 0.0000001 * (float)(rx_buffer[40] - 48) + 0.00000001 * (float)(rx_buffer[41] - 48);
                     if(rx_buffer[29] == '-') latitude *= (-1);
-                    longitude = 100 * (float)(rx_buffer[43] - 48) + 10 * (float)(rx_buffer[44] - 48) + (float)(rx_buffer[45] - 48) + 0.1 * (float)(rx_buffer[47] - 48) + 0.01 * (float)(rx_buffer[48] - 48) + 0.001 * (float)(rx_buffer[49] - 48) + 0.0001 * (float)(rx_buffer[50] - 48) + 0.00001 * (float)(rx_buffer[51] - 47) + 0.000001 * (float)(rx_buffer[52] - 48) + 0.0000001 * (float)(rx_buffer[53] - 47) + 0.00000001 * (float)(rx_buffer[54] - 48);
+                    longitude = 100 * (float)(rx_buffer[43] - 48) + 10 * (float)(rx_buffer[44] - 48) + (float)(rx_buffer[45] - 48) + 0.1 * (float)(rx_buffer[47] - 48) + 0.01 * (float)(rx_buffer[48] - 48) + 0.001 * (float)(rx_buffer[49] - 48) + 0.0001 * (float)(rx_buffer[50] - 48) + 0.00001 * (float)(rx_buffer[51] - 48) + 0.000001 * (float)(rx_buffer[52] - 48) + 0.0000001 * (float)(rx_buffer[53] - 48) + 0.00000001 * (float)(rx_buffer[54] - 48);
                     if(rx_buffer[42] == '-') longitude *= (-1);
                     loop_mode = rx_buffer[55];
                 }
@@ -379,31 +273,27 @@ void __ISR_AT_VECTOR(_UART1_RX_VECTOR, IPL6SRS) Xbee(void){
                     compass_z = 100000*(rx_buffer[58] - 48) + 10000*(rx_buffer[59] - 48) + 1000*(rx_buffer[60] - 48) + 100*(rx_buffer[61] - 48) + 10*(rx_buffer[62] - 48) + (rx_buffer[63] - 48);
                     if(rx_buffer[57] == '-') compass_z *= (-1);
                 }
-                else if(mode == 'Z'){
-                    buffer_counter = 1;
-                    i = 0;
-                    j = 0;
-                    while(rx_buffer[buffer_counter] != '\0'){
-                        if(rx_buffer[buffer_counter++] != '\n'){
-                            serial_monitor[j][i++] = rx_buffer[buffer_counter];
-                        }
-                        else{
-                            serial_monitor[j][i] = '\0';
-                            i = 0;
-                            j++;
-                        }
-                    }
-                    serial_monitor[j++][i] = '\0';
-                    for(; j < 30; j++){
+                else if(mode == 'Z') {
+                    for(j = 0; j < 30; j++) {
                         serial_monitor[j][0] = '\0';
                     }
+                    for(i = 0, j = 0, buffer_counter = 1; rx_buffer[buffer_counter] != '\0'; buffer_counter++) {
+                        if(rx_buffer[buffer_counter] == '\n') {
+                            serial_monitor[j][i] = '\0';
+                            j++;
+                            i = 0;
+                        } else {
+                            serial_monitor[j][i] = rx_buffer[buffer_counter];
+                            i++;
+                        }
+                    }
+                    serial_monitor[j][i] = '\0';
                     buffer_counter = 0;
                 }
             }
         } else {
             rx_buffer[buffer_counter++] = receive1;
         }
-        c++;
     }while(U1STAbits.URXDA);
     U1STAbits.OERR = 0;
     IFS3bits.U1RXIF = 0; 
@@ -422,12 +312,14 @@ void __ISR_AT_VECTOR(_TIMER_5_VECTOR, IPL4SRS) XBee_rx(void) {
 void __ISR_AT_VECTOR(_TIMER_3_VECTOR, IPL3SRS) Xbee_send(void){
     IFS0bits.T3IF = 0;
     get_adc_values();
+    switch1 = switch1_pin;
+    switch2 = switch2_pin;
     
     U1TXREG = (analog1_x + 15);
     U1TXREG = (32 + (analog1_y + 15));
     U1TXREG = (64 + (analog2_x + 15));
     U1TXREG = (96 + analog2_y);
-    U1TXREG = (128 + !switch1_pin * 2 + !switch2_pin);
+    U1TXREG = (128 + !switch1 * 2 + !switch2);
     U1TXREG = (160 + dial2 * 4 + dial1);
 }
 
@@ -464,58 +356,6 @@ void get_adc_values(){
     else if(analog1_y < (-15)) analog1_y = (-15);
     if(analog2_x > 15) analog2_x = 15;
     else if(analog2_x < (-15)) analog2_x = (-15);
-}
-
-void get_touchscreen(){
-    int i;
-    //Set Y resistors as outputs
-    TRISEbits.TRISE5 = 0;   //y1
-    TRISEbits.TRISE6 = 0;   //y2
-    //Set x resistors as inputs
-    TRISEbits.TRISE4 = 1;   //x1
-    TRISEbits.TRISE7 = 1;   //x2
-    //
-    LATEbits.LATE5 = 0;     //y1 = -
-    LATEbits.LATE6 = 1;     //y2 = +
-    
-    ANSELEbits.ANSE4 = 1;
-    ANSELEbits.ANSE5 = 0;
-    
-    ts_x = 0;
-    for(i = 0; i < 10; i++){
-        ADCCON3bits.GSWTRG = 1;
-        while(ADCDSTAT1bits.ARDY18 == 0);
-        ts_x += ADCDATA18;
-    }
-    ts_x /= 10;
-    
-    //Set X resistors as outputs
-    TRISEbits.TRISE5 = 1;   //y1
-    TRISEbits.TRISE6 = 1;   //y2
-    //Set Y resistors as inputs
-    TRISEbits.TRISE4 = 0;   //x1
-    TRISEbits.TRISE7 = 0;   //x2
-    //
-    LATEbits.LATE4 = 1;     //x1 = -
-    LATEbits.LATE7 = 0;     //x2 = +
-    
-    ANSELEbits.ANSE4 = 0;
-    ANSELEbits.ANSE5 = 1;
-    
-    ts_y = 0;
-    for(i = 0; i < 10; i++){
-        ADCCON3bits.GSWTRG = 1;
-        while(ADCDSTAT1bits.ARDY17 == 0);
-        ts_y += ADCDATA17;
-    }
-    ts_y /= 10;
-    
-    ts_x = (320.0 * (float)(ts_x - ts_x_min) / (float)(ts_x_max - ts_x_min));
-    ts_y = (240.0 * (float)(ts_y - ts_y_min) / (float)(ts_y_max - ts_y_min));
-    if(ts_x > 319) ts_x = 319;
-    else if(ts_x < 0) ts_x = 0;   
-    if(ts_y > 239) ts_y = 239;
-    else if(ts_y < 0) ts_y = 0;
 }
 
 void speaker_tone(float frequency){
