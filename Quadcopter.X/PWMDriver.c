@@ -1,5 +1,5 @@
 #include "PWMDriver.h"
-#include "bitbang_i2c.h"
+#include "bitbang_I2C.h"
 
 void PwmDriverInit(float freq){
     //Highest frequency 1600hz
@@ -12,15 +12,15 @@ void PwmDriverInit(float freq){
     prescaleval /= freq;
     prescaleval -= 1;
     prescale = (int)(prescaleval + 0.5);
-    i2c5_write_registers(128, (unsigned char[2]){0, 16}, 2);
-    i2c5_write_registers(128, (unsigned char[2]){0xFE, prescale}, 2);
-    i2c5_write_registers(128, (unsigned char[2]){0, 0}, 2);
+    I2C5_WriteRegisters(128, (unsigned char[2]){0, 16}, 2);
+    I2C5_WriteRegisters(128, (unsigned char[2]){0xFE, prescale}, 2);
+    I2C5_WriteRegisters(128, (unsigned char[2]){0, 0}, 2);
     while(t-- > 0);
-    i2c5_write_registers(128, (unsigned char[2]){0, 0xA1}, 2);
+    I2C5_WriteRegisters(128, (unsigned char[2]){0, 0xA1}, 2);
 }
 
 void set_pwm(int num, int on, int off){
-    i2c5_write_registers(128, (unsigned char[5]){(0x06 + 4 * num), (on & 0xFF), ((on >> 8) & 0x1F), (off & 0xFF), ((off >> 8) & 0x1F)}, 5);
+    I2C5_WriteRegisters(128, (unsigned char[5]){(0x06 + 4 * num), (on & 0xFF), ((on >> 8) & 0x1F), (off & 0xFF), ((off >> 8) & 0x1F)}, 5);
 }
 
 void write_pwm(int num, int val){

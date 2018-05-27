@@ -37,32 +37,54 @@ void delay_ms(unsigned int x){
     T2CONbits.ON = 0;
 }
 
-void timer2_init(float frequency){
-    float t = 100000000.0 / frequency; unsigned char pre = 0;
-    while(t > 65535){ t /= 2.0; pre++; }
-    t = (int)t;
-    while((int)t % 2 == 0 && pre < 8){ t /= 2.0; pre++; }
-    if(pre == 7) { t *= 2.0; pre--; }
+void timer2_init(unsigned long int frequency){
+    float f = 100000000.0 / (float)frequency; 
+    unsigned char pre = 0;
+    while(f > 65535.0) { 
+        f /= 2.0;
+        pre++; 
+    }
+    unsigned int t = (unsigned int)f;
+    while(t % 2 == 0 && pre < 8) { 
+        t /= 2; 
+        pre++; 
+    }
+    if(pre == 7) {
+        t *= 2.0; 
+        pre--; 
+    }
     if(pre == 8) pre = 7;
     T2CONbits.ON = 0;
-    T2CONbits.TCKPS = pre;
-    PR2 = (int)t - 1;
+    T2CONbits.T32 = 0;
+    T2CONbits.TCKPS = pre & 0b111;
+    PR2 = t;
     TMR2 = 0;
+    
     IPC2bits.T2IP = 4;
     IFS0bits.T2IF = 0;
     IEC0bits.T2IE = 1;
 }
 
-void timer3_init(float frequency){
-    float t = 100000000.0 / frequency; unsigned char pre = 0;
-    while(t > 65535){ t /= 2.0; pre++; }
-    t = (int)t;
-    while((int)t % 2 == 0 && pre < 8){ t /= 2.0; pre++; }
-    if(pre == 7){ t *= 2.0; pre--; }
+void timer3_init(unsigned long int frequency){
+    float f = 100000000.0 / (float)frequency; 
+    unsigned char pre = 0;
+    while(f > 65535.0) { 
+        f /= 2.0;
+        pre++; 
+    }
+    unsigned int t = (unsigned int)f;
+    while(t % 2 == 0 && pre < 8) { 
+        t /= 2; 
+        pre++; 
+    }
+    if(pre == 7) {
+        t *= 2.0; 
+        pre--; 
+    }
     if(pre == 8) pre = 7;
     T3CONbits.ON = 0;
-    T3CONbits.TCKPS = pre;
-    PR3 = (int)t - 1;
+    T3CONbits.TCKPS = pre & 0b111;
+    PR3 = t;
     TMR3 = 0;
     IPC3bits.T3IP = 4;
     IFS0bits.T3IF = 0;
@@ -70,32 +92,54 @@ void timer3_init(float frequency){
     T3CONbits.ON = 1;
 }
 
-void timer4_init(float frequency){
-    float t = 100000000.0 / frequency; unsigned char pre = 0;
-    while(t > 65535){ t /= 2.0; pre++; }
-    t = (int)t;
-    while((int)t % 2 == 0 && pre < 8){ t /= 2.0; pre++; }
-    if(pre == 7){ t *= 2.0; pre--; }
+void timer4_init(unsigned long int frequency){
+    float f = 100000000.0 / (float)frequency; 
+    unsigned char pre = 0;
+    while(f > 65535.0) { 
+        f /= 2.0;
+        pre++; 
+    }
+    unsigned int t = (unsigned int)f;
+    while(t % 2 == 0 && pre < 8) { 
+        t /= 2; 
+        pre++; 
+    }
+    if(pre == 7) {
+        t *= 2.0; 
+        pre--; 
+    }
     if(pre == 8) pre = 7;
     T4CONbits.ON = 0;
-    T4CONbits.TCKPS = pre;
-    PR4 = (int)t - 1;
+    T4CONbits.T32 = 0;
+    T4CONbits.TCKPS = pre & 0b111;
+    PR4 = t;
     TMR4 = 0;
+    
     IPC4bits.T4IP = 7;
     IFS0bits.T4IF = 0;
     IEC0bits.T4IE = 1;
 }
 
-void timer5_init(float frequency){
-    float t = 100000000.0 / frequency; unsigned char pre = 0;
-    while(t > 65535){ t /= 2.0; pre++; }
-    t = (int)t;
-    while((int)t % 2 == 0 && pre < 8){ t /= 2.0; pre++; }
-    if(pre == 7){ t *= 2.0; pre--; }
+void timer5_init(unsigned long int frequency){
+    float f = 100000000.0 / (float)frequency; 
+    unsigned char pre = 0;
+    while(f > 65535.0) { 
+        f /= 2.0;
+        pre++; 
+    }
+    unsigned int t = (unsigned int)f;
+    while(t % 2 == 0 && pre < 8) { 
+        t /= 2; 
+        pre++; 
+    }
+    if(pre == 7) {
+        t *= 2.0; 
+        pre--; 
+    }
     if(pre == 8) pre = 7;
     T5CONbits.ON = 0;
-    T5CONbits.TCKPS = pre;
-    PR5 = (int)t - 1;
+    T5CONbits.TCKPS = pre & 0b111;
+    PR5 = t;
     TMR5 = 0;
     IPC6bits.T5IP = 4;
     IFS0bits.T5IF = 0;
@@ -103,16 +147,27 @@ void timer5_init(float frequency){
     T5CONbits.ON = 1;
 }
 
-void timer6_init(float frequency){
-    float t = 100000000.0 / frequency; unsigned char pre = 0;
-    while(t > 65535){ t /= 2.0; pre++; }
-    t = (int)t;
-    while((int)t % 2 == 0 && pre < 8){ t /= 2.0; pre++; }
-    if(pre == 7){ t *= 2.0; pre--; }
+void timer6_init(unsigned long int frequency){
+    float f = 100000000.0 / (float)frequency; 
+    unsigned char pre = 0;
+    while(f > 65535.0) { 
+        f /= 2.0;
+        pre++; 
+    }
+    unsigned int t = (unsigned int)f;
+    while(t % 2 == 0 && pre < 8) { 
+        t /= 2; 
+        pre++; 
+    }
+    if(pre == 7) {
+        t *= 2.0; 
+        pre--; 
+    }
     if(pre == 8) pre = 7;
     T6CONbits.ON = 0;
-    T6CONbits.TCKPS = pre;
-    PR6 = (int)t - 1;
+    T6CONbits.T32 = 0;
+    T6CONbits.TCKPS = pre & 0b111;
+    PR6 = t;
     TMR6 = 0;
     IPC7bits.T6IP = 4;
     IFS0bits.T6IF = 0;

@@ -47,6 +47,7 @@ void __ISR_AT_VECTOR(_TIMER_6_VECTOR, IPL4SRS) Xbee_tx(void){
 
 void __ISR_AT_VECTOR(_TIMER_3_VECTOR, IPL4SRS) safety_timer(void){
     IFS0bits.T3IF = 0;
+    altitude_timer++;
     if(safety_counter == 500) { 
         Xbee_signal = 0; 
         remote_x1 = 0; 

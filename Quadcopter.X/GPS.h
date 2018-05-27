@@ -3,9 +3,6 @@
 
 #include <stdbool.h>
 
-#define PI 3.14159265
-#define RAD_TO_DEGREES 57.29577951
-
 extern double DifferenceLatLon(double, double, double, double);
 extern float DifferenceBearing(double, double, double, double);
 extern void GetLocation();

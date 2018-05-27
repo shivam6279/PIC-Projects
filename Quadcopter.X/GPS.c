@@ -1,4 +1,5 @@
 #include "GPS.h"
+#include "settings.h"
 #include <math.h>
 
 double DifferenceLatLon(double lat1, double lon1, double lat2, double lon2){

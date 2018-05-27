@@ -19,7 +19,12 @@ void Init() {
     delay_ms(100);
     MPU6050Init();
     HMC5883Init();
+#ifdef BMP180
     BMP180Init();
+#endif
+#ifdef MS5611
+    MS5611Init();
+#endif
     
     PwmDriverInit(500);
 }
