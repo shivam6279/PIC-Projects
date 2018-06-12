@@ -37,7 +37,6 @@ void main(){
     PID pitch, roll, yaw, altitude, GPS;
     PID pitch_rate, roll_rate, yaw_rate, altitude_rate;
     XYZ acc_comp, acc_velocity, acc_position;                                       //Tilt-compensated acceleration
-    double acc_z_average;
     int i;                                                                          //General purpose loop counter
     unsigned char tx_buffer_timer = 0;                                              //Counter to for the BMP delays
     float q[4];                                                                     //Quaternion
@@ -62,13 +61,11 @@ void main(){
     TurnMotorsOff();
     
     if(remote_y1 > 13 && remote_x1 > 13) { //display sensor readings
-        T6CONbits.ON = 1;
         WriteRGBLed(4095, 0, 3800); //Purple
-        T2CONbits.ON = 1;
         while(1) {
             SendCalibrationData();
-            delay_counter = 0;
             tx_flag = 1;
+            delay_counter = 0;
             while(delay_counter < 25);
         }
     }
@@ -79,11 +76,11 @@ void main(){
     delay_ms(1500);
     
     while(1) {
-        ResetPID(&roll, &pitch, &yaw, &roll_rate, &pitch_rate, &yaw_rate, &altitude, &altitude_rate, &GPS);//Clear PID variables
-        ResetQuaternion(q); //Reset quaternion
-        MotorsReset(&speed);//Clear motor speeds
-        altitude.offset = 0;
-        
+        ResetPID(&roll, &pitch, &yaw, &roll_rate, &pitch_rate, &yaw_rate, &altitude, &altitude_rate, &GPS); //Clear PID variables
+        ResetQuaternion(q);         //Reset quaternion
+        MotorsReset(&speed);        //Clear motor speeds
+        VectorReset(&acc_velocity);
+        VectorReset(&acc_position);        
         //Menu
         menu(&roll, &pitch, &roll_rate, &pitch_rate, &altitude, &altitude_rate);
         
@@ -91,7 +88,6 @@ void main(){
         
         delay_ms(100);
         CalibrateGyro();
-        T2CONbits.ON = 1;// Turn on the delay timer @ 1kHz
         for(i = 0, acc_avg = 0, take_off_heading = 0; i < 1000; i++) {
             delay_counter = 0;
             GetAcc();
@@ -99,17 +95,18 @@ void main(){
             GetCompass();
             acc_avg += sqrt(acc.x * acc.x + acc.y * acc.y + acc.z * acc.z) / 1000.0;
             MadgwickQuaternionUpdate(q, acc, gyro, compass, 0.005);
-            USART1_send('B');
-            USART1_send((i / 100 % 10) + 48);
-            USART1_send((i / 10 % 10) + 48);
-            USART1_send((i % 10) + 48);
-            USART1_send('\r');
+            tx_buffer[0] = 'C';
+            tx_buffer[1] = (i / 100 % 10) + 48;
+            tx_buffer[2] = (i / 10 % 10) + 48;
+            tx_buffer[3] = (i % 10) + 48;
+            tx_buffer[3] = '\r';
+            tx_buffer[4] = '\0';
+            tx_flag = 1;
             while(delay_counter < 5);
         }
-        T2CONbits.ON = 0;// Turn off the delay timer
         //Read initial heading
         take_off_heading = -atan2(2.0f * (q[1] * q[2] + q[0] * q[3]), q[0] * q[0] + q[1] * q[1] - q[2] * q[2] - q[3] * q[3]) * RAD_TO_DEGREES - HEADINGOFFSET;
-        
+        LimitAngle(&take_off_heading);        
         //Read take-off altitude
         take_off_altitude = GetTakeoffAltitude(altitude_buffer);
         
@@ -121,37 +118,37 @@ void main(){
             take_off_longitude = 0.0; 
         }
         
-        p_loop_mode = 0;
-        p_kill = 0;
+        loop_mode = 0;
+        kill = 0;
         altitude_stage = 0;
         tx_buffer_timer = 0;
         
-        loop_time = 0.00204;        
+        loop_time = 0.00204; 
         
-        LOOP_TIMER_ON = 1;  //Start the loop timer
-        TX_TIMER_ON = 1;    //Start the tx timer
-        
-        VectorReset(&acc_velocity);
-        VectorReset(&acc_position);
+        LOOP_TIMER_ON = 1;
+        TX_TIMER_ON = 1;
         
         //Main Loop
         while(right_switch == 0) {
             loop_counter = 0;
+            p_kill = kill;
+            p_loop_mode = loop_mode;
             
             //---------------------------------------------------------------Set Mode------------------------------------------------------------------------------
             
             if(left_switch) kill = 1; 
             else kill = 0;
+            //Set loop mode - Stabilize, Alt-hold, Pos-hold
             if(dial1 == 0 || (dial1 == 2 && !GPS_signal)) loop_mode = 'S';
             else if(dial1 == 1) loop_mode = 'A';
             else if(dial1 == 2 && GPS_signal) loop_mode = 'P';
+            
             if(p_loop_mode != loop_mode || p_kill != kill) {
                 if(kill) WriteRGBLed(4095, 4095, 4095);
-                else {
-                    if(loop_mode == 'S') WriteRGBLed(0, 4095, 0);   //Green
-                    if(loop_mode == 'A') WriteRGBLed(0, 4095, 4095);//Cyan
-                    if(loop_mode == 'P') WriteRGBLed(4095, 0, 4095);//Magenta
-                }
+                else if(loop_mode == 'S') WriteRGBLed(0, 4095, 0);   //Green
+                else if(loop_mode == 'A') WriteRGBLed(0, 4095, 4095);//Cyan
+                else if(loop_mode == 'P') WriteRGBLed(4095, 0, 4095);//Magenta
+                
                 if(loop_mode == 'A') {
                     altitude_setpoint = (float)remote_y2 * (MOTOR_MAX - MOTOR_OFF) / THROTTLE_MAX;
                     altitude.sum = 0;
@@ -164,7 +161,6 @@ void main(){
                 }
                 yaw.offset = yaw.error;
             }
-            p_kill = kill;
             
             //--------------------------------------------------------IMU data acquisition---------------------------------------------------------------------------
             
@@ -198,7 +194,7 @@ void main(){
                 altitude_rate.output = (float)remote_y2 * (MOTOR_MAX - MOTOR_OFF) / THROTTLE_MAX;
             }
             else if(loop_mode == 'A') {
-                    if(remote_y2 > 10 && remote_y2 < 20) {  //Throttle stick in the mid position
+                if(remote_y2 > 10 && remote_y2 < 20) {  //Throttle stick in the mid position
                     altitude.sum += (altitude.offset - altitude.error) * loop_time;
                     altitude.output = (altitude.p * (altitude.offset - altitude.error) + altitude.i * altitude.sum);
                     altitude_rate.output = (altitude_rate.p * (altitude_rate.error + altitude.output)) + altitude_setpoint;
@@ -228,7 +224,6 @@ void main(){
                 if(pitch.offset > 18) pitch.offset = 18; 
                 else if(pitch.offset < (-18)) pitch.offset = -18;
             }
-            p_loop_mode = loop_mode;
             
             //---------------------------------------------------------Roll/Pitch/Yaw - PID----------------------------------------------------------------------------
             
@@ -237,9 +232,9 @@ void main(){
             ------------*/
             
             if(remote_y2 > 1 && !kill){
-                roll.sum += (roll.error - roll.offset) * loop_time * 3;
-                pitch.sum += (pitch.error - pitch.offset) * loop_time * 3;
-                yaw.sum += (yaw_difference) * loop_time * 3;
+                roll.sum += (roll.error - roll.offset) * loop_time * 3.0;
+                pitch.sum += (pitch.error - pitch.offset) * loop_time * 3.0;
+                yaw.sum += (yaw_difference) * loop_time * 3.0;
             }
             
             roll.derivative = (roll.error - roll.p_error) / loop_time;
@@ -293,7 +288,7 @@ void main(){
             
             //--------------------------------------------------------Send Data to remote-----------------------------------------------------------------------------
             
-            if(tx_buffer_timer++ >= 10 && !tx_flag) {    
+            if(tx_buffer_timer++ >= 10) {    
                 SendFlightData(roll, pitch, yaw, altitude, loop_mode);
                 tx_flag = 1;
                 tx_buffer_timer = 0;
@@ -305,7 +300,7 @@ void main(){
             loop_time = (double)loop_counter / 1000000.0;   // Loop time in seconds:
         }
         LOOP_TIMER_ON = 0;
-        TX_TIMER_ON = 0;   
+        TX_TIMER_ON = 0;
         TurnMotorsOff();
     }
 }

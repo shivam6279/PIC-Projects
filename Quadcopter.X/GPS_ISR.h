@@ -92,7 +92,7 @@ void __ISR_AT_VECTOR(_UART5_RX_VECTOR, IPL6SRS) GPS_(void){
 
 void __ISR_AT_VECTOR(_TIMER_5_VECTOR, IPL4SRS) GPS_timer(void){
     IFS0bits.T5IF = 0;
-    if(GPS_time_counter == 2000) {
+    if(GPS_time_counter == 20) {
         GPS_signal = 0;
         GPS_connected = 0; 
     }

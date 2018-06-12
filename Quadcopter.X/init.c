@@ -7,11 +7,11 @@
 
 void Init() {
     PICInit();
-    timer2_init(1000);      // Delay timer - 1kHz
-    timer3_init(1000);      // Safety timer for Xbee - 1kHz
-    timer4_init(1000000);   // Loop timer - 1MHz
-    timer5_init(1000);      // GPS timer - 1kHz
-    timer6_init(312500);    // XBee tx timer - 312.5kHz
+    timer2_init(1000.0);    // Delay timer - 1kHz
+    timer3_init(1000.0);    // Safety timer for Xbee - 1kHz
+    timer4_init(1000000.0); // Loop timer - 1MHz
+    timer5_init(10.0);      // GPS timer - 10Hz
+    timer6_init(312500.0);  // XBee tx timer - 312.5kHz
     USART1_init(111111);    // XBee
     USART5_init(9600);      // GPS
 

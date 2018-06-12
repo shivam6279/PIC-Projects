@@ -32,13 +32,13 @@ void PICInit(){
 
 void delay_ms(unsigned int x){
     delay_counter = 0;
-    T2CONbits.ON = 1;
+    DELAY_TIMER_ON = 1;
     while(delay_counter < x);
-    T2CONbits.ON = 0;
+    DELAY_TIMER_ON = 0;
 }
 
-void timer2_init(unsigned long int frequency){
-    float f = 100000000.0 / (float)frequency; 
+void timer2_init(float frequency) {
+    float f = 100000000.0 / frequency; 
     unsigned char pre = 0;
     while(f > 65535.0) { 
         f /= 2.0;
@@ -50,8 +50,13 @@ void timer2_init(unsigned long int frequency){
         pre++; 
     }
     if(pre == 7) {
-        t *= 2.0; 
-        pre--; 
+        if(t > 32767) {
+            t /= 2;
+            pre++;
+        } else {
+            t *= 2; 
+            pre--;
+        }
     }
     if(pre == 8) pre = 7;
     T2CONbits.ON = 0;
@@ -65,8 +70,8 @@ void timer2_init(unsigned long int frequency){
     IEC0bits.T2IE = 1;
 }
 
-void timer3_init(unsigned long int frequency){
-    float f = 100000000.0 / (float)frequency; 
+void timer3_init(float frequency){
+    float f = 100000000.0 / frequency; 
     unsigned char pre = 0;
     while(f > 65535.0) { 
         f /= 2.0;
@@ -78,8 +83,13 @@ void timer3_init(unsigned long int frequency){
         pre++; 
     }
     if(pre == 7) {
-        t *= 2.0; 
-        pre--; 
+        if(t > 32767) {
+            t /= 2;
+            pre++;
+        } else {
+            t *= 2; 
+            pre--;
+        }
     }
     if(pre == 8) pre = 7;
     T3CONbits.ON = 0;
@@ -89,11 +99,10 @@ void timer3_init(unsigned long int frequency){
     IPC3bits.T3IP = 4;
     IFS0bits.T3IF = 0;
     IEC0bits.T3IE = 1;
-    T3CONbits.ON = 1;
 }
 
-void timer4_init(unsigned long int frequency){
-    float f = 100000000.0 / (float)frequency; 
+void timer4_init(float frequency){
+    float f = 100000000.0 / frequency; 
     unsigned char pre = 0;
     while(f > 65535.0) { 
         f /= 2.0;
@@ -105,8 +114,13 @@ void timer4_init(unsigned long int frequency){
         pre++; 
     }
     if(pre == 7) {
-        t *= 2.0; 
-        pre--; 
+        if(t > 32767) {
+            t /= 2;
+            pre++;
+        } else {
+            t *= 2; 
+            pre--;
+        }
     }
     if(pre == 8) pre = 7;
     T4CONbits.ON = 0;
@@ -120,8 +134,8 @@ void timer4_init(unsigned long int frequency){
     IEC0bits.T4IE = 1;
 }
 
-void timer5_init(unsigned long int frequency){
-    float f = 100000000.0 / (float)frequency; 
+void timer5_init(float frequency){
+    float f = 100000000.0 / frequency; 
     unsigned char pre = 0;
     while(f > 65535.0) { 
         f /= 2.0;
@@ -133,8 +147,13 @@ void timer5_init(unsigned long int frequency){
         pre++; 
     }
     if(pre == 7) {
-        t *= 2.0; 
-        pre--; 
+        if(t > 32767) {
+            t /= 2;
+            pre++;
+        } else {
+            t *= 2; 
+            pre--;
+        }
     }
     if(pre == 8) pre = 7;
     T5CONbits.ON = 0;
@@ -144,11 +163,10 @@ void timer5_init(unsigned long int frequency){
     IPC6bits.T5IP = 4;
     IFS0bits.T5IF = 0;
     IEC0bits.T5IE = 1;
-    T5CONbits.ON = 1;
 }
 
-void timer6_init(unsigned long int frequency){
-    float f = 100000000.0 / (float)frequency; 
+void timer6_init(float frequency){
+    float f = 100000000.0 / frequency; 
     unsigned char pre = 0;
     while(f > 65535.0) { 
         f /= 2.0;
@@ -160,8 +178,13 @@ void timer6_init(unsigned long int frequency){
         pre++; 
     }
     if(pre == 7) {
-        t *= 2.0; 
-        pre--; 
+        if(t > 32767) {
+            t /= 2;
+            pre++;
+        } else {
+            t *= 2; 
+            pre--;
+        }
     }
     if(pre == 8) pre = 7;
     T6CONbits.ON = 0;
