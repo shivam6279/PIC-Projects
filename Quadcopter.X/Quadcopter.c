@@ -62,15 +62,7 @@ void main() {
     
     if(remote_y1 > 13 && remote_x1 > 13) { //display sensor readings
         WriteRGBLed(4095, 0, 3800); //Purple
-        DELAY_TIMER_ON = 1;
-        TX_TIMER_ON = 1;
-        tx_buffer_index = 0;
-        while(1) {
-            SendCalibrationData();
-            tx_flag = 1;
-            delay_counter = 0;
-            while(delay_counter < 25);
-        }
+        SendCalibrationData();
     }
     
     //Set PID gains

@@ -62,7 +62,7 @@ void GetAcc(){
     acc.y = (signed short)(temp[0] << 8 | temp[1]);
     acc.x = (signed short)(temp[2] << 8 | temp[3]) * (-1);
     acc.z = (signed short)(temp[4] << 8 | temp[5]) * (-1);
-    if(BUFFER_SIZE > 0){
+    if(BUFFER_SIZE > 0) {
         acc_buffer[0].x = acc.x;
         acc_buffer[0].y = acc.y;
         acc_buffer[0].z = acc.z;

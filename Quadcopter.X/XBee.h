@@ -15,7 +15,7 @@ volatile bool tx_flag = 0;
 volatile bool left_switch = 0, right_switch = 0;
 volatile bool Xbee_signal = 0;
 
-char tx_buffer[100];
+char tx_buffer[200];
 
 extern void SendCalibrationData();
 extern void SendFlightData(PID, PID, PID, PID, char);

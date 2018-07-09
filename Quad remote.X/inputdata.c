@@ -3,10 +3,12 @@
 
 void ShowInputData() {
     int i;
-    int pre_x1 = 10, pre_y1 = 10, tx1, ty1;
-    int pre_x2 = 10, pre_y2 = 10, tx2, ty2;
-    int pre_dial1 = 3, pre_dial2 = 3;
-    int pre_ts_x, pre_ts_y;
+    static int pre_x1 = 10, pre_y1 = 10;
+    int tx1, ty1;
+    static int pre_x2 = 10, pre_y2 = 10;
+    int tx2, ty2;
+    static int pre_dial1 = 3, pre_dial2 = 3;
+    static int pre_ts_x = 0, pre_ts_y = 0;
     
     ty2 = analog2_y;
     if(ty2 != pre_y2) {

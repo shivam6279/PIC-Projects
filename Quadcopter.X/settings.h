@@ -2,7 +2,8 @@
 #define _settings_H_
 
 //-----------------------------PCB----------------------------
-#define big
+#define mini    //micro / mini / big
+#define board3  //board1 / board2 / board3
 //------------------------------------------------------------
 
 #define REMOTE_MAX 15.0f
@@ -16,7 +17,7 @@
 #define PITCHOFFSET 0               //degrees
 #define HEADINGOFFSET -87           //degrees
 
-#ifdef micro
+#ifdef board1
 #define RGBLED_RED_PIN 0
 #define RGBLED_GREEN_PIN 1
 #define RGBLED_BLUE_PIN 2
@@ -25,7 +26,7 @@
 #define MOTOR_UPLEFT_PIN 3 
 #define MOTOR_DOWNRIGHT_PIN 5
 #endif
-#ifdef mini
+#ifdef board2
 #define RGBLED_RED_PIN 1
 #define RGBLED_GREEN_PIN 0
 #define RGBLED_BLUE_PIN 2
@@ -34,7 +35,7 @@
 #define MOTOR_UPLEFT_PIN 3 
 #define MOTOR_DOWNRIGHT_PIN 5
 #endif
-#ifdef big
+#ifdef board3
 #define RGBLED_RED_PIN 9
 #define RGBLED_GREEN_PIN 10
 #define RGBLED_BLUE_PIN 8

@@ -22,7 +22,7 @@ void get_touchscreen();
 volatile char serial_monitor[30][54];
 
 unsigned char receive1;
-char rx_buffer[60];
+char rx_buffer[200];
 int buffer_counter = 0;
 
 unsigned int rx_time_counter = 0;
@@ -34,6 +34,7 @@ unsigned char cursor = 0, arming_counter = 0, GPS_signal = 0, GPS_connected = 0;
 int arming_time;//Mode 'B'
 float pitch, roll, yaw, altitude, latitude, longitude, loop_mode;//Mode 'C'
 int acc_x, acc_y, acc_z, gyro_x, gyro_y, gyro_z, compass_x, compass_y, compass_z;//Mode 'D' 
+int compass_max_x, compass_max_y, compass_max_z, compass_min_x, compass_min_y, compass_min_z; 
 
 void main() {
     bool rx_signal_flag = 1;
@@ -69,6 +70,10 @@ void main() {
     DrawDisplayBounds();
     FillRect(270, (float)(31 - analog2_y) * 240.0/31.0, 50, (float)(analog2_y) * 240.0/31.0, 0xFFA0);
     FillRect(270, 0, 50, (float)(31 - analog2_y) * 240.0/31.0,0xFFFF);
+    
+    while(1) {
+        ShowInputData();
+    }
     
     while(1) {
         if(mode == 0 && rx_signal_flag == 1) {
@@ -164,6 +169,12 @@ void main() {
                 WriteStr("Compass x:", 0, 7*8, 0xF80F);
                 WriteStr("Compass y:", 0, 8*8, 0xF80F);
                 WriteStr("Compass z:", 0, 9*8, 0xF80F);
+                WriteStr("Compass x Max:", 0, 10*8, 0xF80F);
+                WriteStr("Compass y Max:", 0, 11*8, 0xF80F);
+                WriteStr("Compass z Max:", 0, 12*8, 0xF80F);
+                WriteStr("Compass x Min:", 0, 13*8, 0xF80F);
+                WriteStr("Compass y Min:", 0, 14*8, 0xF80F);
+                WriteStr("Compass z Min:", 0, 15*8, 0xF80F);
                 WriteInt(acc_x, 6, 7*6, 1*8, 0x0000);
                 WriteInt(acc_y, 6, 7*6, 2*8, 0x0000);
                 WriteInt(acc_z, 6, 7*6, 3*8, 0x0000);
@@ -173,6 +184,12 @@ void main() {
                 WriteInt(compass_x, 6, 11*6, 7*8, 0x0000);
                 WriteInt(compass_y, 6, 11*6, 8*8, 0x0000);
                 WriteInt(compass_z, 6, 11*6, 9*8, 0x0000);
+                WriteInt(compass_max_x, 6, 15*6, 10*8, 0x0000);
+                WriteInt(compass_max_y, 6, 15*6, 11*8, 0x0000);
+                WriteInt(compass_max_z, 6, 15*6, 12*8, 0x0000);
+                WriteInt(compass_min_x, 6, 15*6, 13*8, 0x0000);
+                WriteInt(compass_min_y, 6, 15*6, 14*8, 0x0000);
+                WriteInt(compass_min_z, 6, 15*6, 15*8, 0x0000);
             }
             
             ShowInputData();
@@ -272,6 +289,20 @@ void __ISR_AT_VECTOR(_UART1_RX_VECTOR, IPL6SRS) Xbee(void){
                     if(rx_buffer[50] == '-') compass_y *= (-1);
                     compass_z = 100000*(rx_buffer[58] - 48) + 10000*(rx_buffer[59] - 48) + 1000*(rx_buffer[60] - 48) + 100*(rx_buffer[61] - 48) + 10*(rx_buffer[62] - 48) + (rx_buffer[63] - 48);
                     if(rx_buffer[57] == '-') compass_z *= (-1);
+                    
+                    compass_max_x = 100000*(rx_buffer[65] - 48) + 10000*(rx_buffer[66] - 48) + 1000*(rx_buffer[67] - 48) + 100*(rx_buffer[68] - 48) + 10*(rx_buffer[69] - 48) + (rx_buffer[70] - 48);
+                    if(rx_buffer[64] == '-') compass_max_x *= (-1);
+                    compass_max_y = 100000*(rx_buffer[72] - 48) + 10000*(rx_buffer[73] - 48) + 1000*(rx_buffer[74] - 48) + 100*(rx_buffer[75] - 48) + 10*(rx_buffer[76] - 48) + (rx_buffer[77] - 48);
+                    if(rx_buffer[71] == '-') compass_max_y *= (-1);
+                    compass_max_z = 100000*(rx_buffer[79] - 48) + 10000*(rx_buffer[80] - 48) + 1000*(rx_buffer[81] - 48) + 100*(rx_buffer[82] - 48) + 10*(rx_buffer[83] - 48) + (rx_buffer[84] - 48);
+                    if(rx_buffer[78] == '-') compass_max_z *= (-1);
+                    
+                    compass_x = 100000*(rx_buffer[86] - 48) + 10000*(rx_buffer[87] - 48) + 1000*(rx_buffer[88] - 48) + 100*(rx_buffer[89] - 48) + 10*(rx_buffer[90] - 48) + (rx_buffer[91] - 48);
+                    if(rx_buffer[85] == '-') compass_x *= (-1);
+                    compass_y = 100000*(rx_buffer[93] - 48) + 10000*(rx_buffer[94] - 48) + 1000*(rx_buffer[95] - 48) + 100*(rx_buffer[96] - 48) + 10*(rx_buffer[97] - 48) + (rx_buffer[98] - 48);
+                    if(rx_buffer[92] == '-') compass_y *= (-1);
+                    compass_z = 100000*(rx_buffer[100] - 48) + 10000*(rx_buffer[101] - 48) + 1000*(rx_buffer[102] - 48) + 100*(rx_buffer[103] - 48) + 10*(rx_buffer[104] - 48) + (rx_buffer[105] - 48);
+                    if(rx_buffer[99] == '-') compass_z *= (-1);
                 }
                 else if(mode == 'Z') {
                     for(j = 0; j < 30; j++) {
@@ -307,6 +338,11 @@ void __ISR_AT_VECTOR(_TIMER_5_VECTOR, IPL4SRS) XBee_rx(void) {
     } else {
         rx_time_counter++;
     }    
+}
+
+void __ISR_AT_VECTOR(_TIMER_2_VECTOR, IPL4SRS) delay_timer(void){
+    IFS0bits.T2IF = 0;
+    delay_counter++;
 }
 
 void __ISR_AT_VECTOR(_TIMER_3_VECTOR, IPL3SRS) Xbee_send(void){

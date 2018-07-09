@@ -111,21 +111,37 @@ void delay_ms(unsigned int x){
     T2CONbits.TON = 0;
 }
 
-void timer2_init(float frequency){
-    float t = 100000000.0 / frequency; unsigned char pre = 0;
-    while(t > 65535){ t /= 2.0; pre++; }
-    t = (int)t;
-    while((int)t % 2 == 0 && pre < 8){ t /= 2.0; pre++; }
-    if(pre == 7){ t *= 2.0; pre--; }
+void timer2_init(float frequency) {
+    float f = 100000000.0 / frequency; 
+    unsigned char pre = 0;
+    while(f > 65535.0) { 
+        f /= 2.0;
+        pre++; 
+    }
+    unsigned int t = (unsigned int)f;
+    while(t % 2 == 0 && pre < 8) { 
+        t /= 2; 
+        pre++; 
+    }
+    if(pre == 7) {
+        if(t > 32767) {
+            t /= 2;
+            pre++;
+        } else {
+            t *= 2; 
+            pre--;
+        }
+    }
     if(pre == 8) pre = 7;
-    T2CONbits.TON = 0;
-    T2CONbits.TCKPS = pre;//1Khz
-    PR2 = (int)t - 1;
+    T2CONbits.ON = 0;
+    T2CONbits.T32 = 0;
+    T2CONbits.TCKPS = pre & 0b111;
+    PR2 = t;
     TMR2 = 0;
+    
     IPC2bits.T2IP = 4;
     IFS0bits.T2IF = 0;
     IEC0bits.T2IE = 1;
-    T2CONbits.TON = 0;
 }
 
 void timer3_init(float frequency){
