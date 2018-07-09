@@ -32,7 +32,7 @@
 #warning "---------------------------------Building for Big quad!---------------------------------"
 #endif
 
-void main(){    
+void main() {    
     Motors speed;
     PID pitch, roll, yaw, altitude, GPS;
     PID pitch_rate, roll_rate, yaw_rate, altitude_rate;
@@ -62,6 +62,9 @@ void main(){
     
     if(remote_y1 > 13 && remote_x1 > 13) { //display sensor readings
         WriteRGBLed(4095, 0, 3800); //Purple
+        DELAY_TIMER_ON = 1;
+        TX_TIMER_ON = 1;
+        tx_buffer_index = 0;
         while(1) {
             SendCalibrationData();
             tx_flag = 1;
@@ -88,6 +91,10 @@ void main(){
         
         delay_ms(100);
         CalibrateGyro();
+        
+        DELAY_TIMER_ON = 1;
+        TX_TIMER_ON = 1;
+        tx_buffer_index = 0;
         for(i = 0, acc_avg = 0, take_off_heading = 0; i < 1000; i++) {
             delay_counter = 0;
             GetAcc();
@@ -95,15 +102,17 @@ void main(){
             GetCompass();
             acc_avg += sqrt(acc.x * acc.x + acc.y * acc.y + acc.z * acc.z) / 1000.0;
             MadgwickQuaternionUpdate(q, acc, gyro, compass, 0.005);
-            tx_buffer[0] = 'C';
+            tx_buffer[0] = 'B';
             tx_buffer[1] = (i / 100 % 10) + 48;
             tx_buffer[2] = (i / 10 % 10) + 48;
             tx_buffer[3] = (i % 10) + 48;
-            tx_buffer[3] = '\r';
-            tx_buffer[4] = '\0';
+            tx_buffer[4] = '\r';
+            tx_buffer[5] = '\0';
             tx_flag = 1;
             while(delay_counter < 5);
         }
+        DELAY_TIMER_ON = 0;
+        TX_TIMER_ON = 0;
         //Read initial heading
         take_off_heading = -atan2(2.0f * (q[1] * q[2] + q[0] * q[3]), q[0] * q[0] + q[1] * q[1] - q[2] * q[2] - q[3] * q[3]) * RAD_TO_DEGREES - HEADINGOFFSET;
         LimitAngle(&take_off_heading);        
@@ -290,8 +299,8 @@ void main(){
             
             if(tx_buffer_timer++ >= 10) {    
                 SendFlightData(roll, pitch, yaw, altitude, loop_mode);
-                tx_flag = 1;
                 tx_buffer_timer = 0;
+                tx_flag = 1;
             }
             
             //---------------------------------------------------------------------------------------------------------------------------------------------------------
