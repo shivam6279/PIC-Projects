@@ -1,18 +1,24 @@
 #include "inputdata.h"
+#include "draw.h"
 #include "touchscreen.h"
 
+int analog1_x, analog2_x, analog1_y, analog2_y;
+int dial1 = 0, dial2 = 0;
+bool switch1, switch2;
+
 void ShowInputData() {
-    int i;
     static int pre_x1 = 10;
     static int pre_y1 = 10;
-    int tx1, ty1;
     static int pre_x2 = 10;
     static int pre_y2 = 10;
-    int tx2, ty2;
     static int pre_dial1 = 3;
     static int pre_dial2 = 3;
     static int pre_ts_x = 0;
     static int pre_ts_y = 0;
+    
+    int i;
+    int tx1, ty1;
+    int tx2, ty2;
     
     ty2 = analog2_y;
     if(ty2 != pre_y2) {
@@ -34,7 +40,7 @@ void ShowInputData() {
         pre_x1 = tx1;
         pre_y1 = ty1;
     }
-
+    
     GetTouchscreen();
     if(ts_y > 145 && ts_y < (145 + 20)) {
         if(ts_x > 116 && ts_x < (116 + 18)) dial1 = 0;

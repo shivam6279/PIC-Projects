@@ -1,6 +1,8 @@
 #ifndef _pic32_H_
 #define _pic32_H_
 
+#include <xc.h>
+
 #define DELAY_TIMER_ON T2CONbits.ON
 #define SAFETY_TIMER_ON T3CONbits.ON
 #define LOOP_TIMER_ON T4CONbits.ON 

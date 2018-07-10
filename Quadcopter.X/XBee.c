@@ -22,13 +22,13 @@ void SendCalibrationData() {
     tx_buffer_index = 0;
     while(1) {
         GetRawIMU();
-        if(compass.x > compass_max.x) compass_max = compass.x;
-        if(compass.y > compass_max.y) compass_max = compass.y;
-        if(compass.z > compass_max.z) compass_max = compass.z;
+        if(compass.x > compass_max.x) compass_max.x = compass.x;
+        if(compass.y > compass_max.y) compass_max.y = compass.y;
+        if(compass.z > compass_max.z) compass_max.z = compass.z;
         
-        if(compass.x < compass_min.x) compass_min = compass.x;
-        if(compass.y < compass_min.y) compass_min = compass.y;
-        if(compass.z < compass_min.z) compass_min = compass.z;
+        if(compass.x < compass_min.x) compass_min.x = compass.x;
+        if(compass.y < compass_min.y) compass_min.y = compass.y;
+        if(compass.z < compass_min.z) compass_min.z = compass.z;
         
         tx_buffer[0] = 'D';
         StrWriteInt(acc.x, 6, tx_buffer, 1);

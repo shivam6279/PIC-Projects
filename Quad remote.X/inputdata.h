@@ -6,8 +6,8 @@
 extern void ShowInputData();
 extern void DrawDisplayBounds();
 
-int analog1_x, analog2_x, analog1_y, analog2_y;
-int dial1 = 0, dial2 = 0;
-bool switch1, switch2;
+extern int analog1_x, analog2_x, analog1_y, analog2_y;
+extern int dial1, dial2;
+extern bool switch1, switch2;
 
 #endif

@@ -3,16 +3,20 @@
 #include <stdbool.h>
 #include <sys/attribs.h>
 #include <string.h>
+
+#include "10DOF.h"
 #include "bitbang_i2c.h"
-#include "USART.h"
-#include "SPI.h"
-#include "ili9341.h"
 #include "draw.h"
-#include "pic32.h"
-#include "touchscreen.h"
+#include "ili9341.h"
 #include "inputdata.h"
-#include "settings.h"
+#include "pic32.h"
 #include "pragma.h"
+#include "SPI.h"
+#include "timer_ISR.h"
+#include "touchscreen.h"
+#include "USART.h"
+
+#include "settings.h"
 
 void speaker_tone(float);
 void adc_init();
@@ -70,10 +74,6 @@ void main() {
     DrawDisplayBounds();
     FillRect(270, (float)(31 - analog2_y) * 240.0/31.0, 50, (float)(analog2_y) * 240.0/31.0, 0xFFA0);
     FillRect(270, 0, 50, (float)(31 - analog2_y) * 240.0/31.0,0xFFFF);
-    
-    while(1) {
-        ShowInputData();
-    }
     
     while(1) {
         if(mode == 0 && rx_signal_flag == 1) {
@@ -297,12 +297,12 @@ void __ISR_AT_VECTOR(_UART1_RX_VECTOR, IPL6SRS) Xbee(void){
                     compass_max_z = 100000*(rx_buffer[79] - 48) + 10000*(rx_buffer[80] - 48) + 1000*(rx_buffer[81] - 48) + 100*(rx_buffer[82] - 48) + 10*(rx_buffer[83] - 48) + (rx_buffer[84] - 48);
                     if(rx_buffer[78] == '-') compass_max_z *= (-1);
                     
-                    compass_x = 100000*(rx_buffer[86] - 48) + 10000*(rx_buffer[87] - 48) + 1000*(rx_buffer[88] - 48) + 100*(rx_buffer[89] - 48) + 10*(rx_buffer[90] - 48) + (rx_buffer[91] - 48);
-                    if(rx_buffer[85] == '-') compass_x *= (-1);
-                    compass_y = 100000*(rx_buffer[93] - 48) + 10000*(rx_buffer[94] - 48) + 1000*(rx_buffer[95] - 48) + 100*(rx_buffer[96] - 48) + 10*(rx_buffer[97] - 48) + (rx_buffer[98] - 48);
-                    if(rx_buffer[92] == '-') compass_y *= (-1);
-                    compass_z = 100000*(rx_buffer[100] - 48) + 10000*(rx_buffer[101] - 48) + 1000*(rx_buffer[102] - 48) + 100*(rx_buffer[103] - 48) + 10*(rx_buffer[104] - 48) + (rx_buffer[105] - 48);
-                    if(rx_buffer[99] == '-') compass_z *= (-1);
+                    compass_min_x = 100000*(rx_buffer[86] - 48) + 10000*(rx_buffer[87] - 48) + 1000*(rx_buffer[88] - 48) + 100*(rx_buffer[89] - 48) + 10*(rx_buffer[90] - 48) + (rx_buffer[91] - 48);
+                    if(rx_buffer[85] == '-') compass_min_x *= (-1);
+                    compass_min_y = 100000*(rx_buffer[93] - 48) + 10000*(rx_buffer[94] - 48) + 1000*(rx_buffer[95] - 48) + 100*(rx_buffer[96] - 48) + 10*(rx_buffer[97] - 48) + (rx_buffer[98] - 48);
+                    if(rx_buffer[92] == '-') compass_min_y *= (-1);
+                    compass_min_z = 100000*(rx_buffer[100] - 48) + 10000*(rx_buffer[101] - 48) + 1000*(rx_buffer[102] - 48) + 100*(rx_buffer[103] - 48) + 10*(rx_buffer[104] - 48) + (rx_buffer[105] - 48);
+                    if(rx_buffer[99] == '-') compass_min_z *= (-1);
                 }
                 else if(mode == 'Z') {
                     for(j = 0; j < 30; j++) {
@@ -338,11 +338,6 @@ void __ISR_AT_VECTOR(_TIMER_5_VECTOR, IPL4SRS) XBee_rx(void) {
     } else {
         rx_time_counter++;
     }    
-}
-
-void __ISR_AT_VECTOR(_TIMER_2_VECTOR, IPL4SRS) delay_timer(void){
-    IFS0bits.T2IF = 0;
-    delay_counter++;
 }
 
 void __ISR_AT_VECTOR(_TIMER_3_VECTOR, IPL3SRS) Xbee_send(void){
