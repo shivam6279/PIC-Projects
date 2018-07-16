@@ -19,10 +19,10 @@ void SetPIDGain(PID *roll, PID* pitch, PID *yaw, PID *roll_rate, PID *pitch_rate
 #ifdef mini
     PIDSet(roll, 1.5, 1.2, 0.0);
     PIDSet(pitch, 1.5, 1.2, 0.0);
-    PIDSet(yaw, 2.0, 1.6, 0.0);
-    PIDSet(roll_rate, 2.5, 0.0, 0.0);
-    PIDSet(pitch_rate, 2.5, 0.0, 0.0);
-    PIDSet(yaw_rate, 3.0, 0.0, 0.0);
+    PIDSet(yaw, 1.5, 1.6, 0.0);
+    PIDSet(roll_rate, 1.5, 0.0, 0.0);
+    PIDSet(pitch_rate, 1.5, 0.0, 0.0);
+    PIDSet(yaw_rate, 2.0, 0.0, 0.0);
     PIDSet(altitude, 1.8, 0.04, 0.0);
     PIDSet(altitude_rate, 40.0, 0.0, 0.0);
     PIDSet(GPS, 1.5, 0.05, 0.0);

@@ -11,14 +11,14 @@
 #define GYRO_Y_GAIN -98
 #define GYRO_Z_GAIN 106
 
-#define COMPASS_X_MIN -153.0f
-#define COMPASS_X_MAX 953.0f
+#define COMPASS_X_MIN -207.0f
+#define COMPASS_X_MAX 849.0f
 
-#define COMPASS_Y_MIN -1077.0f
-#define COMPASS_Y_MAX -263.0f
+#define COMPASS_Y_MIN -558.0f
+#define COMPASS_Y_MAX 263.0f
 
-#define COMPASS_Z_MIN -700.0f
-#define COMPASS_Z_MAX 16.0f
+#define COMPASS_Z_MIN -750.0f
+#define COMPASS_Z_MAX 30.0f
 
 #define COMPASS_X_OFFSET (COMPASS_X_MAX + COMPASS_X_MIN) / 2.0f
 #define COMPASS_Y_OFFSET (COMPASS_Y_MAX + COMPASS_Y_MIN) / 2.0f
