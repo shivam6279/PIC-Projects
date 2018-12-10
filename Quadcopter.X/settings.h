@@ -13,8 +13,8 @@
 #define MAX_YAW_RATE 180.0f         // degrees/sec
 #define ALTITUDE_RATE 0.7f          // meters/sec
 
-#define ROLLOFFSET 0                //degrees
-#define PITCHOFFSET 0               //degrees
+#define ROLLOFFSET 3.0                //degrees
+#define PITCHOFFSET -3.0               //degrees
 #define HEADINGOFFSET -87           //degrees
 
 #ifdef board1

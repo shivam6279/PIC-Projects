@@ -238,9 +238,9 @@ void main() {
                 yaw.sum += (yaw_difference) * loop_time * 3.0;
             }
             
-            roll.derivative = (roll.error - roll.p_error) / loop_time;
-            pitch.derivative = (pitch.error - pitch.p_error) / loop_time;
-            yaw.derivative = (yaw.error - yaw.p_error) / loop_time;
+            roll.derivative = gyro.x;//(roll.error - roll.p_error) / loop_time;
+            pitch.derivative = gyro.y;//(pitch.error - pitch.p_error) / loop_time;
+            yaw.derivative = gyro.z;//(yaw.error - yaw.p_error) / loop_time;
             
             roll.output = (roll.p * (roll.error - roll.offset) + roll.i * roll.sum);
             pitch.output = (pitch.p * (pitch.error - pitch.offset) + pitch.i * pitch.sum);

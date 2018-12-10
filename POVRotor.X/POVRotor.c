@@ -94,7 +94,7 @@ long int mag(long int a){
 
 void main(){
     int i, j, k;
-    double angle;
+    double angle, angle_offset = 0.0;
     init();
     
     TRISDbits.TRISD2 = 1;
@@ -147,10 +147,13 @@ void main(){
         angle = 360.0 * ((double)magnet_counter)/((double)omega);
         if(time > 360.0) time = 0.0;
         polar_image(buffer, cart_image, angle);
+        
+        //polar_image(buffer, cart_image, angle - time * 300);
         //polar_neg_d(buffer, cosn, d_cosn, color[4], (angle + time * 25));
         for(i = 0; i < LED_LENGTH; i++){
             if(buffer[i].red != p_buffer[i].red || buffer[i].green != p_buffer[i].green || buffer[i].blue != p_buffer[i].blue) {
-                writeLEDs(buffer);
+                //writeLEDs(buffer);
+                writeLEDs_hue(buffer, 100);
                 break;
             }
         }
