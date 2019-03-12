@@ -5,6 +5,19 @@
 #include "GPS.h"
 #include "USART.h"
 
+volatile int remote_x1 = 0, remote_y1 = 0, remote_x2 = 0, remote_y2 = 0;
+volatile int safety_counter = 0;
+
+volatile unsigned char dial1, dial2;
+volatile unsigned char receive1;
+volatile unsigned char tx_buffer_index = 0;
+volatile bool tx_flag = 0;
+
+volatile bool left_switch = 0, right_switch = 0;
+volatile bool Xbee_signal = 0;
+
+char tx_buffer[200];
+
 void SendCalibrationData() {
     XYZ compass_max, compass_min;
     
@@ -60,9 +73,9 @@ void SendFlightData(PID roll, PID pitch, PID yaw, PID altitude, char loop_mode) 
     StrWriteFloat(roll.error, 3, 2, tx_buffer, 1);
     StrWriteFloat(pitch.error, 3, 2, tx_buffer, 8);
     StrWriteFloat(yaw.error, 3, 2, tx_buffer, 15);
-    StrWriteFloat(altitude.error, 3, 2, tx_buffer, 22);
-    StrWriteFloat(latitude, 3, 8, tx_buffer, 29);
-    StrWriteFloat(longitude, 3, 8, tx_buffer, 42);
+    StrWriteFloat(roll.output, 3, 2, tx_buffer, 22);
+    StrWriteFloat(pitch.output, 3, 8, tx_buffer, 29);
+    StrWriteFloat(yaw.output, 3, 8, tx_buffer, 42);
     tx_buffer[55] = loop_mode;
     tx_buffer[56] = '\r';
     tx_buffer[57] = '\0';     

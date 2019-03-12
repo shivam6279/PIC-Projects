@@ -4,41 +4,32 @@
 #include "pic32.h"
 #include <math.h>
 
-void SetPIDGain(PID *roll, PID* pitch, PID *yaw, PID *roll_rate, PID *pitch_rate, PID *yaw_rate, PID *altitude, PID *altitude_rate, PID *GPS) {
+void SetPIDGain(PID *roll, PID* pitch, PID *yaw, PID *altitude, PID *GPS) {
 #ifdef micro
-    PIDSet(roll, 1.5, 1.2, 0.0);
-    PIDSet(pitch, 1.5, 1.2, 0.0);
-    PIDSet(yaw, 1.5, 1.2, 0.0);
-    PIDSet(roll_rate, 2.2, 0.0, 0.0);
-    PIDSet(pitch_rate, 2.2, 0.0, 0.0);
-    PIDSet(yaw_rate, 2.2, 0.0, 0.0);
-    PIDSet(altitude, 1.8, 0.04, 0.0);
-    PIDSet(altitude_rate, 40.0, 0.0, 0.0);
+    PIDSet(roll, 1.6, 1.3, 1.1);
+    PIDSet(pitch, 1.6, 1.3, 1.1);
+    PIDSet(yaw, 1.6, 1.3, 1.1);
+    PIDSet(altitude, 72, 1.6, 0.0);
     PIDSet(GPS, 1.5, 0.05, 0.0);
 #endif
 #ifdef mini
-    PIDSet(roll, 1.5, 1.2, 0.0);
-    PIDSet(pitch, 1.5, 1.2, 0.0);
-    PIDSet(yaw, 1.5, 1.6, 0.0);
-    PIDSet(roll_rate, 1.5, 0.0, 0.0);
-    PIDSet(pitch_rate, 1.5, 0.0, 0.0);
-    PIDSet(yaw_rate, 2.0, 0.0, 0.0);
-    PIDSet(altitude, 1.8, 0.04, 0.0);
-    PIDSet(altitude_rate, 40.0, 0.0, 0.0);
+    PIDSet(roll, 1.0, 0.9, 0.7);
+    PIDSet(pitch, 1.0, 0.9, 0.7);
+    PIDSet(yaw, 1.5, 1.6, 1.0);
+    PIDSet(altitude, 36.0, 0.8, 0.0);
     PIDSet(GPS, 1.5, 0.05, 0.0);
 #endif
-#ifdef big // 1.5, 1.2, 2.7
-    PIDSet(roll, 1.2, 1.0, 0.0);
-    PIDSet(pitch, 1.2, 1.0, 0.0);
-    PIDSet(yaw, 1.2, 1.0, 0.0);
-    PIDSet(roll_rate, 0.8, 0.0, 0.0);
-    PIDSet(pitch_rate, 0.8, 0.0, 0.0);
-    PIDSet(yaw_rate, 1.2, 0.0, 0.0);
-    PIDSet(altitude, 1.8, 0.04, 0.0);
-    PIDSet(altitude_rate, 40.0, 0.0, 0.0);
+#ifdef big
+    PIDSet(roll, 0.3, 0.4, 0.4);
+    PIDSet(pitch, 0.3, 0.4, 0.4);
+    PIDSet(yaw, 0.4, 0.3, 0.3);
+    PIDSet(altitude, 368, 0.8, 0.0);
     PIDSet(GPS, 1.5, 0.05, 0.0);
 #endif
 }
+
+volatile unsigned long int loop_counter = 0;
+volatile unsigned char altitude_timer = 0;
 
 void QuaternionToEuler(float q[], PID *roll, PID *pitch, PID *yaw, float *heading, float *yaw_difference, float take_off_heading) {
     roll->p_error = roll->error;
@@ -51,7 +42,8 @@ void QuaternionToEuler(float q[], PID *roll, PID *pitch, PID *yaw, float *headin
     *heading = -atan2(2.0f * (q[1] * q[2] + q[0] * q[3]), q[0] * q[0] + q[1] * q[1] - q[2] * q[2] - q[3] * q[3]) * RAD_TO_DEGREES - HEADINGOFFSET;
     LimitAngle(heading);
     yaw->error = *heading - take_off_heading;  
-    LimitAngle(&roll->error);//Limit angles within -180 and +180 degrees
+    //Limit angles within -180 and +180 degrees
+    LimitAngle(&roll->error);
     LimitAngle(&pitch->error);
     LimitAngle(&yaw->error);
     *yaw_difference = yaw->error - yaw->offset;

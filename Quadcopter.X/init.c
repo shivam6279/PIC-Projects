@@ -26,20 +26,15 @@ void Init() {
     MS5611Init();
 #endif
     
-    PwmDriverInit(500);
+    PwmDriverInit(470);
 }
 
-void ResetPID(PID *roll, PID *pitch, PID *yaw, PID *roll_rate, PID *pitch_rate, PID *yaw_rate, PID *altitude, PID *altitude_rate, PID *GPS) {
+void ResetPID(PID *roll, PID *pitch, PID *yaw, PID *altitude, PID *GPS) {
     PIDSet(roll, roll->p, roll->i, roll->d);
     PIDSet(pitch, pitch->p, pitch->i, pitch->d);
     PIDSet(yaw, yaw->p, yaw->i, yaw->d);
 
-    PIDSet(roll_rate, roll_rate->p, roll_rate->i, roll_rate->d);
-    PIDSet(pitch_rate, pitch_rate->p, pitch_rate->i, pitch_rate->d);
-    PIDSet(yaw_rate, yaw_rate->p, yaw_rate->i, yaw_rate->d);
-
     PIDSet(altitude, altitude->p, altitude->i, altitude->d);
-    PIDSet(altitude_rate, altitude_rate->p, altitude_rate->i, altitude_rate->d);
 
     PIDSet(GPS, GPS->p, GPS->i, GPS->d);
 }

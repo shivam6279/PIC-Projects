@@ -3,22 +3,22 @@
 
 #include "settings.h"
 
-#define GYRO_X_OFFSET 115
-#define GYRO_Y_OFFSET -230
-#define GYRO_Z_OFFSET -10
+#define GYRO_X_OFFSET 125
+#define GYRO_Y_OFFSET -250
+#define GYRO_Z_OFFSET -75
 
 #define GYRO_X_GAIN 98
 #define GYRO_Y_GAIN -98
 #define GYRO_Z_GAIN 106
 
-#define COMPASS_X_MIN -150.0f
-#define COMPASS_X_MAX 925.0f
+#define COMPASS_X_MIN -309.0f
+#define COMPASS_X_MAX 1093.0f
 
-#define COMPASS_Y_MIN -736.0f
-#define COMPASS_Y_MAX 334.0f
+#define COMPASS_Y_MIN -838.0f
+#define COMPASS_Y_MAX 181.0f
 
 #define COMPASS_Z_MIN -908.0f
-#define COMPASS_Z_MAX 139.0f
+#define COMPASS_Z_MAX 129.0f
 
 #define COMPASS_X_OFFSET (COMPASS_X_MAX + COMPASS_X_MIN) / 2.0f
 #define COMPASS_Y_OFFSET (COMPASS_Y_MAX + COMPASS_Y_MIN) / 2.0f

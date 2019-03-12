@@ -7,12 +7,12 @@ extern double DifferenceLatLon(double, double, double, double);
 extern float DifferenceBearing(double, double, double, double);
 extern void GetLocation();
 
-volatile double latitude = 0.0, longitude = 0.0;
-float GPS_altitude = 0.0;
-unsigned int GPS_counter = 0;
-unsigned char GPS_time_counter = 0;
-char lat_str[16] = {'V', '\0'}, lon_str[16] = {'V', '\0'}, alt_str[6] = {'V', '\0'};
-unsigned char receive5, GPS_stage = 0;
-volatile bool GPS_signal = 0, GPS_connected = 0;
+extern volatile double latitude, longitude;
+extern float GPS_altitude;
+extern unsigned int GPS_counter;
+extern unsigned char GPS_time_counter;
+extern char lat_str[16], lon_str[16], alt_str[6];
+extern unsigned char receive5, GPS_stage;
+extern volatile bool GPS_signal, GPS_connected ;
 
 #endif

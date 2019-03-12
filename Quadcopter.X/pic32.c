@@ -1,6 +1,8 @@
 #include "pic32.h"
 #include <xc.h>
 
+volatile unsigned long int delay_counter = 0;
+
 void PICInit(){
     TRISB = 0; 
     TRISC = 0; 

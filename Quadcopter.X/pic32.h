@@ -17,6 +17,6 @@ extern void timer4_init(float);
 extern void timer5_init(float);
 extern void timer6_init(float);
 
-volatile unsigned long int delay_counter = 0;
+extern volatile unsigned long int delay_counter;
 
 #endif

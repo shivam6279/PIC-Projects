@@ -14,7 +14,7 @@
 #define ALTITUDE_RATE 0.7f          // meters/sec
 
 #define ROLLOFFSET 3.0                //degrees
-#define PITCHOFFSET -3.0               //degrees
+#define PITCHOFFSET -0.3               //degrees
 #define HEADINGOFFSET -87           //degrees
 
 #ifdef board1
@@ -44,6 +44,8 @@
 #define MOTOR_UPLEFT_PIN 0 
 #define MOTOR_DOWNRIGHT_PIN 2
 #endif
+
+#define MAX_SPEED 1000.0f
 
 #define MS5611 //BMP180 or MS5611
 #define ALTITUDE_BUFFER_SIZE 3

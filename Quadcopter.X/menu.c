@@ -7,7 +7,7 @@
 #include "GPS.h"
 #include <xc.h>
 
-void menu(PID *x, PID *y, PID *x_rate, PID *y_rate, PID *a, PID *a_rate){
+void menu(PID *x, PID *y, PID *a){
     bool flag_menu = 1; 
     signed char cursor = 0; 
     unsigned int r, g, b;
@@ -78,12 +78,12 @@ void menu(PID *x, PID *y, PID *x_rate, PID *y_rate, PID *a, PID *a_rate){
                 break;
             case 2:
                 if(remote_x1 > 12) { 
-                    x_rate->p += 0.01; 
-                    y_rate->p += 0.01; 
+                    x->d += 0.01; 
+                    y->d += 0.01; 
                 }
                 else if(remote_x1 < (-12)) { 
-                    x_rate->p -= 0.01; 
-                    y_rate->p -= 0.01; 
+                    x->d -= 0.01; 
+                    y->d -= 0.01; 
                 }
                 break;
             case 3:
@@ -95,8 +95,8 @@ void menu(PID *x, PID *y, PID *x_rate, PID *y_rate, PID *a, PID *a_rate){
                 else if(remote_x1 < (-12)) a->i -= 0.01; 
                 break;
             case 5:
-                if(remote_x1 > 12) a_rate->p += 1; 
-                else if(remote_x1 < (-12)) a_rate->p -= 1;
+                if(remote_x1 > 12) a->d += 1; 
+                else if(remote_x1 < (-12)) a->d -= 1;
                 break;
         }
         
@@ -110,10 +110,10 @@ void menu(PID *x, PID *y, PID *x_rate, PID *y_rate, PID *a, PID *a_rate){
         USART1_send((cursor % 10) + 48);
         USART1_write_float(x->p, 2, 2);
         USART1_write_float(x->i, 2, 2);
-        USART1_write_float(x_rate->p, 2, 2);
+        USART1_write_float(x->d, 2, 2);
         USART1_write_float(a->p, 3, 1);
         USART1_write_float(a->i, 2, 2);
-        USART1_write_float(a_rate->p, 3, 1);
+        USART1_write_float(a->d, 3, 1);
         USART1_send((GPS_signal % 10) + 48);
         USART1_send((GPS_connected % 10) + 48);
         USART1_send(((arming_counter / 10) % 10) + 48);

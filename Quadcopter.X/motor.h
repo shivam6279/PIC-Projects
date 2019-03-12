@@ -1,8 +1,8 @@
 #ifndef _MOTOR_H_
 #define _MOTOR_H_
 
-#define MOTOR_OFF 2006
-#define MOTOR_MAX 4013
+#define MOTOR_OFF 1924
+#define MOTOR_MAX 3845
 
 typedef struct{
     int upRight, downRight, downLeft, upLeft;

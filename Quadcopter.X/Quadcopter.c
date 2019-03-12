@@ -35,7 +35,6 @@
 void main() {    
     Motors speed;
     PID pitch, roll, yaw, altitude, GPS;
-    PID pitch_rate, roll_rate, yaw_rate, altitude_rate;
     XYZ acc_comp, acc_velocity, acc_position;                                       //Tilt-compensated acceleration
     int i;                                                                          //General purpose loop counter
     unsigned char tx_buffer_timer = 0;                                              //Counter to for the BMP delays
@@ -66,18 +65,18 @@ void main() {
     }
     
     //Set PID gains
-    SetPIDGain(&roll, &pitch, &yaw, &roll_rate, &pitch_rate, &yaw_rate, &altitude, &altitude_rate, &GPS);
+    SetPIDGain(&roll, &pitch, &yaw, &altitude, &GPS);
     
     delay_ms(1500);
     
     while(1) {
-        ResetPID(&roll, &pitch, &yaw, &roll_rate, &pitch_rate, &yaw_rate, &altitude, &altitude_rate, &GPS); //Clear PID variables
+        ResetPID(&roll, &pitch, &yaw, &altitude, &GPS); //Clear PID variables
         ResetQuaternion(q);         //Reset quaternion
         MotorsReset(&speed);        //Clear motor speeds
         VectorReset(&acc_velocity);
         VectorReset(&acc_position);        
         //Menu
-        menu(&roll, &pitch, &roll_rate, &pitch_rate, &altitude, &altitude_rate);
+        menu(&roll, &pitch, &altitude);
         
         WriteRGBLed(4095, 2500, 0); //Yellow
         
@@ -151,9 +150,9 @@ void main() {
                 else if(loop_mode == 'P') WriteRGBLed(4095, 0, 4095);//Magenta
                 
                 if(loop_mode == 'A') {
-                    altitude_setpoint = (float)remote_y2 * (MOTOR_MAX - MOTOR_OFF) / THROTTLE_MAX;
+                    altitude_setpoint = (float)remote_y2 / THROTTLE_MAX * MAX_SPEED;
                     altitude.sum = 0;
-                    altitude_rate.error = 0;
+                    altitude.derivative = 0;
                     altitude.offset = altitude.error;
                 }
                 else if(loop_mode == 'P') {
@@ -192,19 +191,18 @@ void main() {
             //---------------------------------------------------------------3 modes----------------------------------------------------------------------------------
             
             if(loop_mode == 'S') {
-                altitude_rate.output = (float)remote_y2 * (MOTOR_MAX - MOTOR_OFF) / THROTTLE_MAX;
+                altitude.output = (float)remote_y2 / THROTTLE_MAX * MAX_SPEED;
             }
             else if(loop_mode == 'A') {
                 if(remote_y2 > 10 && remote_y2 < 20) {  //Throttle stick in the mid position
                     altitude.sum += (altitude.offset - altitude.error) * loop_time;
-                    altitude.output = (altitude.p * (altitude.offset - altitude.error) + altitude.i * altitude.sum);
-                    altitude_rate.output = (altitude_rate.p * (altitude_rate.error + altitude.output)) + altitude_setpoint;
+                    altitude.output = (altitude.p * (altitude.offset - altitude.error) + altitude.i * altitude.sum + altitude.p * altitude.derivative) + altitude_setpoint;
                 } else {
                     if(remote_y2 <= 10) {
-                        altitude_rate.output = (altitude_rate.p * (altitude_rate.error - 3.0)) + altitude_setpoint;
+                        altitude.output = (altitude.d * (altitude.derivative - 3.0)) + altitude_setpoint;
                     }
                     else if(remote_y2 >= 20) {
-                        altitude_rate.output = (altitude_rate.p * (altitude_rate.error + 3.0)) + altitude_setpoint;
+                        altitude.output = (altitude.d * (altitude.derivative + 3.0)) + altitude_setpoint;
                     }
                     altitude.offset = altitude.error;                
                 }
@@ -213,11 +211,11 @@ void main() {
             }
             
             else if(loop_mode == 'P') {
-                altitude_rate.output = (float)remote_y2 * (MOTOR_MAX - MOTOR_OFF) / THROTTLE_MAX;
+                altitude.output = (float)remote_y2 / THROTTLE_MAX * MAX_SPEED;
                 GPS.error = DifferenceLatLon(take_off_latitude, take_off_longitude, latitude, longitude);
                 GPS_bearing_difference = heading - DifferenceBearing(take_off_latitude, take_off_longitude, latitude, longitude);
                 LimitAngle(&GPS_bearing_difference);
-                GPS.output = (GPS.p * GPS.error);
+                GPS.output = (GPS.p * GPS.error); 
                 pitch.offset = (-1) * GPS.output * cos((GPS_bearing_difference / RAD_TO_DEGREES) + PI);
                 roll.offset = GPS.output * sin((GPS_bearing_difference / RAD_TO_DEGREES) + PI);
                 if(roll.offset > 18) roll.offset = 18; 
@@ -228,54 +226,32 @@ void main() {
             
             //---------------------------------------------------------Roll/Pitch/Yaw - PID----------------------------------------------------------------------------
             
-            /*------------
-              Stab - PID
-            ------------*/
-            
             if(remote_y2 > 1 && !kill){
                 roll.sum += (roll.error - roll.offset) * loop_time * 3.0;
                 pitch.sum += (pitch.error - pitch.offset) * loop_time * 3.0;
                 yaw.sum += (yaw_difference) * loop_time * 3.0;
             }
             
-            roll.derivative = gyro.x;//(roll.error - roll.p_error) / loop_time;
-            pitch.derivative = gyro.y;//(pitch.error - pitch.p_error) / loop_time;
-            yaw.derivative = gyro.z;//(yaw.error - yaw.p_error) / loop_time;
+            roll.derivative = (roll.error - roll.p_error) / loop_time;
+            pitch.derivative = (pitch.error - pitch.p_error) / loop_time;
+            yaw.derivative = (yaw.error - yaw.p_error) / loop_time;
             
-            roll.output = (roll.p * (roll.error - roll.offset) + roll.i * roll.sum);
-            pitch.output = (pitch.p * (pitch.error - pitch.offset) + pitch.i * pitch.sum);
-            yaw.output = (yaw.p * (yaw_difference) + yaw.i * yaw.sum);
-            
-            /*------------
-              Rate - PID
-            ------------*/
-            
-            roll_rate.error = roll.derivative;  //gyro.y
-            pitch_rate.error = pitch.derivative;//gyro.x
-            yaw_rate.error = yaw.derivative;    //gyro.z
-            
-            if(remote_y2 > 2 && !kill) {
-                roll_rate.sum += (roll_rate.error + roll.output) * loop_time * 3;
-                pitch_rate.sum += (pitch_rate.error + pitch.output) * loop_time * 3;
-                yaw_rate.sum += (yaw_rate.error + yaw.output) * loop_time * 3;
-            }
-            
-            roll_rate.output = (roll_rate.p * (roll_rate.error + roll.output));
-            pitch_rate.output = (pitch_rate.p * (pitch_rate.error + pitch.output));
+            roll.output = (roll.p * (roll.error - roll.offset) + roll.i * roll.sum + roll.d * roll.derivative);
+            pitch.output = (pitch.p * (pitch.error - pitch.offset) + pitch.i * pitch.sum + pitch.d * pitch.derivative);
             if(remote_x2 < 3 && remote_x2 > (-3)) {
-                yaw_rate.output = (yaw_rate.p * (yaw_rate.error + yaw.output) + yaw_rate.i * yaw_rate.sum);
+                yaw.output = (yaw.p * (yaw_difference) + yaw.i * yaw.sum + yaw.d * yaw.derivative);
             } else {
-                yaw_rate.output = (yaw_rate.p * (yaw_rate.error + (float)remote_x2 / REMOTE_MAX * MAX_YAW_RATE));
+                yaw.output = (yaw.d * (yaw.derivative + (float)remote_x2 / REMOTE_MAX * MAX_YAW_RATE));
                 yaw.sum = 0;
                 yaw.offset = yaw.error;                
             }
             
             //-------------------------------------------------------------Motor Output--------------------------------------------------------------------------------
             
-            speed.upRight = altitude_rate.output - pitch_rate.output + roll_rate.output + yaw_rate.output;
-            speed.downLeft = altitude_rate.output + pitch_rate.output - roll_rate.output + yaw_rate.output;
-            speed.upLeft = altitude_rate.output - pitch_rate.output - roll_rate.output - yaw_rate.output; 
-            speed.downRight = altitude_rate.output + pitch_rate.output + roll_rate.output - yaw_rate.output;
+            speed.upRight = altitude.output - pitch.output + roll.output + yaw.output;
+            speed.downLeft = altitude.output + pitch.output - roll.output + yaw.output;
+            speed.upLeft = altitude.output - pitch.output - roll.output - yaw.output; 
+            speed.downRight = altitude.output + pitch.output + roll.output - yaw.output;
             
             LimitSpeed(&speed);
             
@@ -297,7 +273,7 @@ void main() {
             
             //---------------------------------------------------------------------------------------------------------------------------------------------------------
             
-            while(loop_counter < 2040);                     //Loop should last at least 2.04 milliseconds
+            while(loop_counter < 2127);                     //Loop should last at least 1 esc cycle long
             loop_time = (double)loop_counter / 1000000.0;   // Loop time in seconds:
         }
         LOOP_TIMER_ON = 0;

@@ -4,7 +4,7 @@
 #include "PID.h"
 
 extern void Init();
-extern void ResetPID(PID*, PID*, PID*, PID*, PID*, PID*, PID*, PID*, PID*);
+extern void ResetPID(PID*, PID*, PID*, PID*, PID*);
 extern void ResetQuaternion(float[]);
 
 #endif
