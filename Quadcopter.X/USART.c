@@ -1,14 +1,25 @@
 #include "USART.h"
+#include "settings.h"
 #include <xc.h>
 
-void USART1_init(unsigned long int baud_rate){
-    TRISBbits.TRISB5 = 1;
-    TRISBbits.TRISB3 = 0;
-    U1MODEbits.ON = 0;
-    CFGCONbits.IOLOCK = 0;
-    U1RXRbits.U1RXR = 8;//U1RX at RB5
-    RPB3Rbits.RPB3R = 1;//U1TX at RB3
-    CFGCONbits.IOLOCK = 1;
+void USART1_init(unsigned long int baud_rate) {
+    #ifndef board_v4
+        TRISBbits.TRISB5 = 1;
+        TRISBbits.TRISB3 = 0;
+        U1MODEbits.ON = 0;
+        CFGCONbits.IOLOCK = 0;
+        U1RXRbits.U1RXR = 8;
+        RPB3Rbits.RPB3R = 1;
+        CFGCONbits.IOLOCK = 1;
+    #else
+        TRISCbits.TRISC14 = 1;
+        TRISCbits.TRISC13 = 0;
+        U1MODEbits.ON = 0;
+        CFGCONbits.IOLOCK = 0;
+        U1RXRbits.U1RXR = 0b0111;
+        RPC13Rbits.RPC13R = 0b0001;
+        CFGCONbits.IOLOCK = 1;
+    #endif
     
     U1BRG = (100000000.0f / (float)baud_rate / 4.0f) - 1;
     
@@ -44,18 +55,19 @@ void USART1_init(unsigned long int baud_rate){
     IEC3bits.U1TXIE = 0;
 }
 
-void USART1_send(unsigned char byte){
+void USART1_send(unsigned char byte) {
     while(U1STAbits.UTXBF);
     U1TXREG = byte;
 }
-void USART1_send_str(char str[]){
+
+void USART1_send_str(char str[]) {
     int i;
     for(i = 0; str[i] != '\0'; i++){
         USART1_send(str[i]);
     }
 }
 
-void USART1_write_int(int a, unsigned char precision){
+void USART1_write_int(int a, unsigned char precision) {
     if(a < 0){
         a *= (-1);
         USART1_send('-');
@@ -71,7 +83,7 @@ void USART1_write_int(int a, unsigned char precision){
     if(precision >= 1) USART1_send((a % 10) + 48);
 }
 
-void USART1_write_float(double a, unsigned char left, unsigned char right){
+void USART1_write_float(double a, unsigned char left, unsigned char right) {
     unsigned char i;
     long int tens = 10;
     if(a < 0){
@@ -95,11 +107,11 @@ void USART1_write_float(double a, unsigned char left, unsigned char right){
     }
 }
 
-void USART5_init(unsigned long int baud_rate){
+void USART5_init(unsigned long int baud_rate) {
     TRISDbits.TRISD10 = 1;
     U5MODEbits.ON = 0;
     CFGCONbits.IOLOCK = 0;
-    U5RXRbits.U5RXR = 3;//U5RX at RD10
+    U5RXRbits.U5RXR = 3;    //U5RX at RD10
     //U5TX select
     CFGCONbits.IOLOCK = 1;
     
@@ -132,4 +144,43 @@ void USART5_init(unsigned long int baud_rate){
     IPC45bits.U5RXIS = 0; 
     
     IEC5bits.U5TXIE = 0;
+}
+
+void USART3_init(unsigned long int baud_rate) {
+    TRISDbits.TRISD11 = 1;
+    U5MODEbits.ON = 0;
+    CFGCONbits.IOLOCK = 0;
+    U3RXRbits.U5RXR = 0b0011;   //U3RX at RD11
+    RPD10bits.RPD10R = 0b0001;  //U3TX at RD10
+    CFGCONbits.IOLOCK = 1;
+    
+    U3BRG = (100000000.0f / (float)baud_rate / 4.0f) - 1;
+    
+    U3STAbits.ADM_EN = 0;
+    U3STAbits.UTXISEL = 3;
+    U3STAbits.UTXINV = 0;
+    U3STAbits.URXISEL = 0;
+    U3STAbits.OERR = 0;
+    
+    U3MODEbits.SIDL = 0;
+    U3MODEbits.IREN = 0;
+    U3MODEbits.UEN = 0;
+    U3MODEbits.WAKE = 1;
+    U3MODEbits.LPBACK = 0;
+    U3MODEbits.ABAUD = 0;
+    U3MODEbits.RXINV = 0;
+    U3MODEbits.BRGH = 1;
+    U3MODEbits.PDSEL = 0;
+    U3MODEbits.STSEL = 0;
+    
+    U3MODEbits.ON = 1; 
+    U3STAbits.URXEN = 1;
+    U3STAbits.UTXEN = 0;
+    
+    IFS5bits.U3RXIF = 0;
+    IEC5bits.U3RXIE = 1;
+    IPC45bits.U3RXIP = 6;
+    IPC45bits.U3RXIS = 0; 
+    
+    IEC5bits.U3TXIE = 0;
 }

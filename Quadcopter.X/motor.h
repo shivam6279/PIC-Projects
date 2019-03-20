@@ -1,10 +1,9 @@
 #ifndef _MOTOR_H_
 #define _MOTOR_H_
 
-#define MOTOR_OFF 1924
-#define MOTOR_MAX 3845
+#include "settings.h"
 
-typedef struct{
+typedef struct {
     int upRight, downRight, downLeft, upLeft;
 } Motors;
 

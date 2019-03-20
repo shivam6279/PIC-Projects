@@ -90,13 +90,17 @@ void __ISR_AT_VECTOR(_UART5_RX_VECTOR, IPL6SRS) GPS_(void){
     IFS5bits.U5RXIF = 0; 
 }
 
-void __ISR_AT_VECTOR(_TIMER_5_VECTOR, IPL4SRS) GPS_timer(void){
-    IFS0bits.T5IF = 0;
-    if(GPS_time_counter == 20) {
-        GPS_signal = 0;
-        GPS_connected = 0; 
+#ifndef board_v4
+void __ISR_AT_VECTOR(_TIMER_5_VECTOR, IPL4SRS) GPS_timer(void) {
+#else
+void __ISR_AT_VECTOR(_TIMER_3_VECTOR, IPL4SRS) GPS_timer(void) { 
+#endif
+        IFS0bits.T5IF = 0;
+        if(GPS_time_counter == 20) {
+            GPS_signal = 0;
+            GPS_connected = 0; 
+        }
+        else GPS_time_counter++;    
     }
-    else GPS_time_counter++;    
-}
 
 #endif

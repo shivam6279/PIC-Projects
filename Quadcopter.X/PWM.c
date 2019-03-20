@@ -1,6 +1,8 @@
 #include "PWM.h"
 #include "bitbang_I2C.h"
 #include "motor.h"
+#include "settings.h"
+#include <xc.h>
 
 int pwm_max;
 int motor_off, motor_max;
@@ -30,9 +32,8 @@ int motor_off, motor_max;
         if(pre == 8) pre = 7;
 
         pwm_max = t;
-        
-        float temp = MOTOR_OFF / 1000000.0 * freq * (float)pwm_max;
-        motor_off = (int)temp;
+        t = MOTOR_OFF / 1000000.0 * freq * (float)pwm_max;
+        motor_off = (int)t;
 
         OC1CON = 0;  
         OC1R = motor_off;
@@ -92,13 +93,13 @@ int motor_off, motor_max;
 
         CFGCONbits.IOLOCK = 0; // Unlock IO
 
-        RPB5bits.RPB5R = 0b1011;    //OC3
-        RPB3bits.RPB3R = 0b1011;    //OC4
-        RPB15bits.RPB15R = 0b1011;  //OC5
-        RPB7bits.RPB7R = 0b1100;    //OC8
-        RPB2bits.RPB2R = 0b1011;    //OC2
-        RPG9bits.RPG9R = 0b1100;    //OC1        
-        RPB14bits.RPB14R = 0b1101;  //OC9
+        RPB5Rbits.RPB5R = 0b1011;    //OC3
+        RPB3Rbits.RPB3R = 0b1011;    //OC4
+        RPB15Rbits.RPB15R = 0b1011;  //OC5
+        RPB7Rbits.RPB7R = 0b1100;    //OC8
+        RPB2Rbits.RPB2R = 0b1011;    //OC2
+        RPG9Rbits.RPG9R = 0b1100;    //OC1        
+        RPB14Rbits.RPB14R = 0b1101;  //OC9
 
         CFGCONbits.IOLOCK = 1;  // Lock IO       
     }

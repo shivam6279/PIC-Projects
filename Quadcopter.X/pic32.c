@@ -198,3 +198,34 @@ void timer6_init(float frequency){
     IFS0bits.T6IF = 0;
     IEC0bits.T6IE = 1;
 }
+
+void timer7_init(float frequency){
+    float f = 100000000.0 / frequency; 
+    unsigned char pre = 0;
+    while(f > 65535.0) { 
+        f /= 2.0;
+        pre++; 
+    }
+    unsigned int t = (unsigned int)f;
+    while(t % 2 == 0 && pre < 8) { 
+        t /= 2; 
+        pre++; 
+    }
+    if(pre == 7) {
+        if(t > 32767) {
+            t /= 2;
+            pre++;
+        } else {
+            t *= 2; 
+            pre--;
+        }
+    }
+    if(pre == 8) pre = 7;
+    T7CONbits.ON = 0;
+    T7CONbits.TCKPS = pre & 0b111;
+    PR7 = t;
+    TMR7 = 0;
+    IPC8bits.T7IP = 4;
+    IFS1bits.T7IF = 0;
+    IEC1bits.T7IE = 1;
+}

@@ -27,8 +27,6 @@
 #define COMPASS_Y_GAIN -1.0f / ((COMPASS_Y_MAX - COMPASS_Y_MIN) / 2.0f)
 #define COMPASS_Z_GAIN 1.0f / ((COMPASS_Z_MAX - COMPASS_Z_MIN) / 2.0f)
 
-#define BUFFER_SIZE 10
-
 #ifdef BMP180
 #define OVERSAMPLING 3  //0 - 3
 #define SEA_LEVEL_PRESSURE 101325UL
@@ -87,8 +85,8 @@ extern double GetAltitude(unsigned long int);
 unsigned int MS5611_fc[6];
 #endif
 
-XYZ acc, acc_buffer[BUFFER_SIZE];
-XYZ gyro, gyro_buffer[BUFFER_SIZE], gyro_avg;
-XYZ compass, compass_buffer[BUFFER_SIZE];
+XYZ acc, acc_buffer[IMU_BUFFER_SIZE];
+XYZ gyro, gyro_buffer[IMU_BUFFER_SIZE], gyro_avg;
+XYZ compass, compass_buffer[IMU_BUFFER_SIZE];
 
 #endif

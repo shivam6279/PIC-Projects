@@ -6,7 +6,7 @@
 #include "settings.h"
 #include "pic32.h"
 #include "bitbang_I2C.h"
-#include "PWMDriver.h"
+#include "PWM.h"
 #include "10DOF.h"
 #include "altitude.h"
 #include "USART.h"
@@ -58,6 +58,9 @@ void main() {
         CalibrateESC();
     }
     TurnMotorsOff();
+    
+    delay_ms(100);
+    WriteRGBLed(4095, 0, 4095);    //Red
     
     if(remote_y1 > 13 && remote_x1 > 13) { //display sensor readings
         WriteRGBLed(4095, 0, 3800); //Purple

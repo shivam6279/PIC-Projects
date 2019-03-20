@@ -1,5 +1,6 @@
 #include "10DOF.h"
 #include "bitbang_I2C.h"
+#include "settings.h"
 #include <math.h>
 
 void VectorReset(XYZ *v) {
@@ -11,30 +12,30 @@ void VectorReset(XYZ *v) {
 //-----------------------------------------MPU6050---------------------------------
 void MPU6050Init(){
     unsigned char i;
-    I2C5_WriteRegisters(0xD0, (unsigned char[2]){0x6B, 0x00}, 2);
-    I2C5_WriteRegisters(0xD0, (unsigned char[2]){0x19, 0x07}, 2);
-    I2C5_WriteRegisters(0xD0, (unsigned char[2]){0x1A, 0x03}, 2);
-    I2C5_WriteRegisters(0xD0, (unsigned char[2]){0x1B, 0x00}, 2);
-    I2C5_WriteRegisters(0xD0, (unsigned char[2]){0x1C, 0x00}, 2);
+    I2C_WriteRegisters(0xD0, (unsigned char[2]){0x6B, 0x00}, 2);
+    I2C_WriteRegisters(0xD0, (unsigned char[2]){0x19, 0x07}, 2);
+    I2C_WriteRegisters(0xD0, (unsigned char[2]){0x1A, 0x03}, 2);
+    I2C_WriteRegisters(0xD0, (unsigned char[2]){0x1B, 0x00}, 2);
+    I2C_WriteRegisters(0xD0, (unsigned char[2]){0x1C, 0x00}, 2);
     for(i = 0x1D; i <= 0x23; i++){
-        I2C5_WriteRegisters(0xD0, (unsigned char[2]){i, 0x00}, 2);
+        I2C_WriteRegisters(0xD0, (unsigned char[2]){i, 0x00}, 2);
     }
-    I2C5_WriteRegisters(0xD0, (unsigned char[2]){0x24, 0x40}, 2);
-    I2C5_WriteRegisters(0xD0, (unsigned char[2]){0x25, 0x8C}, 2);
-    I2C5_WriteRegisters(0xD0, (unsigned char[2]){0x26, 0x02}, 2);
-    I2C5_WriteRegisters(0xD0, (unsigned char[2]){0x27, 0x88}, 2);
-    I2C5_WriteRegisters(0xD0, (unsigned char[2]){0x28, 0x0C}, 2);
-    I2C5_WriteRegisters(0xD0, (unsigned char[2]){0x29, 0x0A}, 2);
-    I2C5_WriteRegisters(0xD0, (unsigned char[2]){0x2A, 0x81}, 2);
-    I2C5_WriteRegisters(0xD0, (unsigned char[2]){0x64, 0x01}, 2);
-    I2C5_WriteRegisters(0xD0, (unsigned char[2]){0x67, 0x03}, 2);
-    I2C5_WriteRegisters(0xD0, (unsigned char[2]){0x01, 0x80}, 2);
-    I2C5_WriteRegisters(0xD0, (unsigned char[2]){0x34, 0x04}, 2);
-    I2C5_WriteRegisters(0xD0, (unsigned char[2]){0x64, 0x00}, 2);
-    I2C5_WriteRegisters(0xD0, (unsigned char[2]){0x6A, 0x00}, 2);
-    I2C5_WriteRegisters(0xD0, (unsigned char[2]){0x64, 0x01}, 2);
-    I2C5_WriteRegisters(0xD0, (unsigned char[2]){0x6A, 0x20}, 2);
-    I2C5_WriteRegisters(0xD0, (unsigned char[2]){0x34, 0x13}, 2);
+    I2C_WriteRegisters(0xD0, (unsigned char[2]){0x24, 0x40}, 2);
+    I2C_WriteRegisters(0xD0, (unsigned char[2]){0x25, 0x8C}, 2);
+    I2C_WriteRegisters(0xD0, (unsigned char[2]){0x26, 0x02}, 2);
+    I2C_WriteRegisters(0xD0, (unsigned char[2]){0x27, 0x88}, 2);
+    I2C_WriteRegisters(0xD0, (unsigned char[2]){0x28, 0x0C}, 2);
+    I2C_WriteRegisters(0xD0, (unsigned char[2]){0x29, 0x0A}, 2);
+    I2C_WriteRegisters(0xD0, (unsigned char[2]){0x2A, 0x81}, 2);
+    I2C_WriteRegisters(0xD0, (unsigned char[2]){0x64, 0x01}, 2);
+    I2C_WriteRegisters(0xD0, (unsigned char[2]){0x67, 0x03}, 2);
+    I2C_WriteRegisters(0xD0, (unsigned char[2]){0x01, 0x80}, 2);
+    I2C_WriteRegisters(0xD0, (unsigned char[2]){0x34, 0x04}, 2);
+    I2C_WriteRegisters(0xD0, (unsigned char[2]){0x64, 0x00}, 2);
+    I2C_WriteRegisters(0xD0, (unsigned char[2]){0x6A, 0x00}, 2);
+    I2C_WriteRegisters(0xD0, (unsigned char[2]){0x64, 0x01}, 2);
+    I2C_WriteRegisters(0xD0, (unsigned char[2]){0x6A, 0x20}, 2);
+    I2C_WriteRegisters(0xD0, (unsigned char[2]){0x34, 0x13}, 2);
     for(i = 0; i < 5; i++){
         acc_buffer[i].x = 0;
         acc_buffer[i].y = 0;
@@ -51,58 +52,58 @@ void MPU6050Init(){
 void GetAcc(){
     unsigned char temp[6];
     unsigned char i;
-    if(BUFFER_SIZE > 0){
-        for(i = (BUFFER_SIZE - 1); i >= 1; i--){
+    if(IMU_BUFFER_SIZE > 0){
+        for(i = (IMU_BUFFER_SIZE - 1); i >= 1; i--){
             acc_buffer[i].x = acc_buffer[i - 1].x;
             acc_buffer[i].y = acc_buffer[i - 1].y;
             acc_buffer[i].z = acc_buffer[i - 1].z;
         }
     }
-    I2C5_ReadRegisters(0xD0, 0x3B, temp, 6);
+    I2C_ReadRegisters(0xD0, 0x3B, temp, 6);
     acc.y = (signed short)(temp[0] << 8 | temp[1]);
     acc.x = (signed short)(temp[2] << 8 | temp[3]) * (-1);
     acc.z = (signed short)(temp[4] << 8 | temp[5]) * (-1);
-    if(BUFFER_SIZE > 0) {
+    if(IMU_BUFFER_SIZE > 0) {
         acc_buffer[0].x = acc.x;
         acc_buffer[0].y = acc.y;
         acc_buffer[0].z = acc.z;
-        for(i = 1; i < BUFFER_SIZE; i++){
+        for(i = 1; i < IMU_BUFFER_SIZE; i++){
             acc.x += acc_buffer[i].x;
             acc.y += acc_buffer[i].y;
             acc.z += acc_buffer[i].z;
         }
-        acc.x /= BUFFER_SIZE;
-        acc.y /= BUFFER_SIZE;
-        acc.z /= BUFFER_SIZE;
+        acc.x /= IMU_BUFFER_SIZE;
+        acc.y /= IMU_BUFFER_SIZE;
+        acc.z /= IMU_BUFFER_SIZE;
     }
 }
 
 void GetGyro(){
     unsigned char temp[6];
     unsigned char i;
-    if(BUFFER_SIZE > 0){
-        for(i = (BUFFER_SIZE - 1); i >= 1; i--){
+    if(IMU_BUFFER_SIZE > 0){
+        for(i = (IMU_BUFFER_SIZE - 1); i >= 1; i--){
             gyro_buffer[i].x = gyro_buffer[i - 1].x;
             gyro_buffer[i].y = gyro_buffer[i - 1].y;
             gyro_buffer[i].z = gyro_buffer[i - 1].z;
         }
     }
-    I2C5_ReadRegisters(0xD0, 0x43, temp, 6);
+    I2C_ReadRegisters(0xD0, 0x43, temp, 6);
     gyro.y = (signed short)(temp[0] << 8 | temp[1]);
     gyro.x = (signed short)(temp[2] << 8 | temp[3]);
     gyro.z = (signed short)(temp[4] << 8 | temp[5]);
-    if(BUFFER_SIZE > 0){
+    if(IMU_BUFFER_SIZE > 0){
         gyro_buffer[0].x = gyro.x;
         gyro_buffer[0].y = gyro.y;
         gyro_buffer[0].z = gyro.z;
-        for(i = 1; i < BUFFER_SIZE; i++){
+        for(i = 1; i < IMU_BUFFER_SIZE; i++){
             gyro.x += gyro_buffer[i].x;
             gyro.y += gyro_buffer[i].y;
             gyro.z += gyro_buffer[i].z;
         }
-        gyro.x /= BUFFER_SIZE;
-        gyro.y /= BUFFER_SIZE;
-        gyro.z /= BUFFER_SIZE;
+        gyro.x /= IMU_BUFFER_SIZE;
+        gyro.y /= IMU_BUFFER_SIZE;
+        gyro.z /= IMU_BUFFER_SIZE;
     }
     gyro.x = (gyro.x - gyro_avg.x) / GYRO_X_GAIN;
     gyro.y = (gyro.y - gyro_avg.y) / GYRO_Y_GAIN;
@@ -113,7 +114,7 @@ void CalibrateGyro() {
     unsigned char temp[6];
     int i;
     for(i = 0; i < 100; i++) {
-        I2C5_ReadRegisters(0xD0, 0x43, temp, 6);
+        I2C_ReadRegisters(0xD0, 0x43, temp, 6);
         gyro_avg.y = (signed short)(temp[0] << 8 | temp[1]);
         gyro_avg.x = (signed short)(temp[2] << 8 | temp[3]);
         gyro_avg.z = (signed short)(temp[4] << 8 | temp[5]);
@@ -128,19 +129,19 @@ void CalibrateGyro() {
 
 void HMC5883Init(){
     unsigned char i;
-    I2C5_WriteRegisters(0xD0, (unsigned char[2]){0x6A, 0x00}, 2);
-    I2C5_WriteRegisters(0xD0, (unsigned char[2]){0x37, 0x02}, 2);
+    I2C_WriteRegisters(0xD0, (unsigned char[2]){0x6A, 0x00}, 2);
+    I2C_WriteRegisters(0xD0, (unsigned char[2]){0x37, 0x02}, 2);
     for(i = 0; i < 5; i++){
         compass_buffer[i].x = 0;
         compass_buffer[i].y = 0;
         compass_buffer[i].z = 0;
     }
-    I2C5_WriteRegisters(0x3C, (unsigned char[2]){0, 0x14}, 2);
-    I2C5_WriteRegisters(0x3C, (unsigned char[2]){1, 0x20}, 2);
-    I2C5_WriteRegisters(0x3C, (unsigned char[2]){2, 0x00}, 2);
+    I2C_WriteRegisters(0x3C, (unsigned char[2]){0, 0x14}, 2);
+    I2C_WriteRegisters(0x3C, (unsigned char[2]){1, 0x20}, 2);
+    I2C_WriteRegisters(0x3C, (unsigned char[2]){2, 0x00}, 2);
     
-    I2C5_WriteRegisters(0xD0, (unsigned char[2]){0x6A, 0x20}, 2);
-    I2C5_WriteRegisters(0xD0, (unsigned char[2]){0x37, 0x00}, 2);
+    I2C_WriteRegisters(0xD0, (unsigned char[2]){0x6A, 0x20}, 2);
+    I2C_WriteRegisters(0xD0, (unsigned char[2]){0x37, 0x00}, 2);
     for(i = 0; i < 5; i++){
         compass_buffer[i].x = 0;
         compass_buffer[i].y = 0;
@@ -151,33 +152,33 @@ void HMC5883Init(){
 void GetCompass(){
     unsigned char temp[6];
     unsigned char i;
-    if(BUFFER_SIZE > 0){
-        for(i = (BUFFER_SIZE - 1); i >= 1; i--){
+    if(IMU_BUFFER_SIZE > 0){
+        for(i = (IMU_BUFFER_SIZE - 1); i >= 1; i--){
             compass_buffer[i].x = compass_buffer[i - 1].x;
             compass_buffer[i].y = compass_buffer[i - 1].y;
             compass_buffer[i].z = compass_buffer[i - 1].z;
         }
     }
-    I2C5_WriteRegisters(0xD0, (unsigned char[2]){0x6A, 0x00}, 2);
-    I2C5_WriteRegisters(0xD0, (unsigned char[2]){0x37, 0x02}, 2);
-    I2C5_ReadRegisters(0x3C, 0x03, temp, 6);
-    I2C5_WriteRegisters(0xD0, (unsigned char[2]){0x6A, 0x20}, 2);
-    I2C5_WriteRegisters(0xD0, (unsigned char[2]){0x37, 0x00}, 2);
+    I2C_WriteRegisters(0xD0, (unsigned char[2]){0x6A, 0x00}, 2);
+    I2C_WriteRegisters(0xD0, (unsigned char[2]){0x37, 0x02}, 2);
+    I2C_ReadRegisters(0x3C, 0x03, temp, 6);
+    I2C_WriteRegisters(0xD0, (unsigned char[2]){0x6A, 0x20}, 2);
+    I2C_WriteRegisters(0xD0, (unsigned char[2]){0x37, 0x00}, 2);
     compass.y = (signed short)(temp[0] << 8 | temp[1]);//y
     compass.z = (signed short)(temp[2] << 8 | temp[3]);
     compass.x = (signed short)(temp[4] << 8 | temp[5]);//x
-    if(BUFFER_SIZE > 0){
+    if(IMU_BUFFER_SIZE > 0){
         compass_buffer[0].x = compass.x;
         compass_buffer[0].y = compass.y;
         compass_buffer[0].z = compass.z;
-        for(i = 1; i < BUFFER_SIZE; i++){
+        for(i = 1; i < IMU_BUFFER_SIZE; i++){
             compass.x += compass_buffer[i].x;
             compass.y += compass_buffer[i].y;
             compass.z += compass_buffer[i].z;
         }
-        compass.x /= BUFFER_SIZE;
-        compass.y /= BUFFER_SIZE;
-        compass.z /= BUFFER_SIZE;
+        compass.x /= IMU_BUFFER_SIZE;
+        compass.y /= IMU_BUFFER_SIZE;
+        compass.z /= IMU_BUFFER_SIZE;
     }
     compass.x = (compass.x - COMPASS_X_OFFSET) * COMPASS_X_GAIN;
     compass.y = (compass.y - COMPASS_Y_OFFSET) * COMPASS_Y_GAIN;
@@ -186,19 +187,19 @@ void GetCompass(){
 //----------------------------------------------------------------------
 void GetRawIMU(){
     unsigned char temp[6];
-    I2C5_ReadRegisters(0xD0, 0x3B, temp, 6);
+    I2C_ReadRegisters(0xD0, 0x3B, temp, 6);
     acc.y = (signed short)(temp[0] << 8 | temp[1]);
     acc.x = (signed short)(temp[2] << 8 | temp[3]) * (-1);
     acc.z = (signed short)(temp[4] << 8 | temp[5]) * (-1);
-    I2C5_ReadRegisters(0xD0, 0x43, temp, 6);
+    I2C_ReadRegisters(0xD0, 0x43, temp, 6);
     gyro.y = (signed short)(temp[0] << 8 | temp[1]);
     gyro.x = (signed short)(temp[2] << 8 | temp[3]);
     gyro.z = (signed short)(temp[4] << 8 | temp[5]);
-    I2C5_WriteRegisters(0xD0, (unsigned char[2]){0x6A, 0x00}, 2);
-    I2C5_WriteRegisters(0xD0, (unsigned char[2]){0x37, 0x02}, 2);
-    I2C5_ReadRegisters(0x3C, 0x03, temp, 6);
-    I2C5_WriteRegisters(0xD0, (unsigned char[2]){0x6A, 0x20}, 2);
-    I2C5_WriteRegisters(0xD0, (unsigned char[2]){0x37, 0x00}, 2);
+    I2C_WriteRegisters(0xD0, (unsigned char[2]){0x6A, 0x00}, 2);
+    I2C_WriteRegisters(0xD0, (unsigned char[2]){0x37, 0x02}, 2);
+    I2C_ReadRegisters(0x3C, 0x03, temp, 6);
+    I2C_WriteRegisters(0xD0, (unsigned char[2]){0x6A, 0x20}, 2);
+    I2C_WriteRegisters(0xD0, (unsigned char[2]){0x37, 0x00}, 2);
     compass.y = (signed short)(temp[0] << 8 | temp[1]);
     compass.z = (signed short)(temp[2] << 8 | temp[3]);
     compass.x = (signed short)(temp[4] << 8 | temp[5]);
@@ -208,7 +209,7 @@ void GetRawIMU(){
 #ifdef BMP180
 void BMP180Init() {
     unsigned char temp[22];
-    I2C5_ReadRegisters(0xEE, 0xAA, temp, 22);
+    I2C_ReadRegisters(0xEE, 0xAA, temp, 22);
     ac1 = (signed short)(temp[0] << 8 | temp[1]);
     ac2 = (signed short)(temp[2] << 8 | temp[3]);
     ac3 = (signed short)(temp[4] << 8 | temp[5]);
@@ -232,17 +233,17 @@ void BMP180Init() {
 }
 
 void StartTemperatureRead() {
-    I2C5_WriteRegisters(0xEE, (unsigned char[2]){0xF4, 0x2E}, 2);
+    I2C_WriteRegisters(0xEE, (unsigned char[2]){0xF4, 0x2E}, 2);
 }
 
 void StartPressureRead() {
-    I2C5_WriteRegisters(0xEE, (unsigned char[2]){0xF4, 0x34 + OVERSAMPLING * 64}, 2);
+    I2C_WriteRegisters(0xEE, (unsigned char[2]){0xF4, 0x34 + OVERSAMPLING * 64}, 2);
 }
 
 void ReadRawTemperature() {
     float X1, X2;
     unsigned char t[2];
-    I2C5_ReadRegisters(0xEE, 0xF6, t, 2);
+    I2C_ReadRegisters(0xEE, 0xF6, t, 2);
     UT = t[0] << 8 | t[1];
     X1 = ((float)UT - (float)ac6) * ((float)ac5 / 32768.0f);
     X2 = ((float)(mc * 2048.0f)) / (X1 + (float)md);
@@ -262,7 +263,7 @@ float GetAltitude(){
     unsigned long int B4, B7;
     unsigned char t[3];
     
-    I2C5_ReadRegisters(0xEE, 0xF6, t, 3);
+    I2C_ReadRegisters(0xEE, 0xF6, t, 3);
     UP = ((t[0] << 16) | (t[1] << 8) | (t[2]));
     UP >>= (8 - OVERSAMPLING);
 
@@ -295,19 +296,19 @@ float GetAltitude(){
 
 void MS5611Init() {
     unsigned char temp[2];
-    I2C5_WriteRegisters(0xEE, (unsigned char[1]){0x1E}, 1);
+    I2C_WriteRegisters(0xEE, (unsigned char[1]){0x1E}, 1);
     delay_ms(100);
-    I2C5_ReadRegisters(0xEE, 0xA2, temp, 2);
+    I2C_ReadRegisters(0xEE, 0xA2, temp, 2);
     MS5611_fc[0] = temp[0] << 8 | temp[1];
-    I2C5_ReadRegisters(0xEE, 0xA2 + 2, temp, 2);
+    I2C_ReadRegisters(0xEE, 0xA2 + 2, temp, 2);
     MS5611_fc[1] = temp[0] << 8 | temp[1];
-    I2C5_ReadRegisters(0xEE, 0xA2 + 4, temp, 2);
+    I2C_ReadRegisters(0xEE, 0xA2 + 4, temp, 2);
     MS5611_fc[2] = temp[0] << 8 | temp[1];
-    I2C5_ReadRegisters(0xEE, 0xA2 + 6, temp, 2);
+    I2C_ReadRegisters(0xEE, 0xA2 + 6, temp, 2);
     MS5611_fc[3] = temp[0] << 8 | temp[1];
-    I2C5_ReadRegisters(0xEE, 0xA2 + 8, temp, 2);
+    I2C_ReadRegisters(0xEE, 0xA2 + 8, temp, 2);
     MS5611_fc[4] = temp[0] << 8 | temp[1];
-    I2C5_ReadRegisters(0xEE, 0xA2 + 10, temp, 2);
+    I2C_ReadRegisters(0xEE, 0xA2 + 10, temp, 2);
     MS5611_fc[5] = temp[0] << 8 | temp[1];
 #if OVERSAMPLING == 0
     oversampling_delay = 1;
@@ -323,25 +324,25 @@ void MS5611Init() {
 }
 
 void StartPressureRead() {
-    I2C5_WriteRegisters(0xEE, (unsigned char[1]){0x40 + OVERSAMPLING * 2}, 1);
+    I2C_WriteRegisters(0xEE, (unsigned char[1]){0x40 + OVERSAMPLING * 2}, 1);
 }
 
 unsigned long int ReadRawPressure() {
     unsigned char temp[3];
     unsigned long int r;
-    I2C5_ReadRegisters(0xEE, 0x00, temp, 3);
+    I2C_ReadRegisters(0xEE, 0x00, temp, 3);
     r = (unsigned long int)((unsigned long int)temp[0] << 16 | (unsigned long int)temp[1] << 8 | (unsigned long int)temp[2]);
     return r;
 }
 
 void StartTemperatureRead() {
-    I2C5_WriteRegisters(0xEE, (unsigned char[1]){0x50 + OVERSAMPLING * 2}, 1);
+    I2C_WriteRegisters(0xEE, (unsigned char[1]){0x50 + OVERSAMPLING * 2}, 1);
 }
 
 unsigned long int ReadRawTemperature() {
     unsigned char temp[3];
     unsigned long int r;
-    I2C5_ReadRegisters(0xEE, 0x00, temp, 3);
+    I2C_ReadRegisters(0xEE, 0x00, temp, 3);
     r = (unsigned long int)((unsigned long int)temp[0] << 16 | (unsigned long int)temp[1] << 8 | (unsigned long int)temp[2]);
     return r;
 }
