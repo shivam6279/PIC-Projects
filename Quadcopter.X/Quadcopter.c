@@ -31,6 +31,18 @@
 #ifdef big
 #warning "---------------------------------Building for Big quad!---------------------------------"
 #endif
+#ifdef board_v1
+#warning "---------------------------------Building for board_v1!---------------------------------"
+#endif
+#ifdef board_v2
+#warning "---------------------------------Building for board_v2!---------------------------------"
+#endif
+#ifdef board_v3
+#warning "---------------------------------Building for board_v3!---------------------------------"
+#endif
+#ifdef board_v4
+#warning "---------------------------------Building for board_v4!---------------------------------"
+#endif
 
 void main() {    
     Motors speed;
@@ -53,17 +65,15 @@ void main() {
     
     Init();
     
-    WriteRGBLed(4095, 0, 0);    //Red
-    if(remote_y2 > 29 && remote_x2 > 13) { //Calibrate ESCs
+    WriteRGBLed(4095, 0, 0);                            //Red
+    if(Xbee.y2 > 29 && Xbee.x2 > 13)                    //Calibrate ESCs
         CalibrateESC();
-    }
     TurnMotorsOff();
     
     delay_ms(100);
-    WriteRGBLed(4095, 0, 4095);    //Red
     
-    if(remote_y1 > 13 && remote_x1 > 13) { //display sensor readings
-        WriteRGBLed(4095, 0, 3800); //Purple
+    if(Xbee.y1 > 13 && Xbee.x1 > 13) {                  //display sensor readings
+        WriteRGBLed(4095, 0, 3800);                     //Magenta
         SendCalibrationData();
     }
     
@@ -74,12 +84,12 @@ void main() {
     
     while(1) {
         ResetPID(&roll, &pitch, &yaw, &altitude, &GPS); //Clear PID variables
-        ResetQuaternion(q);         //Reset quaternion
-        MotorsReset(&speed);        //Clear motor speeds
+        ResetQuaternion(q);                             //Reset quaternion
+        MotorsReset(&speed);                            //Clear motor speeds
         VectorReset(&acc_velocity);
         VectorReset(&acc_position);        
-        //Menu
-        menu(&roll, &pitch, &altitude);
+        
+        Menu(&roll, &pitch, &altitude);
         
         WriteRGBLed(4095, 2500, 0); //Yellow
         
@@ -107,9 +117,11 @@ void main() {
         }
         DELAY_TIMER_ON = 0;
         TX_TIMER_ON = 0;
+
         //Read initial heading
         take_off_heading = -atan2(2.0f * (q[1] * q[2] + q[0] * q[3]), q[0] * q[0] + q[1] * q[1] - q[2] * q[2] - q[3] * q[3]) * RAD_TO_DEGREES - HEADINGOFFSET;
-        LimitAngle(&take_off_heading);        
+        LimitAngle(&take_off_heading);   
+
         //Read take-off altitude
         take_off_altitude = GetTakeoffAltitude(altitude_buffer);
         
@@ -126,34 +138,37 @@ void main() {
         altitude_stage = 0;
         tx_buffer_timer = 0;
         
-        loop_time = 0.00204; 
+        loop_time = 1 / ESC_FREQ; 
         
         LOOP_TIMER_ON = 1;
         TX_TIMER_ON = 1;
         
         //Main Loop
-        while(right_switch == 0) {
+        while(Xbee.rs == 0) {
             loop_counter = 0;
             p_kill = kill;
             p_loop_mode = loop_mode;
             
             //---------------------------------------------------------------Set Mode------------------------------------------------------------------------------
             
-            if(left_switch) kill = 1; 
-            else kill = 0;
+            if(Xbee.ls) 
+                kill = 1; 
+            else 
+                kill = 0;
+
             //Set loop mode - Stabilize, Alt-hold, Pos-hold
-            if(dial1 == 0 || (dial1 == 2 && !GPS_signal)) loop_mode = 'S';
-            else if(dial1 == 1) loop_mode = 'A';
-            else if(dial1 == 2 && GPS_signal) loop_mode = 'P';
+            if(Xbee.d1 == 0 || (Xbee.d1 == 2 && !GPS_signal)) loop_mode = 'S';
+            else if(Xbee.d1 == 1) loop_mode = 'A';
+            else if(Xbee.d1 == 2 && GPS_signal) loop_mode = 'P';
             
             if(p_loop_mode != loop_mode || p_kill != kill) {
                 if(kill) WriteRGBLed(4095, 4095, 4095);
-                else if(loop_mode == 'S') WriteRGBLed(0, 4095, 0);   //Green
-                else if(loop_mode == 'A') WriteRGBLed(0, 4095, 4095);//Cyan
-                else if(loop_mode == 'P') WriteRGBLed(4095, 0, 4095);//Magenta
+                else if(loop_mode == 'S') WriteRGBLed(0, 4095, 0);      //Green
+                else if(loop_mode == 'A') WriteRGBLed(0, 4095, 4095);   //Cyan
+                else if(loop_mode == 'P') WriteRGBLed(4095, 0, 4095);   //Magenta
                 
                 if(loop_mode == 'A') {
-                    altitude_setpoint = (float)remote_y2 / THROTTLE_MAX * MAX_SPEED;
+                    altitude_setpoint = (float)Xbee.y2 / THROTTLE_MAX * MAX_SPEED;
                     altitude.sum = 0;
                     altitude.derivative = 0;
                     altitude.offset = altitude.error;
@@ -182,9 +197,9 @@ void main() {
             //------------------------------------------------Converting Remote data to a 2-D vector------------------------------------------------------------------
             
             if(loop_mode != 'P') {// If not in GPS mode
-                remote_magnitude = sqrt((float)remote_x1 * (float)remote_x1 + (float)remote_y1 * (float)remote_y1); //Magnitude of Remote's roll and pitch
-                if(remote_x1 == 0 && remote_y1 == 0) remote_angle = 0;
-                else remote_angle = -atan2((float)remote_x1, (float)remote_y1) * RAD_TO_DEGREES;  //Angle with respect to pilot/starting position
+                remote_magnitude = sqrt((float)Xbee.x1 * (float)Xbee.x1 + (float)Xbee.y1 * (float)Xbee.y1); //Magnitude of Remote's roll and pitch
+                if(Xbee.x1 == 0 && Xbee.y1 == 0) remote_angle = 0;
+                else remote_angle = -atan2((float)Xbee.x1, (float)Xbee.y1) * RAD_TO_DEGREES;  //Angle with respect to pilot/starting position
                 remote_angle_difference = yaw.error - remote_angle; //Remote's angle with respect to quad's current direction
                 LimitAngle(&remote_angle_difference);
                 pitch.offset = -MAX_PITCH_ROLL_TILT * remote_magnitude / REMOTE_MAX * cos(remote_angle_difference / RAD_TO_DEGREES);
@@ -194,17 +209,17 @@ void main() {
             //---------------------------------------------------------------3 modes----------------------------------------------------------------------------------
             
             if(loop_mode == 'S') {
-                altitude.output = (float)remote_y2 / THROTTLE_MAX * MAX_SPEED;
+                altitude.output = (float)Xbee.y2 / THROTTLE_MAX * MAX_SPEED;
             }
             else if(loop_mode == 'A') {
-                if(remote_y2 > 10 && remote_y2 < 20) {  //Throttle stick in the mid position
+                if(Xbee.y2 > 10 && Xbee.y2 < 20) {  //Throttle stick in the mid position
                     altitude.sum += (altitude.offset - altitude.error) * loop_time;
                     altitude.output = (altitude.p * (altitude.offset - altitude.error) + altitude.i * altitude.sum + altitude.p * altitude.derivative) + altitude_setpoint;
                 } else {
-                    if(remote_y2 <= 10) {
+                    if(Xbee.y2 <= 10) {
                         altitude.output = (altitude.d * (altitude.derivative - 3.0)) + altitude_setpoint;
                     }
-                    else if(remote_y2 >= 20) {
+                    else if(Xbee.y2 >= 20) {
                         altitude.output = (altitude.d * (altitude.derivative + 3.0)) + altitude_setpoint;
                     }
                     altitude.offset = altitude.error;                
@@ -214,7 +229,7 @@ void main() {
             }
             
             else if(loop_mode == 'P') {
-                altitude.output = (float)remote_y2 / THROTTLE_MAX * MAX_SPEED;
+                altitude.output = (float)Xbee.y2 / THROTTLE_MAX * MAX_SPEED;
                 GPS.error = DifferenceLatLon(take_off_latitude, take_off_longitude, latitude, longitude);
                 GPS_bearing_difference = heading - DifferenceBearing(take_off_latitude, take_off_longitude, latitude, longitude);
                 LimitAngle(&GPS_bearing_difference);
@@ -229,7 +244,7 @@ void main() {
             
             //---------------------------------------------------------Roll/Pitch/Yaw - PID----------------------------------------------------------------------------
             
-            if(remote_y2 > 1 && !kill){
+            if(Xbee.y2 > 1 && !kill){
                 roll.sum += (roll.error - roll.offset) * loop_time * 3.0;
                 pitch.sum += (pitch.error - pitch.offset) * loop_time * 3.0;
                 yaw.sum += (yaw_difference) * loop_time * 3.0;
@@ -241,10 +256,10 @@ void main() {
             
             roll.output = (roll.p * (roll.error - roll.offset) + roll.i * roll.sum + roll.d * roll.derivative);
             pitch.output = (pitch.p * (pitch.error - pitch.offset) + pitch.i * pitch.sum + pitch.d * pitch.derivative);
-            if(remote_x2 < 3 && remote_x2 > (-3)) {
+            if(Xbee.x2 < 3 && Xbee.x2 > (-3)) {
                 yaw.output = (yaw.p * (yaw_difference) + yaw.i * yaw.sum + yaw.d * yaw.derivative);
             } else {
-                yaw.output = (yaw.d * (yaw.derivative + (float)remote_x2 / REMOTE_MAX * MAX_YAW_RATE));
+                yaw.output = (yaw.d * (yaw.derivative + (float)Xbee.x2 / REMOTE_MAX * MAX_YAW_RATE));
                 yaw.sum = 0;
                 yaw.offset = yaw.error;                
             }
@@ -260,7 +275,7 @@ void main() {
             
             //-----------------------------------------------------------Output to ESC's-------------------------------------------------------------------------------
             
-            if(Xbee_signal && !kill) {
+            if(Xbee.signal && !kill) {
                 WriteMotors(speed);
             } else {
                 TurnMotorsOff();

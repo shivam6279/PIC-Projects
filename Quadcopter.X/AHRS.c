@@ -3,7 +3,7 @@
 #include "GPS.h"
 #include <math.h>
 
-void MultiplyVectorQuarternion(float q[4], XYZ r, XYZ *v){
+void MultiplyVectorQuarternion(float q[4], XYZ r, XYZ *v) {
     v->x = r.x * (1.0 - 2.0 * q[2] * q[2] - 2.0 * q[3] * q[3]) + r.y * (2.0 * q[1] * q[2] - 2.0 * q[3] * q[0]) + r.z * (2.0 * q[1]* q[3] + 2.0 * q[2] * q[0]);
     v->y = r.x * (2.0 * q[1] * q[2] + 2.0 * q[3] * q[0]) + r.y * (1.0 - 2.0 * q[1] * q[1] - 2.0 * q[3] * q[3]) + r.z * (2.0 * q[2]* q[3] - 2.0 * q[1] * q[0]);
     v->z = r.x * (2.0 * q[1] * q[3] - 2.0 * q[2] * q[0]) + r.y * (2.0 * q[2] * q[3] + 2.0 * q[1] * q[0]) + r.z * (1.0 - 2.0 * q[1]* q[1] - 2.0 * q[2] * q[2]);
@@ -13,7 +13,7 @@ void MatrixInit(float *a) {
     
 }
 
-void MadgwickQuaternionUpdate(float q[], XYZ acc, XYZ gy, XYZ mag, float deltat){
+void MadgwickQuaternionUpdate(float q[], XYZ acc, XYZ gy, XYZ mag, float deltat) {
     float q1 = q[0];
     float q2 = q[1];
     float q3 = q[2];

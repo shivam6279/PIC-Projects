@@ -4,8 +4,8 @@
 #include "settings.h"
 #include <xc.h>
 
-int pwm_max;
-int motor_off, motor_max;
+int PWM_MAX;
+int MOTOR_OFF, MOTOR_MAX;
 
 #ifdef board_v4
     void pwm_init(float freq) {
@@ -31,47 +31,50 @@ int motor_off, motor_max;
         }
         if(pre == 8) pre = 7;
 
-        pwm_max = t;
-        t = MOTOR_OFF / 1000000.0 * freq * (float)pwm_max;
-        motor_off = (int)t;
+        float temp;
+        PWM_MAX = t;
+        temp = MOTOR_OFF_TIME / 1000000.0 * freq * (float)PWM_MAX;
+        MOTOR_OFF = (int)temp;
+        temp = MOTOR_MAX_TIME / 1000000.0 * freq * (float)PWM_MAX;
+        MOTOR_OFF = (int)temp;
 
         OC1CON = 0;  
-        OC1R = motor_off;
-        OC1RS = motor_off;
+        OC1R = MOTOR_OFF;
+        OC1RS = MOTOR_OFF;
         OC1CON = 0b1100;   
 
         OC2CON = 0;  
-        OC2R = motor_off;
-        OC2RS = motor_off;
+        OC2R = MOTOR_OFF;
+        OC2RS = MOTOR_OFF;
         OC2CON = 0b1100;   
 
         OC3CON = 0;  
-        OC3R = motor_off;
-        OC3RS = motor_off;
+        OC3R = MOTOR_OFF;
+        OC3RS = MOTOR_OFF;
         OC3CON = 0b1100;   
 
         OC4CON = 0;  
-        OC4R = motor_off;
-        OC4RS = motor_off;
+        OC4R = MOTOR_OFF;
+        OC4RS = MOTOR_OFF;
         OC4CON = 0b1100;   
 
         OC5CON = 0;  
-        OC5R = motor_off;
-        OC5RS = motor_off;
+        OC5R = MOTOR_OFF;
+        OC5RS = MOTOR_OFF;
         OC5CON = 0b1100;   
 
         OC8CON = 0;  
-        OC8R = motor_off;
-        OC8RS = motor_off;
+        OC8R = MOTOR_OFF;
+        OC8RS = MOTOR_OFF;
         OC8CON = 0b1100;   
 
         OC9CON = 0;  
-        OC9R = motor_off;
-        OC9RS = motor_off;
+        OC9R = MOTOR_OFF;
+        OC9RS = MOTOR_OFF;
         OC9CON = 0b1100;
 
         T3CONbits.TCKPS = pre & 0b111;
-        PR3 = pwm_max;
+        PR3 = PWM_MAX;
         T3CONbits.TON   = 1;
         
         OC1CONbits.ON = 1;
@@ -107,8 +110,8 @@ int motor_off, motor_max;
         if (val <= 0) {
             val = 0;
         }
-        else if (val >= 4095) {
-            val = 4095;
+        else if (val >= PWM_MAX) {
+            val = PWM_MAX;
         }
         if(num == 1) {
             OC1R = val;
@@ -144,9 +147,14 @@ int motor_off, motor_max;
         prescaleval -= 1;
         prescale = (int)(prescaleval + 0.5);
 
-        pwm_max = 4097;
-        prescaleval = MOTOR_OFF / 1000000.0 * freq * (float)pwm_max;
-        motor_off = (int)prescaleval;
+        PWM_MAX = 4095;
+
+        float temp;
+        PWM_MAX = 4095;
+        temp = MOTOR_OFF_TIME / 1000000.0 * freq * (float)PWM_MAX;
+        MOTOR_OFF = (int)temp;
+        temp = MOTOR_MAX_TIME / 1000000.0 * freq * (float)PWM_MAX;
+        MOTOR_OFF = (int)temp;
 
         I2C_WriteRegisters(128, (unsigned char[2]){0, 16}, 2);
         I2C_WriteRegisters(128, (unsigned char[2]){0xFE, prescale}, 2);
@@ -159,11 +167,11 @@ int motor_off, motor_max;
         I2C_WriteRegisters(128, (unsigned char[5]){(0x06 + 4 * num), (on & 0xFF), ((on >> 8) & 0x1F), (off & 0xFF), ((off >> 8) & 0x1F)}, 5);
     }
 
-    void write_pwm(int num, int val){
-        if (val == 0) {
+    void write_pwm(int num, int int){
+        if (val <= 0) {
             set_pwm(num, 0, 4096);
         }
-        else if (val >= 4095) {
+        else if (val >= PWM_MAX) {
             set_pwm(num, 4096, 0);
         } else {
             set_pwm(num, 0, val);

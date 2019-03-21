@@ -4,16 +4,23 @@
 #include "PID.h"
 #include <stdbool.h>
 
-extern volatile int remote_x1, remote_y1, remote_x2, remote_y2;
+#define XBEE_START_BYTE 0x40
+#define XBEE_END_BYTE	0x80
+
+typedef struct {
+	int x1, y1, x2, y2;
+	unsigned char d1, d2;
+	bool ls, rs;
+	bool signal;
+} rx;
+
+extern volatile rx Xbee;
+
 extern volatile int safety_counter;
 
-extern volatile unsigned char dial1, dial2;
-extern volatile unsigned char receive1;
+extern volatile unsigned char XBee_rx_byte;
 extern volatile unsigned char tx_buffer_index;
 extern volatile bool tx_flag;
-
-extern volatile bool left_switch, right_switch;
-extern volatile bool Xbee_signal;
 
 extern char tx_buffer[200];
 

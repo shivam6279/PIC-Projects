@@ -63,13 +63,13 @@
 	#define SDA_TRIS TRISFbits.TRISF4
 #endif
 #ifdef board_v4
-	#define RGBLED_RED_PIN 9		//LATBbits.RB14	- OC9
-	#define RGBLED_GREEN_PIN 5		//LATBbits.RB15	- OC5
-	#define RGBLED_BLUE_PIN 8		//LATBbits.RB7 - OC8
-	#define MOTOR_UPRIGHT_PIN 1		//LATGbits.RG9 - OC1
-	#define MOTOR_DOWNLEFT_PIN 4	//LATBbits.RB3 - OC4
-	#define MOTOR_UPLEFT_PIN 2		//LATBbits.RB2 - OC2
-	#define MOTOR_DOWNRIGHT_PIN 3	//LATBbits.RB5 - OC3
+	#define RGBLED_RED_PIN 9		//RB14 - OC9
+	#define RGBLED_GREEN_PIN 5		//RB15 - OC5
+	#define RGBLED_BLUE_PIN 8		//RB7 - OC8
+	#define MOTOR_UPRIGHT_PIN 1		//RG9 - OC1
+	#define MOTOR_DOWNLEFT_PIN 4	//RB3 - OC4
+	#define MOTOR_UPLEFT_PIN 2		//RB2 - OC2
+	#define MOTOR_DOWNRIGHT_PIN 3	//RB5 - OC3
 
 	#define SCL PORTFbits.RF5
 	#define SCL_TRIS TRISFbits.TRISF5
@@ -78,17 +78,17 @@
 #endif
 
 //------------------------ESC timings--------------------------
-#ifndef board_v4
-	#define ESC_FREQ 470f	//Hz
-	#define MOTOR_OFF 1000f	//us
-	#define MOTOR_MAX 2000f //us
+#ifdef board_v4
+	#define ESC_FREQ 10000.0f		//Hz
+	#define MOTOR_OFF_TIME 42.0f	//us
+	#define MOTOR_MAX_TIME 84.0f	//us
+	
 #else
-	#define ESC_FREQ 10000f	//Hz
-	#define MOTOR_OFF 42.0f	//us
-	#define MOTOR_MAX 84.0f	//us
+	#define ESC_FREQ 470.0f			//Hz
+	#define MOTOR_OFF_TIME 1000.0f	//us
+	#define MOTOR_MAX_TIME 2000.0f	//us
 #endif
-
-#define MAX_SPEED 1000.0f
+#define ESC_TIME_us 1000000.0 / ESC_FREQ	//ESC update period in us
 
 #define MS5611	//BMP180 or MS5611
 #define IMU_BUFFER_SIZE 10

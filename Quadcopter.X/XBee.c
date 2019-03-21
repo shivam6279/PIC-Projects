@@ -5,16 +5,21 @@
 #include "GPS.h"
 #include "USART.h"
 
-volatile int remote_x1 = 0, remote_y1 = 0, remote_x2 = 0, remote_y2 = 0;
+volatile rx Xbee;
+
+Xbee.x1 = 0;
+Xbee.y1 = 0;
+Xbee.x2 = 0;
+Xbee.y2 = 0;
+Xbee.ls = 0;
+Xbee.rs = 0;
+Xbee.signal = 0;
+
 volatile int safety_counter = 0;
 
-volatile unsigned char dial1, dial2;
-volatile unsigned char receive1;
+volatile unsigned char XBee_rx_byte;
 volatile unsigned char tx_buffer_index = 0;
 volatile bool tx_flag = 0;
-
-volatile bool left_switch = 0, right_switch = 0;
-volatile bool Xbee_signal = 0;
 
 char tx_buffer[200];
 

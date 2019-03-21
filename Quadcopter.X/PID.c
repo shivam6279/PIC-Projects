@@ -109,9 +109,9 @@ void StrWriteFloat(double a, unsigned char left, unsigned char right, char str[]
 
 void WriteRGBLed(unsigned int r, unsigned int g, unsigned int b) {
     #ifdef board_v4
-        r = (int)((float)r * (float)motor_max / 4095.0);
-        g = (int)((float)g * (float)motor_max / 4095.0);
-        b = (int)((float)b * (float)motor_max / 4095.0);
+        r = (int)((float)r * (float)MOTOR_MAX / 4095.0);
+        g = (int)((float)g * (float)MOTOR_MAX / 4095.0);
+        b = (int)((float)b * (float)MOTOR_MAX / 4095.0);
     #endif
     write_pwm(RGBLED_RED_PIN, r); 
     write_pwm(RGBLED_GREEN_PIN, g); 

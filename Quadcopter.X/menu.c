@@ -7,7 +7,7 @@
 #include "GPS.h"
 #include <xc.h>
 
-void menu(PID *x, PID *y, PID *a){
+void Menu(PID *x, PID *y, PID *a){
     bool flag_menu = 1; 
     signed char cursor = 0; 
     unsigned int r, g, b;
@@ -42,66 +42,68 @@ void menu(PID *x, PID *y, PID *a){
         WriteRGBLed(r, g, b);
         
         //----------------------------------------------------------------------------------------------------------------------------------------------------------
-        if(remote_y1 > 12 && flag_menu == 0) { 
+        if(Xbee.y1 > 12 && flag_menu == 0) { 
             cursor--; 
             flag_menu = 1; 
         }
-        else if(remote_y1 < (-12) && flag_menu == 0) { 
+        else if(Xbee.y1 < (-12) && flag_menu == 0) { 
             cursor++; 
             flag_menu = 1; 
         }
-        else if(remote_y1 > (-12) && remote_y1 < 12) flag_menu = 0;
+        else if(Xbee.y1 > (-12) && Xbee.y1 < 12) flag_menu = 0;
         
         if(cursor > 5) cursor = 5;
         else if(cursor < 0) cursor = 0;
         
         switch(cursor){
             case 0:
-                if(remote_x1 > 12) {
+                if(Xbee.x1 > 12) {
                     x->p += 0.01; 
                     y->p += 0.01; 
                 }
-                else if(remote_x1 < (-12)) {
+                else if(Xbee.x1 < (-12)) {
                     x->p -= 0.01; 
                     y->p -= 0.01; 
                 }
                 break;
             case 1:
-                if(remote_x1 > 12) { 
+                if(Xbee.x1 > 12) { 
                     x->i += 0.01; 
                     y->i += 0.01; 
                 }
-                else if(remote_x1 < (-12)) { 
+                else if(Xbee.x1 < (-12)) { 
                     x->i -= 0.01; 
                     y->i -= 0.01; 
                 }
                 break;
             case 2:
-                if(remote_x1 > 12) { 
+                if(Xbee.x1 > 12) { 
                     x->d += 0.01; 
                     y->d += 0.01; 
                 }
-                else if(remote_x1 < (-12)) { 
+                else if(Xbee.x1 < (-12)) { 
                     x->d -= 0.01; 
                     y->d -= 0.01; 
                 }
                 break;
             case 3:
-                if(remote_x1 > 12) a->p += 0.2; 
-                else if(remote_x1 < (-12)) a->p -= 0.2;
+                if(Xbee.x1 > 12) a->p += 0.2; 
+                else if(Xbee.x1 < (-12)) a->p -= 0.2;
                 break;
             case 4:
-                if(remote_x1 > 12) a->i += 0.01; 
-                else if(remote_x1 < (-12)) a->i -= 0.01; 
+                if(Xbee.x1 > 12) a->i += 0.01; 
+                else if(Xbee.x1 < (-12)) a->i -= 0.01; 
                 break;
             case 5:
-                if(remote_x1 > 12) a->d += 1; 
-                else if(remote_x1 < (-12)) a->d -= 1;
+                if(Xbee.x1 > 12) a->d += 1; 
+                else if(Xbee.x1 < (-12)) a->d -= 1;
                 break;
         }
         
-        if(left_switch && !right_switch && remote_y2 < 2 && remote_x2 > 13) arming_counter++;
-        else arming_counter = 0;
+        if(Xbee.ls && !Xbee.rs && Xbee.y2 < 2 && Xbee.x2 > 13) 
+            arming_counter++;
+        else 
+            arming_counter = 0;
         
         delay_counter = 0; 
         T2CONbits.TON = 1;

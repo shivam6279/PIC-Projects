@@ -15,21 +15,22 @@ void Init() {
     timer5_init(10.0);      // GPS timer - 10Hz
     timer6_init(312500.0);  // XBee tx timer - 312.5kHz
     USART1_init(111111);    // XBee
-    #ifndef board_v4
-        USART5_init(9600);      // GPS
-    #else
+    #ifdef board_v4
         USART3_init(9600);      // GPS
+    #else
+        USART5_init(9600);      // GPS
     #endif
+        
     //Initializing all devices: MPU6050, HMC5883, PWM driver and the four ESCs
     delay_ms(100);
     MPU6050Init();
     HMC5883Init();
-#ifdef BMP180
-    BMP180Init();
-#endif
-#ifdef MS5611
-    MS5611Init();
-#endif
+    #ifdef BMP180
+        BMP180Init();
+    #endif
+    #ifdef MS5611
+        MS5611Init();
+    #endif
     
     pwm_init(ESC_FREQ);
 }

@@ -4,7 +4,7 @@
 #include "settings.h"
 
 typedef struct {
-    int upRight, downRight, downLeft, upLeft;
+    float upRight, downRight, downLeft, upLeft;
 } Motors;
 
 /*
@@ -21,6 +21,8 @@ typedef struct {
  * |downLeft|      |downRight|
  *  
  */
+
+#define MAX_SPEED 1000.0f
 
 extern void LimitSpeed(Motors*);
 extern void MotorsReset(Motors*);

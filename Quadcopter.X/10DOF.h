@@ -28,16 +28,16 @@
 #define COMPASS_Z_GAIN 1.0f / ((COMPASS_Z_MAX - COMPASS_Z_MIN) / 2.0f)
 
 #ifdef BMP180
-#define OVERSAMPLING 3  //0 - 3
-#define SEA_LEVEL_PRESSURE 101325UL
+	#define OVERSAMPLING 3  //0 - 3
+	#define SEA_LEVEL_PRESSURE 101325UL
 #endif
 #ifdef MS5611
-#define OVERSAMPLING 4  //0 - 4
-#define COMPENSATION 0
+	#define OVERSAMPLING 4  //0 - 4
+	#define COMPENSATION 0
 #endif
 
-typedef struct{
-    float x,y,z;
+typedef struct {
+    float x, y, z;
 } XYZ;
 
 extern void VectorReset(XYZ *v);
@@ -55,34 +55,35 @@ extern void GetRawIMU();
 
 //Pressure sensors
 unsigned char oversampling_delay;
+
 //BMP180
 #ifdef BMP180
-extern void BMP180Init();
-extern void StartPressureRead();
-extern void ReadRawPressure();
-extern void StartTemperatureRead();
-extern void ReadRawTemperature();
-extern double ComputeTemperature();
-extern float GetAltitude();
+	extern void BMP180Init();
+	extern void StartPressureRead();
+	extern void ReadRawPressure();
+	extern void StartTemperatureRead();
+	extern void ReadRawTemperature();
+	extern double ComputeTemperature();
+	extern float GetAltitude();
 
-signed short ac1, ac2, ac3, b1, b2, mb, mc, md;
-unsigned short ac4, ac5, ac6;
-unsigned long int UT;
-float B5;
+	signed short ac1, ac2, ac3, b1, b2, mb, mc, md;
+	unsigned short ac4, ac5, ac6;
+	unsigned long int UT;
+	float B5;
 #endif
 
 //MS5611
 #ifdef MS5611
-extern void MS5611Init();
-extern void StartPressureRead();
-extern unsigned long int ReadRawPressure();
-extern void StartTemperatureRead();
-extern unsigned long int ReadRawTemperature();
-extern long int ComputePressure(unsigned long int, unsigned long int);
-extern double ComputeTemperature(unsigned long int);
-extern double GetAltitude(unsigned long int);
+	extern void MS5611Init();
+	extern void StartPressureRead();
+	extern unsigned long int ReadRawPressure();
+	extern void StartTemperatureRead();
+	extern unsigned long int ReadRawTemperature();
+	extern long int ComputePressure(unsigned long int, unsigned long int);
+	extern double ComputeTemperature(unsigned long int);
+	extern double GetAltitude(unsigned long int);
 
-unsigned int MS5611_fc[6];
+	unsigned int MS5611_fc[6];
 #endif
 
 XYZ acc, acc_buffer[IMU_BUFFER_SIZE];

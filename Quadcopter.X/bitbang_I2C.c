@@ -3,22 +3,23 @@
 #include <stdbool.h>
 #include <xc.h>
 
-void I2C_WriteRegisters(unsigned char address, unsigned char *data, unsigned int num) {
+bool I2C_WriteRegisters(unsigned char address, unsigned char *data, unsigned int num) {
     I2C_Start();
     I2C_Send(address & 0xFE); 
     if(!I2C_GetAck()) {
         I2C_Stop();
-        return;
+        return 0;
     }
     while(num--) {
         I2C_Send(*data);
         if(!I2C_GetAck()) {
             I2C_Stop();
-            return;
+            return 0;
         }
         data++;
     }
     I2C_Stop();
+    return 1;
 }
 
 void I2C_ReadRegisters(unsigned char address, unsigned char start_adr, unsigned char *data, unsigned int num) {
