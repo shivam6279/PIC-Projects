@@ -153,7 +153,7 @@ int MOTOR_OFF, MOTOR_MAX;
         temp = MOTOR_OFF_TIME / 1000000.0 * freq * (float)PWM_MAX;
         MOTOR_OFF = (int)temp;
         temp = MOTOR_MAX_TIME / 1000000.0 * freq * (float)PWM_MAX;
-        MOTOR_OFF = (int)temp;
+        MOTOR_MAX = (int)temp;
 
         I2C_WriteRegisters(128, (unsigned char[2]){0, 16}, 2);
         I2C_WriteRegisters(128, (unsigned char[2]){0xFE, prescale}, 2);
