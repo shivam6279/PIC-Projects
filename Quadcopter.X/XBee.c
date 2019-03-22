@@ -7,14 +7,6 @@
 
 volatile rx Xbee;
 
-Xbee.x1 = 0;
-Xbee.y1 = 0;
-Xbee.x2 = 0;
-Xbee.y2 = 0;
-Xbee.ls = 0;
-Xbee.rs = 0;
-Xbee.signal = 0;
-
 volatile int safety_counter = 0;
 
 volatile unsigned char XBee_rx_byte;

@@ -150,7 +150,6 @@ int MOTOR_OFF, MOTOR_MAX;
         PWM_MAX = 4095;
 
         float temp;
-        PWM_MAX = 4095;
         temp = MOTOR_OFF_TIME / 1000000.0 * freq * (float)PWM_MAX;
         MOTOR_OFF = (int)temp;
         temp = MOTOR_MAX_TIME / 1000000.0 * freq * (float)PWM_MAX;
@@ -167,7 +166,7 @@ int MOTOR_OFF, MOTOR_MAX;
         I2C_WriteRegisters(128, (unsigned char[5]){(0x06 + 4 * num), (on & 0xFF), ((on >> 8) & 0x1F), (off & 0xFF), ((off >> 8) & 0x1F)}, 5);
     }
 
-    void write_pwm(int num, int int){
+    void write_pwm(int num, int val){
         if (val <= 0) {
             set_pwm(num, 0, 4096);
         }

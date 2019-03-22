@@ -5,9 +5,18 @@
 #include "PWM.h"
 #include "motor.h"
 #include "PID.h"
+#include "XBee.h"
 #include "settings.h"
 
 void Init() {
+    Xbee.x1 = 0;
+    Xbee.y1 = 0;
+    Xbee.x2 = 0;
+    Xbee.y2 = 0;
+    Xbee.ls = 0;
+    Xbee.rs = 0;
+    Xbee.signal = 0;
+    
     PICInit();
     timer2_init(1000.0);    // Delay timer - 1kHz
     timer7_init(1000.0);    // Safety timer for Xbee - 1kHz

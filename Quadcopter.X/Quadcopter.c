@@ -65,9 +65,12 @@ void main() {
     
     Init();
     
-    WriteRGBLed(4095, 0, 0);                            //Red
-    if(Xbee.y2 > 29 && Xbee.x2 > 13)                    //Calibrate ESCs
+    if(Xbee.y2 > 29 && Xbee.x2 > 13) {                  //Calibrate ESCs
+        WriteRGBLed(0, 4095, 4095);                     //Cyan
         CalibrateESC();
+    }
+        
+    WriteRGBLed(4095, 0, 0);                            //Red
     TurnMotorsOff();
     
     delay_ms(100);
@@ -266,10 +269,10 @@ void main() {
             
             //-------------------------------------------------------------Motor Output--------------------------------------------------------------------------------
             
-            speed.upRight = altitude.output - pitch.output + roll.output + yaw.output;
-            speed.downLeft = altitude.output + pitch.output - roll.output + yaw.output;
-            speed.upLeft = altitude.output - pitch.output - roll.output - yaw.output; 
-            speed.downRight = altitude.output + pitch.output + roll.output - yaw.output;
+            speed.upRight = altitude.output - pitch.output + roll.output + (yaw.output * MOTOR_SPIN);
+            speed.downLeft = altitude.output + pitch.output - roll.output + (yaw.output * MOTOR_SPIN);
+            speed.upLeft = altitude.output - pitch.output - roll.output - (yaw.output * MOTOR_SPIN); 
+            speed.downRight = altitude.output + pitch.output + roll.output - (yaw.output * MOTOR_SPIN);
             
             LimitSpeed(&speed);
             

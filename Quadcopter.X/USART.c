@@ -150,8 +150,8 @@ void USART3_init(unsigned long int baud_rate) {
     TRISDbits.TRISD11 = 1;
     U5MODEbits.ON = 0;
     CFGCONbits.IOLOCK = 0;
-    U3RXRbits.U5RXR = 0b0011;   //U3RX at RD11
-    RPD10bits.RPD10R = 0b0001;  //U3TX at RD10
+    U3RXRbits.U3RXR = 0b0011;   //U3RX at RD11
+    RPD10Rbits.RPD10R = 0b0001;  //U3TX at RD10
     CFGCONbits.IOLOCK = 1;
     
     U3BRG = (100000000.0f / (float)baud_rate / 4.0f) - 1;
@@ -177,10 +177,10 @@ void USART3_init(unsigned long int baud_rate) {
     U3STAbits.URXEN = 1;
     U3STAbits.UTXEN = 0;
     
-    IFS5bits.U3RXIF = 0;
-    IEC5bits.U3RXIE = 1;
-    IPC45bits.U3RXIP = 6;
-    IPC45bits.U3RXIS = 0; 
+    IFS4bits.U3RXIF = 0;
+    IEC4bits.U3RXIE = 1;
+    IPC39bits.U3RXIP = 6;
+    IPC39bits.U3RXIS = 0; 
     
-    IEC5bits.U3TXIE = 0;
+    IEC4bits.U3TXIE = 0;
 }

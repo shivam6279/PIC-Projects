@@ -46,11 +46,10 @@ bool eeprom_writeBytes(unsigned char addr, unsigned char *bytes, unsigned char n
 }
 
 unsigned char eeprom_readBytes(unsigned char addr, unsigned char *bytes, unsigned char num) {
-    I2C_ReadRegisters(EEPROM_ADDRESS, addr, bytes, num)
-    return data;
+    I2C_ReadRegisters(EEPROM_ADDRESS, addr, bytes, num);
 }
 
-void eeprom_readPID(PID *roll, PID *pitch, PID *yaw, PID *alt, PID, *gps) {
+void eeprom_readPID(PID *roll, PID *pitch, PID *yaw, PID *alt, PID *gps) {
     unsigned char key;
     unsigned char str[12];
     
