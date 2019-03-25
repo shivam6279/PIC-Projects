@@ -18,6 +18,10 @@
 #include "init.h"
 #include "menu.h"
 
+#if board_version == 4
+    #include "EEPROM.h"
+#endif
+
 #include "GPS_ISR.h"
 #include "XBee_ISR.h"
 #include "timer_ISR.h"
@@ -31,16 +35,13 @@
 #ifdef big
 #warning "---------------------------------Building for Big quad!---------------------------------"
 #endif
-#ifdef board_v1
+#if board_version == 1
 #warning "---------------------------------Building for board_v1!---------------------------------"
-#endif
-#ifdef board_v2
+#elif board_version == 2
 #warning "---------------------------------Building for board_v2!---------------------------------"
-#endif
-#ifdef board_v3
+#elif board_version == 3
 #warning "---------------------------------Building for board_v3!---------------------------------"
-#endif
-#ifdef board_v4
+#elif board_version == 4
 #warning "---------------------------------Building for board_v4!---------------------------------"
 #endif
 
@@ -64,12 +65,15 @@ void main() {
     bool kill, p_kill;
     
     Init();
+    delay_ms(100);
+    Init_10DOF();
     
     if(Xbee.y2 > 29 && Xbee.x2 > 13) {                  //Calibrate ESCs
-        WriteRGBLed(0, 4095, 4095);                     //Cyan
+        WriteRGBLed(0, 4095, 4095);   
+        delay_ms(5000);                                 //Cyan
         CalibrateESC();
     }
-        
+    
     WriteRGBLed(4095, 0, 0);                            //Red
     TurnMotorsOff();
     
@@ -154,7 +158,7 @@ void main() {
             
             //---------------------------------------------------------------Set Mode------------------------------------------------------------------------------
             
-            if(Xbee.ls) 
+            if(Xbee.ls || !Xbee.signal) 
                 kill = 1; 
             else 
                 kill = 0;
@@ -201,8 +205,10 @@ void main() {
             
             if(loop_mode != 'P') {// If not in GPS mode
                 remote_magnitude = sqrt((float)Xbee.x1 * (float)Xbee.x1 + (float)Xbee.y1 * (float)Xbee.y1); //Magnitude of Remote's roll and pitch
-                if(Xbee.x1 == 0 && Xbee.y1 == 0) remote_angle = 0;
-                else remote_angle = -atan2((float)Xbee.x1, (float)Xbee.y1) * RAD_TO_DEGREES;  //Angle with respect to pilot/starting position
+                if(Xbee.x1 == 0 && Xbee.y1 == 0) 
+                    remote_angle = 0;
+                else remote_angle = 
+                        -atan2((float)Xbee.x1, (float)Xbee.y1) * RAD_TO_DEGREES;  //Angle with respect to pilot/starting position
                 remote_angle_difference = yaw.error - remote_angle; //Remote's angle with respect to quad's current direction
                 LimitAngle(&remote_angle_difference);
                 pitch.offset = -MAX_PITCH_ROLL_TILT * remote_magnitude / REMOTE_MAX * cos(remote_angle_difference / RAD_TO_DEGREES);
@@ -239,10 +245,15 @@ void main() {
                 GPS.output = (GPS.p * GPS.error); 
                 pitch.offset = (-1) * GPS.output * cos((GPS_bearing_difference / RAD_TO_DEGREES) + PI);
                 roll.offset = GPS.output * sin((GPS_bearing_difference / RAD_TO_DEGREES) + PI);
-                if(roll.offset > 18) roll.offset = 18; 
-                else if(roll.offset < (-18)) roll.offset = -18;
-                if(pitch.offset > 18) pitch.offset = 18; 
-                else if(pitch.offset < (-18)) pitch.offset = -18;
+                
+                if(roll.offset > 18) 
+                    roll.offset = 18; 
+                else if(roll.offset < (-18)) 
+                    roll.offset = -18;
+                if(pitch.offset > 18) 
+                    pitch.offset = 18; 
+                else if(pitch.offset < (-18)) 
+                    pitch.offset = -18;
             }
             
             //---------------------------------------------------------Roll/Pitch/Yaw - PID----------------------------------------------------------------------------
@@ -278,7 +289,7 @@ void main() {
             
             //-----------------------------------------------------------Output to ESC's-------------------------------------------------------------------------------
             
-            if(Xbee.signal && !kill) {
+            if(!kill) {
                 WriteMotors(speed);
             } else {
                 TurnMotorsOff();

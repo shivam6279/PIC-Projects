@@ -7,7 +7,7 @@
 int PWM_MAX;
 int MOTOR_OFF, MOTOR_MAX;
 
-#ifdef board_v4
+#if board_version == 4
     void pwm_init(float freq) {
         float f = 100000000.0 / freq; 
         unsigned char pre = 0;
@@ -133,26 +133,31 @@ int MOTOR_OFF, MOTOR_MAX;
             OC9R = val;
         }  
     }
-
-#else
+    
+#elif board_version == 1 || board_version == 2 || board_version == 3
     void pwm_init(float freq){
         //Highest frequency 1600hz
         unsigned int t = 20000;
+        
         unsigned char prescale;
         float prescaleval;
-        freq *= 0.9;
+        float temp, temp_freq;
+        
+        temp_freq = freq * 0.9;
         prescaleval = 25000000;
         prescaleval /= 4096;
-        prescaleval /= freq;
+        prescaleval /= temp_freq;
         prescaleval -= 1;
         prescale = (int)(prescaleval + 0.5);
 
-        PWM_MAX = 4095;
-
-        float temp;
-        temp = MOTOR_OFF_TIME / 1000000.0 * freq * (float)PWM_MAX;
+        PWM_MAX = 4095;       
+        
+        temp = PWM_MAX;
+        temp *= MOTOR_OFF_TIME / 1000000.0f * freq;
         MOTOR_OFF = (int)temp;
-        temp = MOTOR_MAX_TIME / 1000000.0 * freq * (float)PWM_MAX;
+        
+        temp = PWM_MAX;
+        temp *= MOTOR_MAX_TIME / 1000000.0f * freq;
         MOTOR_MAX = (int)temp;
 
         I2C_WriteRegisters(128, (unsigned char[2]){0, 16}, 2);

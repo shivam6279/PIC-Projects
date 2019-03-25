@@ -7,9 +7,9 @@ extern void USART1_send_str(char str[]);
 extern void USART1_write_int(int a, unsigned char precision);
 extern void USART1_write_float(double a, unsigned char left, unsigned char right);
 
-#ifndef board_v4
+#if board_version == 1 || board_version == 2 || board_version == 3
 	extern void USART5_init(unsigned long int baud_rate);
-#else
+#elif board_version == 4
 	extern void USART3_init(unsigned long int baud_rate);
 #endif
 

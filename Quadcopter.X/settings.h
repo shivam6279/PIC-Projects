@@ -3,7 +3,7 @@
 
 //-----------------------------PCB----------------------------
 #define micro		//micro / mini / big
-#define board_v3	//board_v1 / board_v2 / board_v3 / board_v4
+#define board_version 3
 //------------------------------------------------------------
 
 //--------------------------Angles----------------------------
@@ -20,7 +20,7 @@
 
 
 //-------------------------Pinouts----------------------------
-#ifdef board_v1
+#if board_version == 1
 	#define RGBLED_RED_PIN 0
 	#define RGBLED_GREEN_PIN 1
 	#define RGBLED_BLUE_PIN 2
@@ -33,8 +33,7 @@
 	#define SCL_TRIS TRISFbits.TRISF5
 	#define SDA PORTFbits.RF4  
 	#define SDA_TRIS TRISFbits.TRISF4
-#endif
-#ifdef board_v2
+#elif board_version == 2
 	#define RGBLED_RED_PIN 1
 	#define RGBLED_GREEN_PIN 0
 	#define RGBLED_BLUE_PIN 2
@@ -47,8 +46,7 @@
 	#define SCL_TRIS TRISFbits.TRISF5
 	#define SDA PORTFbits.RF4  
 	#define SDA_TRIS TRISFbits.TRISF4
-#endif
-#ifdef board_v3
+#elif board_version == 3
 	#define RGBLED_RED_PIN 9
 	#define RGBLED_GREEN_PIN 10
 	#define RGBLED_BLUE_PIN 8
@@ -61,8 +59,7 @@
 	#define SCL_TRIS TRISFbits.TRISF5
 	#define SDA PORTFbits.RF4  
 	#define SDA_TRIS TRISFbits.TRISF4
-#endif
-#ifdef board_v4
+#elif board_version == 4
 	#define RGBLED_RED_PIN 9		//RB14 - OC9
 	#define RGBLED_GREEN_PIN 5		//RB15 - OC5
 	#define RGBLED_BLUE_PIN 8		//RB7 - OC8
@@ -78,27 +75,26 @@
 #endif
 
 //------------------------ESC timings--------------------------
-#ifdef board_v4
+#if board_version == 1 || board_version == 2 || board_version == 3
+    #define ESC_FREQ 470.0f			//Hz
+	#define MOTOR_OFF_TIME 1000.0f	//us
+	#define MOTOR_MAX_TIME 2000.0f	//us
+#elif board_version == 4
 	#define ESC_FREQ 10000.0f		//Hz
 	#define MOTOR_OFF_TIME 42.0f	//us
 	#define MOTOR_MAX_TIME 84.0f	//us
-	
-#else
-	#define ESC_FREQ 470.0f			//Hz
-	#define MOTOR_OFF_TIME 1000.0f	//us
-	#define MOTOR_MAX_TIME 2000.0f	//us
 #endif
 #define ESC_TIME_us 1000000.0 / ESC_FREQ	//ESC update period in us
 
 //Motor spin correction: +1 for top right motor CCW, -1 for top right motor CW
 #ifdef micro
-    #define MOTOR_SPIN -1
+    #define MOTOR_SPIN -1.0f
 #endif
 #ifdef mini
-    #define MOTOR_SPIN 1
+    #define MOTOR_SPIN 1.0f
 #endif
 #ifdef big
-    #define MOTOR_SPIN 1
+    #define MOTOR_SPIN 1.0f
 #endif
 
 #define MS5611	//BMP180 or MS5611

@@ -1,7 +1,7 @@
 #ifndef _PID_H_
 #define _PID_H_
 
-typedef struct{
+typedef struct {
     float p, i, d;
     float error, p_error; 
     float sum, derivative;

@@ -90,7 +90,7 @@ void __ISR_AT_VECTOR(_UART5_RX_VECTOR, IPL6SRS) GPS_(void){
     IFS5bits.U5RXIF = 0; 
 }
 
-#ifndef board_v4
+#if board_version == 4
 void __ISR_AT_VECTOR(_TIMER_5_VECTOR, IPL4SRS) GPS_timer(void) {
 #else
 void __ISR_AT_VECTOR(_TIMER_3_VECTOR, IPL4SRS) GPS_timer(void) { 

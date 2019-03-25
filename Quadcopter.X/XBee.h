@@ -21,6 +21,7 @@ extern volatile int safety_counter;
 extern volatile unsigned char XBee_rx_byte;
 extern volatile unsigned char tx_buffer_index;
 extern volatile bool tx_flag;
+extern volatile bool signal_temp;
 
 extern char tx_buffer[200];
 

@@ -28,13 +28,13 @@ void MotorsReset(Motors *x) {
 }
 
 void CalibrateESC() {
-    TurnMotorsOff();
-    delay_ms(500);
+    //TurnMotorsOff();
+    //delay_ms(500);
     write_pwm(MOTOR_UPRIGHT_PIN, MOTOR_MAX);
     write_pwm(MOTOR_DOWNLEFT_PIN, MOTOR_MAX);
     write_pwm(MOTOR_UPLEFT_PIN, MOTOR_MAX);
     write_pwm(MOTOR_DOWNRIGHT_PIN, MOTOR_MAX);
-    delay_ms(4500);
+    delay_ms(7000);
 }
 
 void WriteMotors(Motors x) {

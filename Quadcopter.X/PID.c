@@ -5,27 +5,27 @@
 #include <math.h>
 
 void SetPIDGain(PID *roll, PID* pitch, PID *yaw, PID *altitude, PID *GPS) {
-#ifdef micro
-    PIDSet(roll, 1.6, 1.3, 1.1);
-    PIDSet(pitch, 1.6, 1.3, 1.1);
-    PIDSet(yaw, 1.6, 1.3, 1.1);
-    PIDSet(altitude, 72, 1.6, 0.0);
-    PIDSet(GPS, 1.5, 0.05, 0.0);
-#endif
-#ifdef mini
-    PIDSet(roll, 1.0, 0.9, 0.7);
-    PIDSet(pitch, 1.0, 0.9, 0.7);
-    PIDSet(yaw, 1.5, 1.6, 1.0);
-    PIDSet(altitude, 36.0, 0.8, 0.0);
-    PIDSet(GPS, 1.5, 0.05, 0.0);
-#endif
-#ifdef big
-    PIDSet(roll, 0.3, 0.4, 0.4);
-    PIDSet(pitch, 0.3, 0.4, 0.4);
-    PIDSet(yaw, 0.4, 0.3, 0.3);
-    PIDSet(altitude, 368, 0.8, 0.0);
-    PIDSet(GPS, 1.5, 0.05, 0.0);
-#endif
+    #ifdef micro
+        PIDSet(roll, 1.0, 0.35, 0.3);
+        PIDSet(pitch, 1.0, 0.35, 0.3);
+        PIDSet(yaw, 0.6, 0.6, 0.5);
+        PIDSet(altitude, 36, 0.8, 0.0);
+        PIDSet(GPS, 1.5, 0.05, 0.0);
+    #endif
+    #ifdef mini
+        PIDSet(roll, 1.0, 0.9, 0.7);
+        PIDSet(pitch, 1.0, 0.9, 0.7);
+        PIDSet(yaw, 1.5, 1.6, 1.0);
+        PIDSet(altitude, 36.0, 0.8, 0.0);
+        PIDSet(GPS, 1.5, 0.05, 0.0);
+    #endif
+    #ifdef big
+        PIDSet(roll, 0.3, 0.4, 0.4);
+        PIDSet(pitch, 0.3, 0.4, 0.4);
+        PIDSet(yaw, 0.4, 0.3, 0.3);
+        PIDSet(altitude, 368, 0.8, 0.0);
+        PIDSet(GPS, 1.5, 0.05, 0.0);
+    #endif
 }
 
 volatile unsigned long int loop_counter = 0;
@@ -108,7 +108,7 @@ void StrWriteFloat(double a, unsigned char left, unsigned char right, char str[]
 }
 
 void WriteRGBLed(unsigned int r, unsigned int g, unsigned int b) {
-    #ifdef board_v4
+    #if board_version == 4
         r = (int)((float)r * (float)MOTOR_MAX / 4095.0);
         g = (int)((float)g * (float)MOTOR_MAX / 4095.0);
         b = (int)((float)b * (float)MOTOR_MAX / 4095.0);

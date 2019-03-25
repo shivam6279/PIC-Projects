@@ -1,3 +1,4 @@
+#include "EEPROM.h"
 #include "bitbang_I2C.h"
 #include "PID.h"
 #include <stdbool.h>
@@ -82,5 +83,31 @@ void eeprom_readPID(PID *roll, PID *pitch, PID *yaw, PID *alt, PID *gps) {
 
     } else {
         //Write data
+        *(float*)(str) = roll->p;
+        *(float*)(str + 4) = roll->i;
+        *(float*)(str + 8) = roll->d;
+        eeprom_readBytes(ROLL_ADDR, str, 12);
+
+        *(float*)(str) = pitch->p;
+        *(float*)(str + 4) = pitch->i;
+        *(float*)(str + 8) = pitch->d;
+        eeprom_readBytes(PITCH_ADDR, str, 12);
+
+        *(float*)(str) = yaw->p;
+        *(float*)(str + 4) = yaw->i;
+        *(float*)(str + 8) = yaw->d;
+        eeprom_readBytes(YAW_ADDR, str, 12);
+
+        *(float*)(str) = alt->p;
+        *(float*)(str + 4) = alt->i;
+        *(float*)(str + 8) = alt->d;
+        eeprom_readBytes(ALTITUDE_ADDR, str, 12);
+
+        *(float*)(str) = gps->p;
+        *(float*)(str + 4) = gps->i;
+        *(float*)(str + 8) = gps->d;
+        eeprom_readBytes(GPS_ADDR, str, 12);
+
+        eeprom_writeByte(EEPROM_INITIAL_ADDRESS, EEPROM_INITIAL_KEY);
     }
 }

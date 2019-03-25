@@ -18,20 +18,26 @@ void Init() {
     Xbee.signal = 0;
     
     PICInit();
-    timer2_init(1000.0);    // Delay timer - 1kHz
+    
+    USART1_init(111111);    // XBee
     timer7_init(1000.0);    // Safety timer for Xbee - 1kHz
+    SAFETY_TIMER_ON = 1;
+    
+    timer2_init(1000.0);    // Delay timer - 1kHz    
     timer4_init(1000000.0); // Loop timer - 1MHz
     timer5_init(10.0);      // GPS timer - 10Hz
     timer6_init(312500.0);  // XBee tx timer - 312.5kHz
-    USART1_init(111111);    // XBee
+    
     #ifdef board_v4
         USART3_init(9600);      // GPS
     #else
         USART5_init(9600);      // GPS
     #endif
-        
-    //Initializing all devices: MPU6050, HMC5883, PWM driver and the four ESCs
-    delay_ms(100);
+    
+    pwm_init(ESC_FREQ);
+}
+
+void Init_10DOF(){
     MPU6050Init();
     HMC5883Init();
     #ifdef BMP180
@@ -40,8 +46,6 @@ void Init() {
     #ifdef MS5611
         MS5611Init();
     #endif
-    
-    pwm_init(ESC_FREQ);
 }
 
 void ResetPID(PID *roll, PID *pitch, PID *yaw, PID *altitude, PID *GPS) {

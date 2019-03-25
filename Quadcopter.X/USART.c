@@ -3,7 +3,7 @@
 #include <xc.h>
 
 void USART1_init(unsigned long int baud_rate) {
-    #ifndef board_v4
+    #if board_version == 1 || board_version == 2 || board_version == 3
         TRISBbits.TRISB5 = 1;
         TRISBbits.TRISB3 = 0;
         U1MODEbits.ON = 0;
@@ -11,7 +11,8 @@ void USART1_init(unsigned long int baud_rate) {
         U1RXRbits.U1RXR = 8;
         RPB3Rbits.RPB3R = 1;
         CFGCONbits.IOLOCK = 1;
-    #else
+
+    #elif board_version == 4
         TRISCbits.TRISC14 = 1;
         TRISCbits.TRISC13 = 0;
         U1MODEbits.ON = 0;
@@ -62,17 +63,16 @@ void USART1_send(unsigned char byte) {
 
 void USART1_send_str(char str[]) {
     int i;
-    for(i = 0; str[i] != '\0'; i++){
+    for(i = 0; str[i] != '\0'; i++) {
         USART1_send(str[i]);
     }
 }
 
 void USART1_write_int(int a, unsigned char precision) {
-    if(a < 0){
+    if(a < 0) {
         a *= (-1);
         USART1_send('-');
-    }
-    else{
+    } else {
         USART1_send('+');
     }
     if(precision >= 6) USART1_send(((a / 100000) % 10) + 48);
@@ -86,11 +86,10 @@ void USART1_write_int(int a, unsigned char precision) {
 void USART1_write_float(double a, unsigned char left, unsigned char right) {
     unsigned char i;
     long int tens = 10;
-    if(a < 0){
+    if(a < 0) {
         a *= (-1);
         USART1_send('-');
-    }
-    else{
+    } else {
         USART1_send('+');
     }    
     if(left >= 7) USART1_send(((int)(a / 1000000) % 10) + 48);
@@ -101,7 +100,7 @@ void USART1_write_float(double a, unsigned char left, unsigned char right) {
     if(left >= 2) USART1_send(((int)(a / 10) % 10) + 48);
     if(left >= 1) USART1_send(((int)a % 10) + 48);
     USART1_send('.');
-    for(i = 0; i < right; i++){
+    for(i = 0; i < right; i++) {
         USART1_send(((long int)(a * tens) % 10) + 48);
         tens *= 10;
     }
