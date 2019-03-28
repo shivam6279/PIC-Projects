@@ -11,6 +11,7 @@ typedef struct {
 
 extern volatile unsigned long int loop_counter;
 extern volatile unsigned char altitude_timer;
+extern volatile unsigned int ToF_counter;
 
 extern void SetPIDGain(PID*, PID*, PID*, PID*, PID*);
 extern void QuaternionToEuler(float[], PID*, PID*, PID*, float*, float*, float);

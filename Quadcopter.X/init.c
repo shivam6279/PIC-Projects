@@ -6,6 +6,7 @@
 #include "motor.h"
 #include "PID.h"
 #include "XBee.h"
+#include "ToF.h"
 #include "settings.h"
 
 void Init() {
@@ -30,6 +31,7 @@ void Init() {
     
     #ifdef board_v4
         USART3_init(9600);      // GPS
+        ToF_init();
     #else
         USART5_init(9600);      // GPS
     #endif

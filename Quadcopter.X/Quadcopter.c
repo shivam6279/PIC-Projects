@@ -17,6 +17,7 @@
 #include "AHRS.h"
 #include "init.h"
 #include "menu.h"
+#include "ToF.h"
 
 #if board_version == 4
     #include "EEPROM.h"
@@ -56,6 +57,7 @@ void main() {
     float heading, take_off_heading, yaw_difference;                                //yaw
     float remote_magnitude, remote_angle, remote_angle_difference;                  //RC
     double altitude_setpoint, acc_avg, altitude_buffer[ALTITUDE_BUFFER_SIZE];       //altitude
+    int ToF_distance;                                                               //ToF data
     double latitude_offset, longitude_offset, take_off_latitude, take_off_longitude;//GPS
     float GPS_bearing_difference;                                                   //GPS bearing relative to yaw
     double loop_time;             
@@ -143,6 +145,7 @@ void main() {
         loop_mode = 0;
         kill = 0;
         altitude_stage = 0;
+        ToF_counter = 0;
         tx_buffer_timer = 0;
         
         loop_time = 1 / ESC_FREQ; 
@@ -169,7 +172,7 @@ void main() {
             else if(Xbee.d1 == 2 && GPS_signal) loop_mode = 'P';
             
             if(p_loop_mode != loop_mode || p_kill != kill) {
-                if(kill) WriteRGBLed(4095, 4095, 4095);
+                if(kill) WriteRGBLed(4095, 4095, 4095);                 //White
                 else if(loop_mode == 'S') WriteRGBLed(0, 4095, 0);      //Green
                 else if(loop_mode == 'A') WriteRGBLed(0, 4095, 4095);   //Cyan
                 else if(loop_mode == 'P') WriteRGBLed(4095, 0, 4095);   //Magenta
@@ -193,7 +196,14 @@ void main() {
             GetGyro();
             GetCompass(); 
             LoopAltitude(&altitude_stage, &raw_pressure, &raw_temperature, altitude_buffer, &altitude, take_off_altitude, &temperature);
-            
+            #if board_version == 4
+                if(ToF_counter >= 10) {
+                    ToF_distance = ToF_readRange();
+                    if(ToF_valueGood != 0)
+                        ToF_distance = -1;
+                }
+            #endif
+                
             //----------------------------------------------------------------Filters--------------------------------------------------------------------------------
              
             MadgwickQuaternionUpdate(q, acc, gyro, compass, loop_time); //Update the quaternion with the current accelerometer, gyroscope and magnetometer vectors
