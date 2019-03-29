@@ -51,7 +51,7 @@ void main() {
     Motors speed;
     PID pitch, roll, yaw, altitude, GPS;
     XYZ acc_avg, acc_pure, acc_comp;                                       //Tilt-compensated acceleration
-    double gravity;
+    XYZ gravity;
     int i;                                                                          //General purpose loop counter
     unsigned char tx_buffer_timer = 0;                                              //Counter to for the BMP delays
     float q[4];                                                                     //Quaternion
@@ -127,18 +127,13 @@ void main() {
             tx_flag = 1;
             while(delay_counter < 5);
         }
+        DELAY_TIMER_ON = 0;
+        TX_TIMER_ON = 0;
+
         acc_avg.x /= 1000.0;
         acc_avg.y /= 1000.0;
         acc_avg.z /= 1000.0;
-        gravity = sqrt(acc_avg.x * acc_avg.x + acc_avg.y * acc_avg.y + acc_avg.z * acc_avg.z);        
-        
-        QuaternionToEuler(q, &roll, &pitch, &yaw, &heading, &yaw_difference, take_off_heading);
-        XYZ gg;
-        gg = acc_avg;        
-        RotateVector(-roll.error, -pitch.error, 0.0, &gg);
-                
-        DELAY_TIMER_ON = 0;
-        TX_TIMER_ON = 0;
+        MultiplyVectorQuarternion(q, acc_avg, gravity);
 
         //Read initial heading
         take_off_heading = -atan2(2.0f * (q[1] * q[2] + q[0] * q[3]), q[0] * q[0] + q[1] * q[1] - q[2] * q[2] - q[3] * q[3]) * RAD_TO_DEGREES - HEADINGOFFSET;
@@ -220,15 +215,19 @@ void main() {
             //----------------------------------------------------------------Filters--------------------------------------------------------------------------------
              
             MadgwickQuaternionUpdate(q, acc, gyro, compass, loop_time); //Update the quaternion with the current accelerometer, gyroscope and magnetometer vectors
-            QuaternionToEuler(q, &roll, &pitch, &yaw, &heading, &yaw_difference, take_off_heading);
+            QuaternionToEuler(q, &roll.error, &pitch.error, &heading);
+            yaw->error = *heading - take_off_heading;
+            LimitAngle(&yaw.error);
+            yaw_difference = yaw->error - yaw->offset;
+            LimitAngle(&yaw_difference);
             
             
             // Test
-            acc_pure.y = -1 * (acc.y - gg.y);
-            acc_pure.z = -1 * (acc.z - gg.z);
-            acc_pure.x = -1 * (acc.x + gg.x);
             
-            MultiplyVectorQuarternion(q, acc_pure, &acc_comp);
+            MultiplyVectorQuarternion(q, acc, &acc_comp);
+            acc_comp.x -= gravity.x;
+            acc_comp.y -= gravity.y;
+            acc_comp.z -= gravity.z;
             
             
             //------------------------------------------------Converting Remote data to a 2-D vector------------------------------------------------------------------
@@ -237,10 +236,11 @@ void main() {
                 remote_magnitude = sqrt((float)Xbee.x1 * (float)Xbee.x1 + (float)Xbee.y1 * (float)Xbee.y1); //Magnitude of Remote's roll and pitch
                 if(Xbee.x1 == 0 && Xbee.y1 == 0) 
                     remote_angle = 0;
-                else remote_angle = 
-                        -atan2((float)Xbee.x1, (float)Xbee.y1) * RAD_TO_DEGREES;  //Angle with respect to pilot/starting position
+                else 
+                    remote_angle = -atan2((float)Xbee.x1, (float)Xbee.y1) * RAD_TO_DEGREES;  //Angle with respect to pilot/starting position
                 remote_angle_difference = yaw.error - remote_angle; //Remote's angle with respect to quad's current direction
                 LimitAngle(&remote_angle_difference);
+                
                 pitch.offset = -MAX_PITCH_ROLL_TILT * remote_magnitude / REMOTE_MAX * cos(remote_angle_difference / RAD_TO_DEGREES);
                 roll.offset = MAX_PITCH_ROLL_TILT * remote_magnitude / REMOTE_MAX * sin(remote_angle_difference / RAD_TO_DEGREES);
             }
@@ -289,17 +289,18 @@ void main() {
             //---------------------------------------------------------Roll/Pitch/Yaw - PID----------------------------------------------------------------------------
             
             if(Xbee.y2 > 1 && !kill){
-                roll.sum += (roll.error - roll.offset) * loop_time * 3.0;
+                roll.sum  += (roll.error  - roll.offset)  * loop_time * 3.0;
                 pitch.sum += (pitch.error - pitch.offset) * loop_time * 3.0;
-                yaw.sum += (yaw_difference) * loop_time * 3.0;
+                yaw.sum   += (yaw_difference)             * loop_time * 3.0;
             }
             
-            roll.derivative = (roll.error - roll.p_error) / loop_time;
+            roll.derivative  = (roll.error  - roll.p_error)  / loop_time;
             pitch.derivative = (pitch.error - pitch.p_error) / loop_time;
-            yaw.derivative = (yaw.error - yaw.p_error) / loop_time;
+            yaw.derivative   = (yaw.error   - yaw.p_error)   / loop_time;
             
-            roll.output = (roll.p * (roll.error - roll.offset) + roll.i * roll.sum + roll.d * roll.derivative);
+            roll.output = (roll.p   * (roll.error  - roll.offset)  + roll.i  * roll.sum  + roll.d  * roll.derivative);
             pitch.output = (pitch.p * (pitch.error - pitch.offset) + pitch.i * pitch.sum + pitch.d * pitch.derivative);
+
             if(Xbee.x2 < 3 && Xbee.x2 > (-3)) {
                 yaw.output = (yaw.p * (yaw_difference) + yaw.i * yaw.sum + yaw.d * yaw.derivative);
             } else {
@@ -310,9 +311,9 @@ void main() {
             
             //-------------------------------------------------------------Motor Output--------------------------------------------------------------------------------
             
-            speed.upRight = altitude.output - pitch.output + roll.output + (yaw.output * MOTOR_SPIN);
-            speed.downLeft = altitude.output + pitch.output - roll.output + (yaw.output * MOTOR_SPIN);
-            speed.upLeft = altitude.output - pitch.output - roll.output - (yaw.output * MOTOR_SPIN); 
+            speed.upRight   = altitude.output - pitch.output + roll.output + (yaw.output * MOTOR_SPIN);
+            speed.downLeft  = altitude.output + pitch.output - roll.output + (yaw.output * MOTOR_SPIN);
+            speed.upLeft    = altitude.output - pitch.output - roll.output - (yaw.output * MOTOR_SPIN); 
             speed.downRight = altitude.output + pitch.output + roll.output - (yaw.output * MOTOR_SPIN);
             
             LimitSpeed(&speed);
@@ -347,7 +348,7 @@ void main() {
             
             //---------------------------------------------------------------------------------------------------------------------------------------------------------
             
-            while(loop_counter < 2127);                     //Loop should last at least 1 esc cycle long
+            while(loop_counter < (ESC_TIME_us + 10));                     //Loop should last at least 1 esc cycle long
             loop_time = (double)loop_counter / 1000000.0;   // Loop time in seconds:
         }
         LOOP_TIMER_ON = 0;

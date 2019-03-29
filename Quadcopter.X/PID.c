@@ -32,24 +32,6 @@ volatile unsigned long int loop_counter = 0;
 volatile unsigned char altitude_timer = 0;
 volatile unsigned int ToF_counter = 0;
 
-void QuaternionToEuler(float q[], PID *roll, PID *pitch, PID *yaw, float *heading, float *yaw_difference, float take_off_heading) {
-    roll->p_error = roll->error;
-    pitch->p_error = pitch->error;
-    yaw->p_error = yaw->error;
-
-    //Converting quaternion to Euler angles
-    roll->error = (atan2(2.0f * (q[0] * q[2] - q[3] * q[1]), q[0] * q[0] - q[1] * q[1] - q[2] * q[2] + q[3] * q[3]) + PI) * RAD_TO_DEGREES - ROLLOFFSET;
-    pitch->error = (atan2(2.0f * (q[0] * q[1] + q[2] * q[3]), q[0] * q[0] - q[1] * q[1] - q[2] * q[2] + q[3] * q[3]) + PI) * RAD_TO_DEGREES - PITCHOFFSET;
-    *heading = -atan2(2.0f * (q[1] * q[2] + q[0] * q[3]), q[0] * q[0] + q[1] * q[1] - q[2] * q[2] - q[3] * q[3]) * RAD_TO_DEGREES - HEADINGOFFSET;
-    LimitAngle(heading);
-    yaw->error = *heading - take_off_heading;  
-    //Limit angles within -180 and +180 degrees
-    LimitAngle(&roll->error);
-    LimitAngle(&pitch->error);
-    LimitAngle(&yaw->error);
-    *yaw_difference = yaw->error - yaw->offset;
-    LimitAngle(yaw_difference);
-}
 
 void LimitAngle(float *a){
     while(*a < (-180) || *a > 180) { 

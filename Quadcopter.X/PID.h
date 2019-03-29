@@ -14,7 +14,6 @@ extern volatile unsigned char altitude_timer;
 extern volatile unsigned int ToF_counter;
 
 extern void SetPIDGain(PID*, PID*, PID*, PID*, PID*);
-extern void QuaternionToEuler(float[], PID*, PID*, PID*, float*, float*, float);
 extern void LimitAngle(float*);
 extern void WriteRGBLed(unsigned int, unsigned int, unsigned int);
 extern void PIDSet(PID*, float, float, float);
