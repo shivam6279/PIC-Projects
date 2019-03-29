@@ -44,9 +44,11 @@ void LoopAltitude(unsigned char *altitude_stage, unsigned long int *raw_pressure
         else if(*altitude_stage == 2 && altitude_timer > oversampling_delay) {
             *raw_temperature = ReadRawTemperature();
             *temperature = ComputeTemperature(*raw_temperature);
-            for(i = (ALTITUDE_BUFFER_SIZE - 1); i >= 1; i--) altitude_buffer[i] = altitude_buffer[i - 1];
+            for(i = (ALTITUDE_BUFFER_SIZE - 1); i >= 1; i--) 
+                altitude_buffer[i] = altitude_buffer[i - 1];
             altitude_buffer[0] = GetAltitude(ComputePressure(*raw_pressure, *raw_temperature));
-            for(i = 0, altitude->error = 0.0; i < ALTITUDE_BUFFER_SIZE; i++) altitude->error += altitude_buffer[i];
+            for(i = 0, altitude->error = 0.0; i < ALTITUDE_BUFFER_SIZE; i++) 
+                altitude->error += altitude_buffer[i];
             altitude->error = (altitude->error / (double)ALTITUDE_BUFFER_SIZE) - take_off_altitude; 
 
             StartPressureRead();

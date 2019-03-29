@@ -21,6 +21,7 @@
 
 #if board_version == 4
     #include "EEPROM.h"
+    
 #endif
 
 #include "GPS_ISR.h"
@@ -49,14 +50,15 @@
 void main() {    
     Motors speed;
     PID pitch, roll, yaw, altitude, GPS;
-    XYZ acc_comp, acc_velocity, acc_position;                                       //Tilt-compensated acceleration
+    XYZ acc_avg, acc_pure, acc_comp;                                       //Tilt-compensated acceleration
+    double gravity;
     int i;                                                                          //General purpose loop counter
     unsigned char tx_buffer_timer = 0;                                              //Counter to for the BMP delays
     float q[4];                                                                     //Quaternion
     double take_off_altitude, temperature;                                          //Offsets
     float heading, take_off_heading, yaw_difference;                                //yaw
     float remote_magnitude, remote_angle, remote_angle_difference;                  //RC
-    double altitude_setpoint, acc_avg, altitude_buffer[ALTITUDE_BUFFER_SIZE];       //altitude
+    double altitude_setpoint, altitude_buffer[ALTITUDE_BUFFER_SIZE];                //altitude
     int ToF_distance;                                                               //ToF data
     double latitude_offset, longitude_offset, take_off_latitude, take_off_longitude;//GPS
     float GPS_bearing_difference;                                                   //GPS bearing relative to yaw
@@ -94,9 +96,7 @@ void main() {
     while(1) {
         ResetPID(&roll, &pitch, &yaw, &altitude, &GPS); //Clear PID variables
         ResetQuaternion(q);                             //Reset quaternion
-        MotorsReset(&speed);                            //Clear motor speeds
-        VectorReset(&acc_velocity);
-        VectorReset(&acc_position);        
+        MotorsReset(&speed);                            //Clear motor speeds        
         
         Menu(&roll, &pitch, &altitude);
         
@@ -108,12 +108,15 @@ void main() {
         DELAY_TIMER_ON = 1;
         TX_TIMER_ON = 1;
         tx_buffer_index = 0;
-        for(i = 0, acc_avg = 0, take_off_heading = 0; i < 1000; i++) {
+        VectorReset(&acc_avg);
+        for(i = 0, take_off_heading = 0; i < 1000; i++) {
             delay_counter = 0;
             GetAcc();
             GetGyro();
             GetCompass();
-            acc_avg += sqrt(acc.x * acc.x + acc.y * acc.y + acc.z * acc.z) / 1000.0;
+            acc_avg.x += acc.x;
+            acc_avg.y += acc.y;
+            acc_avg.z += acc.z;
             MadgwickQuaternionUpdate(q, acc, gyro, compass, 0.005);
             tx_buffer[0] = 'B';
             tx_buffer[1] = (i / 100 % 10) + 48;
@@ -124,6 +127,16 @@ void main() {
             tx_flag = 1;
             while(delay_counter < 5);
         }
+        acc_avg.x /= 1000.0;
+        acc_avg.y /= 1000.0;
+        acc_avg.z /= 1000.0;
+        gravity = sqrt(acc_avg.x * acc_avg.x + acc_avg.y * acc_avg.y + acc_avg.z * acc_avg.z);        
+        
+        QuaternionToEuler(q, &roll, &pitch, &yaw, &heading, &yaw_difference, take_off_heading);
+        XYZ gg;
+        gg = acc_avg;        
+        RotateVector(-roll.error, -pitch.error, 0.0, &gg);
+                
         DELAY_TIMER_ON = 0;
         TX_TIMER_ON = 0;
 
@@ -207,9 +220,16 @@ void main() {
             //----------------------------------------------------------------Filters--------------------------------------------------------------------------------
              
             MadgwickQuaternionUpdate(q, acc, gyro, compass, loop_time); //Update the quaternion with the current accelerometer, gyroscope and magnetometer vectors
-            MultiplyVectorQuarternion(q, acc, &acc_comp);
-            
             QuaternionToEuler(q, &roll, &pitch, &yaw, &heading, &yaw_difference, take_off_heading);
+            
+            
+            // Test
+            acc_pure.y = -1 * (acc.y - gg.y);
+            acc_pure.z = -1 * (acc.z - gg.z);
+            acc_pure.x = -1 * (acc.x + gg.x);
+            
+            MultiplyVectorQuarternion(q, acc_pure, &acc_comp);
+            
             
             //------------------------------------------------Converting Remote data to a 2-D vector------------------------------------------------------------------
             
@@ -308,7 +328,19 @@ void main() {
             //--------------------------------------------------------Send Data to remote-----------------------------------------------------------------------------
             
             if(tx_buffer_timer++ >= 10) {    
-                SendFlightData(roll, pitch, yaw, altitude, loop_mode);
+                //SendFlightData(roll, pitch, yaw, altitude, loop_mode);
+                
+                tx_buffer[0] = 'C';
+                StrWriteFloat(acc_pure.x / 100.0, 3, 2, tx_buffer, 1);
+                StrWriteFloat(acc_pure.y / 100.0, 3, 2, tx_buffer, 8);
+                StrWriteFloat(acc_pure.z / 100.0, 3, 2, tx_buffer, 15);
+                StrWriteFloat(altitude.error, 3, 2, tx_buffer, 22);
+                StrWriteFloat(altitude.output, 3, 8, tx_buffer, 29);
+                StrWriteFloat(yaw.output, 3, 8, tx_buffer, 42);
+                tx_buffer[55] = loop_mode;
+                tx_buffer[56] = '\r';
+                tx_buffer[57] = '\0';     
+                
                 tx_buffer_timer = 0;
                 tx_flag = 1;
             }

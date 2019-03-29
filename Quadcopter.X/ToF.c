@@ -100,5 +100,5 @@ unsigned char VL6180_read8(unsigned int addr) {
 }
 
 void VL6180_write8(unsigned int addr, unsigned char data) {
-    I2C_WriteRegisters(VL6180X_ADDRESS, (unsigned char[3]){addr >> 8, addr & 0xFF, data}, 3)
+    I2C_WriteRegisters(VL6180X_ADDRESS, (unsigned char[3]){addr >> 8, addr & 0xFF, data}, 3);
 }

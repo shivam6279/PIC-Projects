@@ -4,9 +4,52 @@
 #include <math.h>
 
 void MultiplyVectorQuarternion(float q[4], XYZ r, XYZ *v) {
-    v->x = r.x * (1.0 - 2.0 * q[2] * q[2] - 2.0 * q[3] * q[3]) + r.y * (2.0 * q[1] * q[2] - 2.0 * q[3] * q[0]) + r.z * (2.0 * q[1]* q[3] + 2.0 * q[2] * q[0]);
-    v->y = r.x * (2.0 * q[1] * q[2] + 2.0 * q[3] * q[0]) + r.y * (1.0 - 2.0 * q[1] * q[1] - 2.0 * q[3] * q[3]) + r.z * (2.0 * q[2]* q[3] - 2.0 * q[1] * q[0]);
-    v->z = r.x * (2.0 * q[1] * q[3] - 2.0 * q[2] * q[0]) + r.y * (2.0 * q[2] * q[3] + 2.0 * q[1] * q[0]) + r.z * (1.0 - 2.0 * q[1]* q[1] - 2.0 * q[2] * q[2]);
+    float num1 = q[0] * 2.0;
+	float num2 = q[1] * 2.0;
+	float num3 = q[2] * 2.0;
+	float num4 = q[0] * num1;
+	float num5 = q[1] * num2;
+	float num6 = q[2] * num3;
+	float num7 = q[0] * num2;
+	float num8 = q[0] * num3;
+	float num9 = q[1] * num3;
+	float num10 = q[3] * num1;
+	float num11 = q[3] * num2;
+	float num12 = q[3] * num3;
+    
+    v->x = (1.0 - (num5 + num6)) * r.x + (num7 - num12) * r.y + (num8 + num11) * r.z;
+    v->y = (num7 + num12) * r.x + (1.0 - (num4 + num6)) * r.y + (num9 - num10) * r.z;
+    v->z = (num8 - num11) * r.x + (num9 + num10) * r.y + (1.0 - (num4 + num5)) * r.z;
+}
+
+void RotateVector(float roll, float pitch, float yaw, XYZ *v) {
+    float rcos = cos(roll / RAD_TO_DEGREES);
+    float rsin = sin(roll / RAD_TO_DEGREES);
+    
+    float pcos = cos(pitch / RAD_TO_DEGREES);
+    float psin = sin(pitch / RAD_TO_DEGREES);
+    
+    float ycos = cos(yaw / RAD_TO_DEGREES);
+    float ysin = sin(yaw / RAD_TO_DEGREES);
+    
+    float a1 = ycos * pcos;
+    float a2 = ycos * psin * rsin - ysin * pcos;
+    float a3 = ycos * psin * rcos + ysin * psin;
+    float b1 = ysin * pcos;
+    float b2 = ysin * psin * rsin + ycos * pcos;
+    float b3 = ysin * psin * rcos - ycos * psin;
+    float c1 = -psin;
+    float c2 = pcos * rsin;
+    float c3 = pcos * rcos;
+    
+    XYZ temp;
+    temp.x = v->x;
+    temp.y = v->y;
+    temp.z = v->z;
+    
+    v->x = temp.x * a1 + temp.y * a2 + temp.z * a3;
+    v->y = temp.x * b1 + temp.y * b2 + temp.z * b3;
+    v->z = temp.x * c1 + temp.y * c2 + temp.z * c3;
 }
 
 void MatrixInit(float *a) {

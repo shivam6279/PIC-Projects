@@ -71,8 +71,8 @@ void SendFlightData(PID roll, PID pitch, PID yaw, PID altitude, char loop_mode) 
     StrWriteFloat(roll.error, 3, 2, tx_buffer, 1);
     StrWriteFloat(pitch.error, 3, 2, tx_buffer, 8);
     StrWriteFloat(yaw.error, 3, 2, tx_buffer, 15);
-    StrWriteFloat(roll.output, 3, 2, tx_buffer, 22);
-    StrWriteFloat(pitch.output, 3, 8, tx_buffer, 29);
+    StrWriteFloat(altitude.error, 3, 2, tx_buffer, 22);
+    StrWriteFloat(altitude.output, 3, 8, tx_buffer, 29);
     StrWriteFloat(yaw.output, 3, 8, tx_buffer, 42);
     tx_buffer[55] = loop_mode;
     tx_buffer[56] = '\r';
