@@ -53,30 +53,26 @@ void RotateVector(float roll, float pitch, float yaw, XYZ *v) {
 }
 
 void QuaternionToEuler(float q[], float *roll, float *pitch, float *yaw) {
-    roll->p_error = roll->error;
-    pitch->p_error = pitch->error;
-    yaw->p_error = yaw->error;
-
     float a = q[2] * q[2];
 
     /*
     *roll = (atan2(2.0f * (q[0] * q[2] - q[3] * q[1]), q[0] * q[0] - q[1] * q[1] - q[2] * q[2] + q[3] * q[3]) + PI) * RAD_TO_DEGREES - ROLLOFFSET;
-    *pitch = (atan2(2.0f * (q[0] * q[1] + q[2] * q[3]), q[0] * q[0] - q[1] * q[1] - q[2] * q[2] + q[3] * q[3]) + PI) * RAD_TO_DEGREES - PITCHOFFSET;
+    *pitch = (atan2(2.S0f * (q[0] * q[1] + q[2] * q[3]), q[0] * q[0] - q[1] * q[1] - q[2] * q[2] + q[3] * q[3]) + PI) * RAD_TO_DEGREES - PITCHOFFSET;
     *heading = -atan2(2.0f * (q[1] * q[2] + q[0] * q[3]), q[0] * q[0] + q[1] * q[1] - q[2] * q[2] - q[3] * q[3]) * RAD_TO_DEGREES - HEADINGOFFSET;
     */
 
     //Converting quaternion to Euler angles
-    *roll = (asin(2.0f * (q[0] * q[2] - q[3] * q[1])) + PI) * RAD_TO_DEGREES - ROLLOFFSET;
+    *roll = -(asin(2.0f * (q[0] * q[2] - q[3] * q[1]))) * RAD_TO_DEGREES - ROLLOFFSET;
     *pitch = (atan2(2.0f * (q[0] * q[1] + q[2] * q[3]), 1.0f - 2.0f * (q[1] * q[1] + a)) + PI) * RAD_TO_DEGREES - PITCHOFFSET;
-    *heading = -atan2(2.0f * (q[0] * q[3] + q[1] * q[2]), 1.0f - 2.0f * (a + q[3] * q[3])) * RAD_TO_DEGREES - HEADINGOFFSET;
+    *yaw = -atan2(2.0f * (q[0] * q[3] + q[1] * q[2]), 1.0f - 2.0f * (a + q[3] * q[3])) * RAD_TO_DEGREES - HEADINGOFFSET;
     
     //Limit angles within -180 and +180 degrees
-    LimitAngle(heading);
+    LimitAngle(yaw);
     LimitAngle(roll);
     LimitAngle(pitch);
 }
 
-void MadgwickQuaternionUpdate(float q[], XYZ a, XYZ g XYZ m, float deltat) {
+void MadgwickQuaternionUpdate(float q[], XYZ a, XYZ g, XYZ m, float deltat) {
     float recipNorm;
     float s0, s1, s2, s3;
     float qDot1, qDot2, qDot3, qDot4;
@@ -129,7 +125,7 @@ void MadgwickQuaternionUpdate(float q[], XYZ a, XYZ g XYZ m, float deltat) {
     q3q3 = q[3] * q[3];
 
     // Reference direction of Earth's magnetic field
-    hx = m.x * q0q0 - _2q0my * q3 + _2q0mz * q[2] + m.x * q1q1 + _2q1 * m.y * q[2] + _2q1 * m.z * q[3] - m.x * q2q2 - m.x * q3q3;
+    hx = m.x * q0q0 - _2q0my * q[3] + _2q0mz * q[2] + m.x * q1q1 + _2q1 * m.y * q[2] + _2q1 * m.z * q[3] - m.x * q2q2 - m.x * q3q3;
     hy = _2q0mx * q[3] + m.y * q0q0 - _2q0mz * q[1] + _2q1mx * q[2] - m.y * q1q1 + m.y * q2q2 + _2q2 * m.z * q[3] - m.y * q3q3;
     _2bx = sqrtf(hx * hx + hy * hy);
     _2bz = -_2q0mx * q[2] + _2q0my * q[1] + m.z * q0q0 + _2q1mx * q[3] - m.z * q1q1 + _2q2 * m.y * q[3] - m.z * q2q2 + m.z * q3q3;
@@ -165,7 +161,6 @@ void MadgwickQuaternionUpdate(float q[], XYZ a, XYZ g XYZ m, float deltat) {
     q[1] *= recipNorm;
     q[2] *= recipNorm;
     q[3] *= recipNorm;
-    anglesComputed = 0;
 }
 
 float invSqrt(float x) {
@@ -179,29 +174,75 @@ float invSqrt(float x) {
     return y;
 }
 
+void GetCompensatedAcc(float q[4], float gravity_mag, XYZ *acc_pure, XYZ *acc_comp) {
+    float num1 = q[0] * 2.0;
+    float num2 = q[1] * 2.0;
+    float num3 = q[2] * 2.0;
+    float num4 = q[0] * num1;
+    float num5 = q[1] * num2;
+    float num6 = q[2] * num3;
+    float num7 = q[0] * num2;
+    float num8 = q[0] * num3;
+    float num9 = q[1] * num3;
+    float num10 = q[3] * num1;
+    float num11 = q[3] * num2;
+    float num12 = q[3] * num3;
+    XYZ gravity;
+    
+    gravity.x = num11 - num8;
+    gravity.y = num7 + num12;
+    gravity.z = q[0] * q[0] - q[1] * q[1] - q[2] * q[2] + q[3] * q[3];
+    
+    acc_pure->x = -ACC_GRAVITY * (acc.x / gravity_mag - gravity.x);
+    acc_pure->y = -ACC_GRAVITY * (acc.y / gravity_mag - gravity.y);
+    acc_pure->z = -ACC_GRAVITY * (acc.z / gravity_mag - gravity.z);  
+
+    acc_comp->x = (1.0 - (num5 + num6)) * acc_pure->x + (num7 - num12) * acc_pure->y + (num8 + num11) * acc_pure->z;
+    acc_comp->y = (num7 + num12) * acc_pure->x + (1.0 - (num4 + num6)) * acc_pure->y + (num9 - num10) * acc_pure->z;
+    acc_comp->z = -1 * ((num8 - num11) * acc_pure->x + (num9 + num10) * acc_pure->y + (1.0 - (num4 + num5)) * acc_pure->z);
+}
+
 float altitude_kf_P[2][2] = { { 1.0f, 0.0f },
                               { 0.0f, 1.0f } };
 
 float altitude_kf_h = 0.0;
 float altitude_kf_v = 0.0;
 
+float altitude_kf_acc_buffer[ALITUDE_KF_ACC_BUFFER_SIZE];
+
 void altitude_KF_reset() {
-    altitude_kf_P[2][2] =
-    {
-        { 1.0f,     0.0f },
-        { 0.0f,     1.0f }
-    };
+    altitude_kf_P[0][0] = 1.0f;
+    altitude_kf_P[0][1] = 0.0f;
+    altitude_kf_P[1][0] = 0.0f;
+    altitude_kf_P[1][1] = 1.0f;
 
     altitude_kf_h = 0.0;
     altitude_kf_v = 0.0;
+    
+    int i;
+    for(i = 0; i < ALITUDE_KF_ACC_BUFFER_SIZE; i++) {
+        altitude_kf_acc_buffer[i] = 0.0;
+    }
 }
 
-void altitude_KF_propagate(float acceleration, float dt) {
+void altitude_KF_propagate(float acc, float dt) {
+    int i;
+    for(i = 0; i < (ALITUDE_KF_ACC_BUFFER_SIZE - 1); i++) {
+        altitude_kf_acc_buffer[i + 1] = altitude_kf_acc_buffer[i];
+    }
+    altitude_kf_acc_buffer[0] = acc;
+    
+    float acceleration;
+    for(i = 0, acceleration = 0.0; i < ALITUDE_KF_ACC_BUFFER_SIZE; i++) {
+        acceleration += altitude_kf_acc_buffer[i];
+    }
+    acceleration /= (float)ALITUDE_KF_ACC_BUFFER_SIZE;
+    
     float _dtdt = dt * dt;
 
     // Propagation of the state (equation of motion) by Euler integration
-    altitude_kf_h = altitude_kf_h + altitude_kf_v * dt + 0.5f * acceleration * _dtdt;
-    altitude_kf_v = altitude_kf_v + acceleration * dt;
+    altitude_kf_h += altitude_kf_v * dt + 0.5f * acceleration * _dtdt;
+    altitude_kf_v += acceleration * dt;
 
     // Calculate the state estimate covariance
     float _Q_accel_dtdt = ALTITUDE_KF_Q * _dtdt;
@@ -214,7 +255,7 @@ void altitude_KF_propagate(float acceleration, float dt) {
 
 
 void altitude_KF_update(float altitude) {
-    float y = altitude - h;
+    float y = altitude - altitude_kf_h;
     float Sinv = 1.0f / (altitude_kf_P[0][0] + ALTITUDE_KF_R);
 
     // Calculate the Kalman gain

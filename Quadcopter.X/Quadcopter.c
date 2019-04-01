@@ -47,11 +47,14 @@
 #warning "---------------------------------Building for board_v4!---------------------------------"
 #endif
 
+#define ACC_PURE_BUFFER_SIZE 50
+#define TEST_FACTOR 10
+
 void main() {    
     Motors speed;
     PID pitch, roll, yaw, altitude, GPS;
-    XYZ acc_avg, acc_pure, acc_comp;                                       //Tilt-compensated acceleration
-    XYZ gravity;
+    XYZ acc_avg, acc_comp, acc_pure;                                                //Tilt-compensated acceleration
+    float gravity_mag;
     int i;                                                                          //General purpose loop counter
     unsigned char tx_buffer_timer = 0;                                              //Counter to for the BMP delays
     float q[4];                                                                     //Quaternion
@@ -109,14 +112,15 @@ void main() {
         TX_TIMER_ON = 1;
         tx_buffer_index = 0;
         VectorReset(&acc_avg);
+        
         for(i = 0, take_off_heading = 0; i < 1000; i++) {
             delay_counter = 0;
             GetAcc();
             GetGyro();
             GetCompass();
-            acc_avg.x += acc.x;
-            acc_avg.y += acc.y;
-            acc_avg.z += acc.z;
+            acc_avg.x += acc.x / 10;
+            acc_avg.y += acc.y / 10;
+            acc_avg.z += acc.z / 10;
             MadgwickQuaternionUpdate(q, acc, gyro, compass, 0.005);
             tx_buffer[0] = 'B';
             tx_buffer[1] = (i / 100 % 10) + 48;
@@ -130,16 +134,18 @@ void main() {
         DELAY_TIMER_ON = 0;
         TX_TIMER_ON = 0;
 
-        acc_avg.x /= 1000.0;
-        acc_avg.y /= 1000.0;
-        acc_avg.z /= 1000.0;
-        MultiplyVectorQuarternion(q, acc_avg, gravity);
+        acc_avg.x /= 100.0;
+        acc_avg.y /= 100.0;
+        acc_avg.z /= 100.0;
+        gravity_mag = sqrt(acc_avg.x * acc_avg.x + acc_avg.y * acc_avg.y + acc_avg.z * acc_avg.z);
+        //MultiplyVectorQuarternion(q, acc, &gravity);
 
         //Read initial heading
         take_off_heading = -atan2(2.0f * (q[1] * q[2] + q[0] * q[3]), q[0] * q[0] + q[1] * q[1] - q[2] * q[2] - q[3] * q[3]) * RAD_TO_DEGREES - HEADINGOFFSET;
         LimitAngle(&take_off_heading);   
 
         //Read take-off altitude
+        altitude_KF_reset();
         take_off_altitude = GetTakeoffAltitude(altitude_buffer);
         
         if(GPS_signal) { 
@@ -203,7 +209,8 @@ void main() {
             GetAcc();
             GetGyro();
             GetCompass(); 
-            LoopAltitude(&altitude_stage, &raw_pressure, &raw_temperature, altitude_buffer, &altitude, take_off_altitude, &temperature);
+            LoopAltitude(&altitude_stage, &raw_pressure, &raw_temperature, altitude_buffer, take_off_altitude, &temperature);
+            
             #if board_version == 4
                 if(ToF_counter >= 10) {
                     ToF_distance = ToF_readRange();
@@ -212,23 +219,26 @@ void main() {
                 }
             #endif
                 
-            //----------------------------------------------------------------Filters--------------------------------------------------------------------------------
+            //------------------------------------------------------Update quaternion and get angles-----------------------------------------------------------------
              
             MadgwickQuaternionUpdate(q, acc, gyro, compass, loop_time); //Update the quaternion with the current accelerometer, gyroscope and magnetometer vectors
+            
+            roll.p_error = roll.error;
+            pitch.p_error = pitch.error;
+            yaw.p_error = yaw.error;
+            
             QuaternionToEuler(q, &roll.error, &pitch.error, &heading);
-            yaw->error = *heading - take_off_heading;
+            
+            yaw.error = heading - take_off_heading;
             LimitAngle(&yaw.error);
-            yaw_difference = yaw->error - yaw->offset;
+            yaw_difference = yaw.error - yaw.offset;
             LimitAngle(&yaw_difference);
             
-            
-            // Test
-            
-            MultiplyVectorQuarternion(q, acc, &acc_comp);
-            acc_comp.x -= gravity.x;
-            acc_comp.y -= gravity.y;
-            acc_comp.z -= gravity.z;
-            
+            GetCompensatedAcc(q, gravity_mag, &acc_pure, &acc_comp);
+
+            altitude_KF_propagate(acc_comp.z, loop_time);            
+            altitude.error = altitude_KF_getAltitude() - take_off_altitude;
+            altitude.derivative = -1.0 * altitude_KF_getVelocity();
             
             //------------------------------------------------Converting Remote data to a 2-D vector------------------------------------------------------------------
             
@@ -247,13 +257,16 @@ void main() {
             
             //---------------------------------------------------------------3 modes----------------------------------------------------------------------------------
             
+            //--Stabilize--
             if(loop_mode == 'S') {
                 altitude.output = (float)Xbee.y2 / THROTTLE_MAX * MAX_SPEED;
             }
+
+            //--Alt-hold---
             else if(loop_mode == 'A') {
                 if(Xbee.y2 > 10 && Xbee.y2 < 20) {  //Throttle stick in the mid position
                     altitude.sum += (altitude.offset - altitude.error) * loop_time;
-                    altitude.output = (altitude.p * (altitude.offset - altitude.error) + altitude.i * altitude.sum + altitude.p * altitude.derivative) + altitude_setpoint;
+                    altitude.output = (altitude.p * (altitude.offset - altitude.error) + altitude.i * altitude.sum + altitude.d * altitude.derivative) + altitude_setpoint;
                 } else {
                     if(Xbee.y2 <= 10) {
                         altitude.output = (altitude.d * (altitude.derivative - 3.0)) + altitude_setpoint;
@@ -267,13 +280,14 @@ void main() {
                 //altitude_rate.output += altitude_setpoint;
             }
             
+            //--Pos-hold---
             else if(loop_mode == 'P') {
                 altitude.output = (float)Xbee.y2 / THROTTLE_MAX * MAX_SPEED;
                 GPS.error = DifferenceLatLon(take_off_latitude, take_off_longitude, latitude, longitude);
                 GPS_bearing_difference = heading - DifferenceBearing(take_off_latitude, take_off_longitude, latitude, longitude);
                 LimitAngle(&GPS_bearing_difference);
                 GPS.output = (GPS.p * GPS.error); 
-                pitch.offset = (-1) * GPS.output * cos((GPS_bearing_difference / RAD_TO_DEGREES) + PI);
+                pitch.offset = -1 * GPS.output * cos((GPS_bearing_difference / RAD_TO_DEGREES) + PI);
                 roll.offset = GPS.output * sin((GPS_bearing_difference / RAD_TO_DEGREES) + PI);
                 
                 if(roll.offset > 18) 
@@ -313,7 +327,7 @@ void main() {
             
             speed.upRight   = altitude.output - pitch.output + roll.output + (yaw.output * MOTOR_SPIN);
             speed.downLeft  = altitude.output + pitch.output - roll.output + (yaw.output * MOTOR_SPIN);
-            speed.upLeft    = altitude.output - pitch.output - roll.output - (yaw.output * MOTOR_SPIN); 
+            speed.upLeft    = altitude.output - pitch.output - roll.output - (yaw.output * MOTOR_SPIN);
             speed.downRight = altitude.output + pitch.output + roll.output - (yaw.output * MOTOR_SPIN);
             
             LimitSpeed(&speed);
@@ -332,12 +346,12 @@ void main() {
                 //SendFlightData(roll, pitch, yaw, altitude, loop_mode);
                 
                 tx_buffer[0] = 'C';
-                StrWriteFloat(acc_pure.x / 100.0, 3, 2, tx_buffer, 1);
-                StrWriteFloat(acc_pure.y / 100.0, 3, 2, tx_buffer, 8);
-                StrWriteFloat(acc_pure.z / 100.0, 3, 2, tx_buffer, 15);
-                StrWriteFloat(altitude.error, 3, 2, tx_buffer, 22);
-                StrWriteFloat(altitude.output, 3, 8, tx_buffer, 29);
-                StrWriteFloat(yaw.output, 3, 8, tx_buffer, 42);
+                StrWriteFloat(roll.error, 3, 2, tx_buffer, 1);
+                StrWriteFloat(pitch.error, 3, 2, tx_buffer, 8);
+                StrWriteFloat(yaw.error, 3, 2, tx_buffer, 15);
+                StrWriteFloat(altitude.offset - altitude.error, 3, 2, tx_buffer, 22);
+                StrWriteFloat(altitude.derivative, 3, 8, tx_buffer, 29);
+                StrWriteFloat(altitude.output - altitude_setpoint, 3, 8, tx_buffer, 42);
                 tx_buffer[55] = loop_mode;
                 tx_buffer[56] = '\r';
                 tx_buffer[57] = '\0';     
@@ -348,7 +362,7 @@ void main() {
             
             //---------------------------------------------------------------------------------------------------------------------------------------------------------
             
-            while(loop_counter < (ESC_TIME_us + 10));                     //Loop should last at least 1 esc cycle long
+            while(loop_counter < (ESC_TIME_us + 10));       // Loop should last at least 1 esc cycle long
             loop_time = (double)loop_counter / 1000000.0;   // Loop time in seconds:
         }
         LOOP_TIMER_ON = 0;

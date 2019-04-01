@@ -9,7 +9,7 @@ void SetPIDGain(PID *roll, PID* pitch, PID *yaw, PID *altitude, PID *GPS) {
         PIDSet(roll, 1.0, 0.35, 0.3);
         PIDSet(pitch, 1.0, 0.35, 0.3);
         PIDSet(yaw, 0.6, 0.6, 0.5);
-        PIDSet(altitude, 36, 0.8, 0.0);
+        PIDSet(altitude, 36, 5.0, 5.0);
         PIDSet(GPS, 1.5, 0.05, 0.0);
     #endif
     #ifdef mini
