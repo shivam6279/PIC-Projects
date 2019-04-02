@@ -17,6 +17,7 @@ void Init() {
     Xbee.ls = 0;
     Xbee.rs = 0;
     Xbee.signal = 0;
+    Xbee.data_ready = 0;
     
     PICInit();
     

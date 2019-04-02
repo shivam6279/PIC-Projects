@@ -29,6 +29,7 @@ void SetPIDGain(PID *roll, PID* pitch, PID *yaw, PID *altitude, PID *GPS) {
 }
 
 volatile unsigned long int loop_counter = 0;
+volatile unsigned long int esc_counter = 0;
 volatile unsigned char altitude_timer = 0;
 volatile unsigned int ToF_counter = 0;
 

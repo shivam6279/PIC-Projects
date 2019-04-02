@@ -12,6 +12,7 @@ typedef struct {
 	unsigned char d1, d2;
 	bool ls, rs;
 	bool signal;
+    bool data_ready;
 } rx;
 
 extern volatile rx Xbee;

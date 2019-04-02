@@ -10,6 +10,7 @@ typedef struct {
 } PID;
 
 extern volatile unsigned long int loop_counter;
+extern volatile unsigned long int esc_counter;
 extern volatile unsigned char altitude_timer;
 extern volatile unsigned int ToF_counter;
 

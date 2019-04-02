@@ -34,8 +34,10 @@ void __ISR_AT_VECTOR(_UART1_RX_VECTOR, IPL6SRS) Xbee_rx(void) {
             Xbee.d2 = (XBee_rx_byte & 0b00001100) << 2;
             Xbee.d1 = (XBee_rx_byte & 0b00000011);
             safety_counter = 0;
-            if(signal_temp)
+            if(signal_temp) {
                 Xbee.signal = 1;
+                Xbee.data_ready = 1;
+            }
         }
     }while(U1STAbits.URXDA);
 
@@ -61,7 +63,7 @@ void __ISR_AT_VECTOR(_TIMER_7_VECTOR, IPL4SRS) safety_timer(void) {
     IFS1bits.T7IF = 0;
     altitude_timer++;
     ToF_counter++;
-
+    
     if(safety_counter >= 500) {
         signal_temp = 0;
         Xbee.signal = 0; 

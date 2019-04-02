@@ -7,6 +7,7 @@
 void __ISR_AT_VECTOR(_TIMER_4_VECTOR, IPL7SRS) pid_loop_timer(void){
     IFS0bits.T4IF = 0;
     loop_counter++;
+    esc_counter++;
 }
 
 void __ISR_AT_VECTOR(_TIMER_2_VECTOR, IPL4SRS) delay_timer(void){
