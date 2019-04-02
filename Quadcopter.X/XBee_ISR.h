@@ -5,39 +5,47 @@
 
 void __ISR_AT_VECTOR(_UART1_RX_VECTOR, IPL6SRS) Xbee_rx(void) {
     IFS3bits.U1RXIF = 0; 
-    do{
+
+    static unsigned char XBee_rx_byte, XBee_address;
+
+    do {
         XBee_rx_byte = U1RXREG & 0xFF;
+        XBee_address = XBee_rx_byte >> 5;
 
-        if(XBee_rx_byte >> 5 == 0) {
-            Xbee.x1 = (XBee_rx_byte & 0x1F) - 15;
-            signal_temp = 1;
-        }
+        switch(Xbee_address) {
+            case 0:
+                XBee_temp.x1 = (XBee_rx_byte & 0x1F) - 15;
+                signal_temp = 1;
+                break;
 
-        else if(XBee_rx_byte >> 5 == 1) {
-            Xbee.y1 = (XBee_rx_byte & 0x1F) - 15;
-        }
+            case 1:
+                XBee_temp.y1 = (XBee_rx_byte & 0x1F) - 15;
+                break;
 
-        else if(XBee_rx_byte >> 5 == 2) {
-            Xbee.x2 = (XBee_rx_byte & 0x1F) - 15;
-        }
+            case 2:
+                XBee_temp.x2 = (XBee_rx_byte & 0x1F) - 15;
+                break;
 
-        else if(XBee_rx_byte >> 5 == 3) {
-            Xbee.y2 = (XBee_rx_byte & 0x1F);
-        }
+            case 3:
+                XBee_temp.y2 = (XBee_rx_byte & 0x1F);
+                break;
 
-        else if(XBee_rx_byte >> 5 == 4) {
-            Xbee.ls = (XBee_rx_byte >> 1) & 1; 
-            Xbee.rs = XBee_rx_byte & 1;
-        }
+            case 4:
+                XBee_temp.ls = (XBee_rx_byte >> 1) & 1; 
+                XBee_temp.rs = XBee_rx_byte & 1;
+                break;
 
-        else if(XBee_rx_byte >> 5 == 5) { 
-            Xbee.d2 = (XBee_rx_byte & 0b00001100) << 2;
-            Xbee.d1 = (XBee_rx_byte & 0b00000011);
-            safety_counter = 0;
-            if(signal_temp) {
-                Xbee.signal = 1;
-                Xbee.data_ready = 1;
-            }
+            case 5: 
+                XBee_temp.d2 = (XBee_rx_byte & 0b00001100) << 2;
+                XBee_temp.d1 = (XBee_rx_byte & 0b00000011);
+                safety_counter = 0;
+                if(signal_temp) {
+                    Xbee_temp.signal = 1;
+                    Xbee_temp.data_ready = 1;
+
+                    XBee = XBee_temp;
+                }
+                break;
         }
     }while(U1STAbits.URXDA);
 

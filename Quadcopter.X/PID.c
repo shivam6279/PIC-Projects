@@ -6,25 +6,25 @@
 
 void SetPIDGain(PID *roll, PID* pitch, PID *yaw, PID *altitude, PID *GPS) {
     #ifdef micro
-        PIDSet(roll, 1.0, 0.35, 0.3);
-        PIDSet(pitch, 1.0, 0.35, 0.3);
-        PIDSet(yaw, 0.6, 0.6, 0.5);
-        PIDSet(altitude, 36, 5.0, 5.0);
-        PIDSet(GPS, 1.5, 0.05, 0.0);
+        PIDSet(roll,     1.00, 1.00, 0.30);
+        PIDSet(pitch,    1.00, 1.00, 0.30);
+        PIDSet(yaw,      0.60, 1.80, 0.50);
+        PIDSet(altitude, 36.0, 5.00, 5.00);
+        PIDSet(GPS,      1.50, 0.05, 0.00);
     #endif
     #ifdef mini
-        PIDSet(roll, 1.0, 0.9, 0.7);
-        PIDSet(pitch, 1.0, 0.9, 0.7);
-        PIDSet(yaw, 1.5, 1.6, 1.0);
-        PIDSet(altitude, 36.0, 0.8, 0.0);
-        PIDSet(GPS, 1.5, 0.05, 0.0);
+        PIDSet(roll,     1.00, 2.70, 0.70);
+        PIDSet(pitch,    1.00, 2.70, 0.70);
+        PIDSet(yaw,      1.50, 4.00, 1.00);
+        PIDSet(altitude, 36.0, 0.80, 0.00);
+        PIDSet(GPS,      1.50, 0.05, 0.00);
     #endif
     #ifdef big
-        PIDSet(roll, 0.3, 0.4, 0.4);
-        PIDSet(pitch, 0.3, 0.4, 0.4);
-        PIDSet(yaw, 0.4, 0.3, 0.3);
-        PIDSet(altitude, 368, 0.8, 0.0);
-        PIDSet(GPS, 1.5, 0.05, 0.0);
+        PIDSet(roll,     0.30, 1.20, 0.40);
+        PIDSet(pitch,    0.30, 1.20, 0.40);
+        PIDSet(yaw,      0.40, 1.00, 0.30);
+        PIDSet(altitude, 36.0, 0.80, 0.00);
+        PIDSet(GPS,      1.50, 0.05, 0.00);
     #endif
 }
 
@@ -34,10 +34,12 @@ volatile unsigned char altitude_timer = 0;
 volatile unsigned int ToF_counter = 0;
 
 
-void LimitAngle(float *a){
+void LimitAngle(float *a) {
     while(*a < (-180) || *a > 180) { 
-        if(*a < (-180)) *a += 360; 
-        else if(*a > 180) *a -= 360; 
+        if(*a < (-180)) 
+            *a += 360; 
+        else if(*a > 180) 
+            *a -= 360; 
     }
 }
 
@@ -59,12 +61,19 @@ void StrWriteInt(int a, unsigned char precision, char str[], unsigned char n) {
         str[n++] = '-'; 
     }
     else str[n++] = '+';
+
+    /*
     if(precision >= 6) str[n++] = ((a / 100000) % 10) + 48;
     if(precision >= 5) str[n++] = ((a / 10000) % 10) + 48;
     if(precision >= 4) str[n++] = ((a / 1000) % 10) + 48;
     if(precision >= 3) str[n++] = ((a / 100) % 10) + 48;
     if(precision >= 2) str[n++] = ((a / 10) % 10) + 48;
     if(precision >= 1) str[n++] = (a % 10) + 48;
+    */
+
+    for(; precision > 0; precision--) {
+        str[n++] = ((a / (int)pow(10, (precision - 1))) % 10) + 48
+    }
 }
 
 void StrWriteFloat(double a, unsigned char left, unsigned char right, char str[], unsigned char n) {
@@ -75,6 +84,8 @@ void StrWriteFloat(double a, unsigned char left, unsigned char right, char str[]
         str[n++] = '-'; 
     }
     else str[n++] = '+';
+
+    /*
     if(left >= 10)str[n++] = ((int)(a / 1000000000.0) % 10) + 48;
     if(left >= 9) str[n++] = ((int)(a / 100000000.0) % 10) + 48;
     if(left >= 8) str[n++] = ((int)(a / 10000000.0) % 10) + 48;
@@ -85,6 +96,12 @@ void StrWriteFloat(double a, unsigned char left, unsigned char right, char str[]
     if(left >= 3) str[n++] = ((int)(a / 100.0) % 10) + 48;
     if(left >= 2) str[n++] = ((int)(a / 10.0) % 10) + 48;
     if(left >= 1) str[n++] = ((int)a % 10) + 48;
+    */
+
+    for(; left > 0; left--) {
+        str[n++] = ((a / (int)pow(10, (left - 1))) % 10) + 48
+    }
+
     str[n++] = '.';
     for(i = 0; i < right; i++, tens *= 10, n++) {
         str[n] = ((long int)(a * tens) % 10) + 48;

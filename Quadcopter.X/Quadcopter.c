@@ -56,6 +56,7 @@ void main() {
     XYZ acc_avg, acc_comp, acc_pure;                                                //Tilt-compensated acceleration
     float gravity_mag;
     int i;                                                                          //General purpose loop counter
+    rx XBee_rx;
     unsigned char tx_buffer_timer = 0;                                              //Counter to for the BMP delays
     float q[4];                                                                     //Quaternion
     double take_off_altitude, temperature;                                          //Offsets
@@ -75,7 +76,7 @@ void main() {
     delay_ms(100);
     Init_10DOF();
     
-    if(Xbee.y2 > 29 && Xbee.x2 > 13) {                  //Calibrate ESCs
+    if(XBee.y2 > 29 && XBee.x2 > 13) {                  //Calibrate ESCs
         WriteRGBLed(0, 4095, 4095);   
         delay_ms(5000);                                 //Cyan
         CalibrateESC();
@@ -86,7 +87,7 @@ void main() {
     
     delay_ms(100);
     
-    if(Xbee.y1 > 13 && Xbee.x1 > 13) {                  //display sensor readings
+    if(XBee.y1 > 13 && XBee.x1 > 13) {                  //display sensor readings
         WriteRGBLed(4095, 0, 3800);                     //Magenta
         SendCalibrationData();
     }
@@ -166,7 +167,7 @@ void main() {
         TX_TIMER_ON = 1;
         
         //Main Loop
-        while(Xbee.rs == 0) {
+        while(XBee.rs == 0) {
             loop_time = (double)loop_counter / 1000000.0;   // Loop time in seconds: 
             loop_counter = 0;
             
@@ -188,25 +189,31 @@ void main() {
 
             MadgwickQuaternionUpdate(q, acc, gyro, compass, loop_time); //Update the quaternion with the current accelerometer, gyroscope and magnetometer vectors
             GetCompensatedAcc(q, gravity_mag, &acc_pure, &acc_comp);
-            altitude_KF_propagate(acc_comp.z, loop_time);            
-            
+            altitude_KF_propagate(acc_comp.z, loop_time);         
+
+            if(XBee_rx.y2 > 1 && !kill){
+                roll.sum  += (roll.error  - roll.offset)  * loop_time;
+                pitch.sum += (pitch.error - pitch.offset) * loop_time;
+                yaw.sum   += (yaw_difference)             * loop_time;
+            }
           
             if(esc_counter >= ESC_TIME_us) {
                 esc_counter = 0;
                 p_kill = kill;
                 p_loop_mode = loop_mode;
+                XBee_rx = ReadXBee();
 
                 //---------------------------------------------------------------Set Mode------------------------------------------------------------------------------
 
-                if(Xbee.ls || !Xbee.signal) 
+                if(XBee_rx.ls || !XBee_rx.signal) 
                     kill = 1; 
                 else 
                     kill = 0;
 
                 //Set loop mode - Stabilize, Alt-hold, Pos-hold
-                if(Xbee.d1 == 0 || (Xbee.d1 == 2 && !GPS_signal)) loop_mode = 'S';
-                else if(Xbee.d1 == 1) loop_mode = 'A';
-                else if(Xbee.d1 == 2 && GPS_signal) loop_mode = 'P';
+                if(XBee_rx.d1 == 0 || (XBee_rx.d1 == 2 && !GPS_signal)) loop_mode = 'S';
+                else if(XBee_rx.d1 == 1) loop_mode = 'A';
+                else if(XBee_rx.d1 == 2 && GPS_signal) loop_mode = 'P';
 
                 if(p_loop_mode != loop_mode || p_kill != kill) {
                     if(kill) WriteRGBLed(4095, 4095, 4095);                 //White
@@ -215,7 +222,7 @@ void main() {
                     else if(loop_mode == 'P') WriteRGBLed(4095, 0, 4095);   //Magenta
 
                     if(loop_mode == 'A') {
-                        altitude_setpoint = (float)Xbee.y2 / THROTTLE_MAX * MAX_SPEED;
+                        altitude_setpoint = (float)XBee_rx.y2 / THROTTLE_MAX * MAX_SPEED;
                         altitude.sum = 0;
                         altitude.derivative = 0;
                         altitude.offset = altitude.error;
@@ -243,11 +250,11 @@ void main() {
                 //------------------------------------------------Converting Remote data to a 2-D vector------------------------------------------------------------------
 
                 if(loop_mode != 'P') {// If not in GPS mode
-                    remote_magnitude = sqrt((float)Xbee.x1 * (float)Xbee.x1 + (float)Xbee.y1 * (float)Xbee.y1); //Magnitude of Remote's roll and pitch
-                    if(Xbee.x1 == 0 && Xbee.y1 == 0) 
+                    remote_magnitude = sqrt((float)XBee_rx.x1 * (float)XBee_rx.x1 + (float)XBee_rx.y1 * (float)XBee_rx.y1); //Magnitude of Remote's roll and pitch
+                    if(XBee_rx.x1 == 0 && XBee_rx.y1 == 0) 
                         remote_angle = 0;
                     else 
-                        remote_angle = -atan2((float)Xbee.x1, (float)Xbee.y1) * RAD_TO_DEGREES;  //Angle with respect to pilot/starting position
+                        remote_angle = -atan2((float)XBee_rx.x1, (float)XBee_rx.y1) * RAD_TO_DEGREES;  //Angle with respect to pilot/starting position
                     remote_angle_difference = yaw.error - remote_angle; //Remote's angle with respect to quad's current direction
                     LimitAngle(&remote_angle_difference);
 
@@ -259,19 +266,19 @@ void main() {
 
                 //--Stabilize--
                 if(loop_mode == 'S') {
-                    altitude.output = (float)Xbee.y2 / THROTTLE_MAX * MAX_SPEED;
+                    altitude.output = (float)XBee_rx.y2 / THROTTLE_MAX * MAX_SPEED;
                 }
 
                 //--Alt-hold---
                 else if(loop_mode == 'A') {
-                    if(Xbee.y2 > 10 && Xbee.y2 < 20) {  //Throttle stick in the mid position
+                    if(XBee_rx.y2 > 10 && XBee_rx.y2 < 20) {  //Throttle stick in the mid position
                         altitude.sum += (altitude.offset - altitude.error) * loop_time;
                         altitude.output = (altitude.p * (altitude.offset - altitude.error) + altitude.i * altitude.sum + altitude.d * altitude.derivative) + altitude_setpoint;
                     } else {
-                        if(Xbee.y2 <= 10) {
+                        if(XBee_rx.y2 <= 10) {
                             altitude.output = (altitude.d * (altitude.derivative - 3.0)) + altitude_setpoint;
                         }
-                        else if(Xbee.y2 >= 20) {
+                        else if(XBee_rx.y2 >= 20) {
                             altitude.output = (altitude.d * (altitude.derivative + 3.0)) + altitude_setpoint;
                         }
                         altitude.offset = altitude.error;                
@@ -282,7 +289,7 @@ void main() {
 
                 //--Pos-hold---
                 else if(loop_mode == 'P') {
-                    altitude.output = (float)Xbee.y2 / THROTTLE_MAX * MAX_SPEED;
+                    altitude.output = (float)XBee_rx.y2 / THROTTLE_MAX * MAX_SPEED;
                     GPS.error = DifferenceLatLon(take_off_latitude, take_off_longitude, latitude, longitude);
                     GPS_bearing_difference = heading - DifferenceBearing(take_off_latitude, take_off_longitude, latitude, longitude);
                     LimitAngle(&GPS_bearing_difference);
@@ -310,13 +317,13 @@ void main() {
                 pitch.p_error = pitch.error;
                 yaw.p_error = yaw.error;
 
-                roll.output = (roll.p   * (roll.error  - roll.offset)  + roll.i  * roll.sum  + roll.d  * roll.derivative);
+                roll.output  = (roll.p  * (roll.error  - roll.offset)  + roll.i  * roll.sum  + roll.d  * roll.derivative);
                 pitch.output = (pitch.p * (pitch.error - pitch.offset) + pitch.i * pitch.sum + pitch.d * pitch.derivative);
 
-                if(Xbee.x2 < 3 && Xbee.x2 > (-3)) {
+                if(XBee_rx.x2 < 3 && XBee_rx.x2 > (-3)) {
                     yaw.output = (yaw.p * (yaw_difference) + yaw.i * yaw.sum + yaw.d * yaw.derivative);
                 } else {
-                    yaw.output = (yaw.d * (yaw.derivative + (float)Xbee.x2 / REMOTE_MAX * MAX_YAW_RATE));
+                    yaw.output = (yaw.d * (yaw.derivative + (float)XBee_rx.x2 / REMOTE_MAX * MAX_YAW_RATE));
                     yaw.sum = 0;
                     yaw.offset = yaw.error;                
                 }

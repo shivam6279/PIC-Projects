@@ -5,16 +5,19 @@
 #include "GPS.h"
 #include "USART.h"
 
-volatile rx Xbee;
+volatile rx Xbee, Xbee_temp;
 
 volatile int safety_counter = 0;
 
-volatile unsigned char XBee_rx_byte;
 volatile unsigned char tx_buffer_index = 0;
 volatile bool tx_flag = 0;
 volatile bool signal_temp = 0;
 
 char tx_buffer[200];
+
+rx ReadXBee() {
+    return XBee;
+}
 
 void SendCalibrationData() {
     XYZ compass_max, compass_min;
