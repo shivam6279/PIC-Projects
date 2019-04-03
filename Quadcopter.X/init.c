@@ -10,14 +10,14 @@
 #include "settings.h"
 
 void Init() {
-    Xbee.x1 = 0;
-    Xbee.y1 = 0;
-    Xbee.x2 = 0;
-    Xbee.y2 = 0;
-    Xbee.ls = 0;
-    Xbee.rs = 0;
-    Xbee.signal = 0;
-    Xbee.data_ready = 0;
+    XBee.x1 = 0;
+    XBee.y1 = 0;
+    XBee.x2 = 0;
+    XBee.y2 = 0;
+    XBee.ls = 0;
+    XBee.rs = 0;
+    XBee.signal = 0;
+    XBee.data_ready = 0;
     
     PICInit();
     

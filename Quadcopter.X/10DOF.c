@@ -9,6 +9,22 @@ void VectorReset(XYZ *v) {
     v->z = 0.0f;
 }
 
+XYZ VectorAdd(XYZ a, XYZ b) {
+    XYZ r;
+    r.x = a.x + b.x;
+    r.y = a.y + b.y;
+    r.z = a.z + b.z;
+    return r;
+}
+
+XYZ VectorScale(XYZ a, float scale) {
+    XYZ r;
+    r.x = a.x * scale;
+    r.y = a.y * scale;
+    r.z = a.z * scale;
+    return r;
+}
+
 //-----------------------------------------MPU6050---------------------------------
 void MPU6050Init() {
     unsigned char i;
@@ -186,15 +202,29 @@ void GetCompass() {
 }
 //----------------------------------------------------------------------
 void GetRawIMU() {
+    GetRawAcc();
+    GetRawGyro();
+    GetRawCompass();
+}
+
+void GetRawAcc() {
     unsigned char temp[6];
     I2C_ReadRegisters(0xD0, 0x3B, temp, 6);
     acc.y = (signed short)(temp[0] << 8 | temp[1]);
     acc.x = (signed short)(temp[2] << 8 | temp[3]) * (-1);
     acc.z = (signed short)(temp[4] << 8 | temp[5]) * (-1);
+}
+
+void GetRawGyro() {
+    unsigned char temp[6];
     I2C_ReadRegisters(0xD0, 0x43, temp, 6);
     gyro.y = (signed short)(temp[0] << 8 | temp[1]);
     gyro.x = (signed short)(temp[2] << 8 | temp[3]);
     gyro.z = (signed short)(temp[4] << 8 | temp[5]);
+}
+
+void GetRawCompass() {
+    unsigned char temp[6];
     I2C_WriteRegisters(0xD0, (unsigned char[2]){0x6A, 0x00}, 2);
     I2C_WriteRegisters(0xD0, (unsigned char[2]){0x37, 0x02}, 2);
     I2C_ReadRegisters(0x3C, 0x03, temp, 6);

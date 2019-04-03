@@ -12,7 +12,11 @@ void Menu(PID *x, PID *y, PID *a){
     signed char cursor = 0; 
     unsigned int r, g, b;
     unsigned int led_counter = 0, arming_counter = 0;
+    rx XBee;
+    
     while(arming_counter < 20) {
+        
+        XBee = ReadXBee();
         
         //-------------------------------------------------------------------LED stuff------------------------------------------------------------------------------
         
@@ -42,65 +46,65 @@ void Menu(PID *x, PID *y, PID *a){
         WriteRGBLed(r, g, b);
         
         //----------------------------------------------------------------------------------------------------------------------------------------------------------
-        if(Xbee.y1 > 12 && flag_menu == 0) { 
+        if(XBee.y1 > 12 && flag_menu == 0) { 
             cursor--; 
             flag_menu = 1; 
         }
-        else if(Xbee.y1 < (-12) && flag_menu == 0) { 
+        else if(XBee.y1 < (-12) && flag_menu == 0) { 
             cursor++; 
             flag_menu = 1; 
         }
-        else if(Xbee.y1 > (-12) && Xbee.y1 < 12) flag_menu = 0;
+        else if(XBee.y1 > (-12) && XBee.y1 < 12) flag_menu = 0;
         
         if(cursor > 5) cursor = 5;
         else if(cursor < 0) cursor = 0;
         
         switch(cursor){
             case 0:
-                if(Xbee.x1 > 12) {
+                if(XBee.x1 > 12) {
                     x->p += 0.01; 
                     y->p += 0.01; 
                 }
-                else if(Xbee.x1 < (-12)) {
+                else if(XBee.x1 < (-12)) {
                     x->p -= 0.01; 
                     y->p -= 0.01; 
                 }
                 break;
             case 1:
-                if(Xbee.x1 > 12) { 
+                if(XBee.x1 > 12) { 
                     x->i += 0.01; 
                     y->i += 0.01; 
                 }
-                else if(Xbee.x1 < (-12)) { 
+                else if(XBee.x1 < (-12)) { 
                     x->i -= 0.01; 
                     y->i -= 0.01; 
                 }
                 break;
             case 2:
-                if(Xbee.x1 > 12) { 
+                if(XBee.x1 > 12) { 
                     x->d += 0.01; 
                     y->d += 0.01; 
                 }
-                else if(Xbee.x1 < (-12)) { 
+                else if(XBee.x1 < (-12)) { 
                     x->d -= 0.01; 
                     y->d -= 0.01; 
                 }
                 break;
             case 3:
-                if(Xbee.x1 > 12) a->p += 0.2; 
-                else if(Xbee.x1 < (-12)) a->p -= 0.2;
+                if(XBee.x1 > 12) a->p += 0.2; 
+                else if(XBee.x1 < (-12)) a->p -= 0.2;
                 break;
             case 4:
-                if(Xbee.x1 > 12) a->i += 0.01; 
-                else if(Xbee.x1 < (-12)) a->i -= 0.01; 
+                if(XBee.x1 > 12) a->i += 0.01; 
+                else if(XBee.x1 < (-12)) a->i -= 0.01; 
                 break;
             case 5:
-                if(Xbee.x1 > 12) a->d += 1; 
-                else if(Xbee.x1 < (-12)) a->d -= 1;
+                if(XBee.x1 > 12) a->d += 1; 
+                else if(XBee.x1 < (-12)) a->d -= 1;
                 break;
         }
         
-        if(Xbee.ls && !Xbee.rs && Xbee.y2 < 2 && Xbee.x2 > 13) 
+        if(XBee.ls && !XBee.rs && XBee.y2 < 2 && XBee.x2 > 13) 
             arming_counter++;
         else 
             arming_counter = 0;

@@ -14,9 +14,9 @@
 #define MAX_YAW_RATE 180.0f         // degrees/sec
 #define ALTITUDE_RATE 0.7f          // meters/sec
 
-#define ROLLOFFSET 3.0f				//degrees
-#define PITCHOFFSET -0.3			//degrees
-#define HEADINGOFFSET -87           //degrees
+#define ROLLOFFSET 2.6f				//degrees -0.4
+#define PITCHOFFSET -2.1f			//degrees -1.8
+#define HEADINGOFFSET -87.0f        //degrees
 
 
 //-------------------------Pinouts----------------------------

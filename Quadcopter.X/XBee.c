@@ -5,7 +5,7 @@
 #include "GPS.h"
 #include "USART.h"
 
-volatile rx Xbee, Xbee_temp;
+volatile rx XBee, XBee_temp;
 
 volatile int safety_counter = 0;
 

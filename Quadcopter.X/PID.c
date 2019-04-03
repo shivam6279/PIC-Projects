@@ -72,7 +72,7 @@ void StrWriteInt(int a, unsigned char precision, char str[], unsigned char n) {
     */
 
     for(; precision > 0; precision--) {
-        str[n++] = ((a / (int)pow(10, (precision - 1))) % 10) + 48
+        str[n++] = ((a / (int)pow(10, (precision - 1))) % 10) + 48;
     }
 }
 
@@ -99,7 +99,7 @@ void StrWriteFloat(double a, unsigned char left, unsigned char right, char str[]
     */
 
     for(; left > 0; left--) {
-        str[n++] = ((a / (int)pow(10, (left - 1))) % 10) + 48
+        str[n++] = ((int)(a / pow(10, (left - 1))) % 10) + 48;
     }
 
     str[n++] = '.';

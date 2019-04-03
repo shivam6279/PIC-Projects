@@ -12,7 +12,7 @@ void __ISR_AT_VECTOR(_UART1_RX_VECTOR, IPL6SRS) Xbee_rx(void) {
         XBee_rx_byte = U1RXREG & 0xFF;
         XBee_address = XBee_rx_byte >> 5;
 
-        switch(Xbee_address) {
+        switch(XBee_address) {
             case 0:
                 XBee_temp.x1 = (XBee_rx_byte & 0x1F) - 15;
                 signal_temp = 1;
@@ -40,8 +40,8 @@ void __ISR_AT_VECTOR(_UART1_RX_VECTOR, IPL6SRS) Xbee_rx(void) {
                 XBee_temp.d1 = (XBee_rx_byte & 0b00000011);
                 safety_counter = 0;
                 if(signal_temp) {
-                    Xbee_temp.signal = 1;
-                    Xbee_temp.data_ready = 1;
+                    XBee_temp.signal = 1;
+                    XBee_temp.data_ready = 1;
 
                     XBee = XBee_temp;
                 }
@@ -74,11 +74,11 @@ void __ISR_AT_VECTOR(_TIMER_7_VECTOR, IPL4SRS) safety_timer(void) {
     
     if(safety_counter >= 500) {
         signal_temp = 0;
-        Xbee.signal = 0; 
-        Xbee.x1 = 0; 
-        Xbee.y1 = 0; 
-        Xbee.x2 = 0; 
-        Xbee.y2 = 0; 
+        XBee.signal = 0; 
+        XBee.x1 = 0; 
+        XBee.y1 = 0; 
+        XBee.x2 = 0; 
+        XBee.y2 = 0; 
     }
     else safety_counter++;
 }

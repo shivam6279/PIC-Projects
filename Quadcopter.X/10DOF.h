@@ -41,6 +41,8 @@ typedef struct {
 } XYZ;
 
 extern void VectorReset(XYZ *v);
+extern XYZ VectorAdd(XYZ, XYZ);
+extern XYZ VectorScale(XYZ, float);
 
 //MPU6050
 extern void MPU6050Init();
@@ -52,6 +54,9 @@ extern void HMC5883Init();
 extern void GetCompass();
 
 extern void GetRawIMU();
+extern void GetRawAcc();
+extern void GetRawGyro();
+extern void GetRawCompass();
 
 //Pressure sensors
 unsigned char oversampling_delay;

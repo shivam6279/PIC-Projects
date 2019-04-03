@@ -112,17 +112,18 @@ void main() {
         DELAY_TIMER_ON = 1;
         TX_TIMER_ON = 1;
         tx_buffer_index = 0;
-        VectorReset(&acc_avg);
-        
-        for(i = 0, take_off_heading = 0; i < 1000; i++) {
+             
+        for(i = 0, VectorReset(&acc_avg), VectorReset(&gyro_avg); i < 1000; i++) {
             delay_counter = 0;
             GetAcc();
-            GetGyro();
+            GetRawGyro();
             GetCompass();
-            acc_avg.x += acc.x / 10;
-            acc_avg.y += acc.y / 10;
-            acc_avg.z += acc.z / 10;
-            MadgwickQuaternionUpdate(q, acc, gyro, compass, 0.005);
+            
+            acc_avg = VectorAdd(acc_avg, acc);
+            gyro_avg = VectorAdd(gyro_avg, gyro);
+            
+            MadgwickQuaternionUpdate(q, acc, (XYZ){0.0, 0.0, 0.0}, compass, 0.050);
+            
             tx_buffer[0] = 'B';
             tx_buffer[1] = (i / 100 % 10) + 48;
             tx_buffer[2] = (i / 10 % 10) + 48;
@@ -130,14 +131,15 @@ void main() {
             tx_buffer[4] = '\r';
             tx_buffer[5] = '\0';
             tx_flag = 1;
-            while(delay_counter < 5);
+            
+            while(delay_counter < 3);
         }
         DELAY_TIMER_ON = 0;
         TX_TIMER_ON = 0;
-
-        acc_avg.x /= 100.0;
-        acc_avg.y /= 100.0;
-        acc_avg.z /= 100.0;
+        
+        acc_avg = VectorScale(acc_avg, 1 / 1000.0);
+        gyro_avg = VectorScale(gyro_avg, 1 / 1000.0);
+        
         gravity_mag = sqrt(acc_avg.x * acc_avg.x + acc_avg.y * acc_avg.y + acc_avg.z * acc_avg.z);
         //MultiplyVectorQuarternion(q, acc, &gravity);
 
