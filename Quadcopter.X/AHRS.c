@@ -227,15 +227,16 @@ void altitude_KF_reset() {
 
 void altitude_KF_propagate(float acc, float dt) {
     int i;
-    for(i = 0; i < (ALITUDE_KF_ACC_BUFFER_SIZE - 1); i++) {
-        altitude_kf_acc_buffer[i + 1] = altitude_kf_acc_buffer[i];
-    }
+    
+    for(i = (ALITUDE_KF_ACC_BUFFER_SIZE - 1); i >= 1; i--)
+        altitude_kf_acc_buffer[i] = altitude_kf_acc_buffer[i - 1];
+
     altitude_kf_acc_buffer[0] = acc;
     
     float acceleration;
-    for(i = 0, acceleration = 0.0; i < ALITUDE_KF_ACC_BUFFER_SIZE; i++) {
+    for(i = 0, acceleration = 0.0; i < ALITUDE_KF_ACC_BUFFER_SIZE; i++)
         acceleration += altitude_kf_acc_buffer[i];
-    }
+    
     acceleration /= (float)ALITUDE_KF_ACC_BUFFER_SIZE;
     
     float _dtdt = dt * dt;

@@ -3,6 +3,14 @@
 #include "settings.h"
 #include <math.h>
 
+XYZ acc;
+XYZ gyro, gyro_avg;
+XYZ compass;
+
+#if IMU_BUFFER_SIZE > 0
+XYZ acc_buffer[IMU_BUFFER_SIZE], gyro_buffer[IMU_BUFFER_SIZE], compass_buffer[IMU_BUFFER_SIZE];
+#endif
+
 void VectorReset(XYZ *v) {
     v->x = 0.0f;
     v->y = 0.0f;
@@ -28,6 +36,7 @@ XYZ VectorScale(XYZ a, float scale) {
 //-----------------------------------------MPU6050---------------------------------
 void MPU6050Init() {
     unsigned char i;
+    
     I2C_WriteRegisters(0xD0, (unsigned char[2]){0x6B, 0x00}, 2);
     I2C_WriteRegisters(0xD0, (unsigned char[2]){0x19, 0x07}, 2);
     I2C_WriteRegisters(0xD0, (unsigned char[2]){0x1A, 0x03}, 2);
@@ -52,159 +61,16 @@ void MPU6050Init() {
     I2C_WriteRegisters(0xD0, (unsigned char[2]){0x64, 0x01}, 2);
     I2C_WriteRegisters(0xD0, (unsigned char[2]){0x6A, 0x20}, 2);
     I2C_WriteRegisters(0xD0, (unsigned char[2]){0x34, 0x13}, 2);
-    for(i = 0; i < 5; i++) {
-        acc_buffer[i].x = 0;
-        acc_buffer[i].y = 0;
-        acc_buffer[i].z = 0;
-        gyro_buffer[i].x = 0;
-        gyro_buffer[i].y = 0;
-        gyro_buffer[i].z = 0;
+    
+#if IMU_BUFFER_SIZE > 0
+    for(i = 0; i < IMU_BUFFER_SIZE; i++) {
+        acc_buffer[i] = (XYZ){0.0, 0.0, 0.0};
+        gyro_buffer[i] = (XYZ){0.0, 0.0, 0.0};
     }
+#endif
     gyro_avg.x = GYRO_X_OFFSET;
     gyro_avg.y = GYRO_Y_OFFSET;
     gyro_avg.z = GYRO_Z_OFFSET;
-}
-
-void GetAcc() {
-    unsigned char temp[6];
-    unsigned char i;
-    if(IMU_BUFFER_SIZE > 0){
-        for(i = (IMU_BUFFER_SIZE - 1); i >= 1; i--) {
-            acc_buffer[i].x = acc_buffer[i - 1].x;
-            acc_buffer[i].y = acc_buffer[i - 1].y;
-            acc_buffer[i].z = acc_buffer[i - 1].z;
-        }
-    }
-    I2C_ReadRegisters(0xD0, 0x3B, temp, 6);
-    acc.y = (signed short)(temp[0] << 8 | temp[1]);
-    acc.x = (signed short)(temp[2] << 8 | temp[3]) * (-1);
-    acc.z = (signed short)(temp[4] << 8 | temp[5]) * (-1);
-    if(IMU_BUFFER_SIZE > 0) {
-        acc_buffer[0].x = acc.x;
-        acc_buffer[0].y = acc.y;
-        acc_buffer[0].z = acc.z;
-        for(i = 1; i < IMU_BUFFER_SIZE; i++){
-            acc.x += acc_buffer[i].x;
-            acc.y += acc_buffer[i].y;
-            acc.z += acc_buffer[i].z;
-        }
-        acc.x /= IMU_BUFFER_SIZE;
-        acc.y /= IMU_BUFFER_SIZE;
-        acc.z /= IMU_BUFFER_SIZE;
-    }
-}
-
-void GetGyro() {
-    unsigned char temp[6];
-    unsigned char i;
-    if(IMU_BUFFER_SIZE > 0){
-        for(i = (IMU_BUFFER_SIZE - 1); i >= 1; i--) {
-            gyro_buffer[i].x = gyro_buffer[i - 1].x;
-            gyro_buffer[i].y = gyro_buffer[i - 1].y;
-            gyro_buffer[i].z = gyro_buffer[i - 1].z;
-        }
-    }
-    I2C_ReadRegisters(0xD0, 0x43, temp, 6);
-    gyro.y = (signed short)(temp[0] << 8 | temp[1]);
-    gyro.x = (signed short)(temp[2] << 8 | temp[3]);
-    gyro.z = (signed short)(temp[4] << 8 | temp[5]);
-    if(IMU_BUFFER_SIZE > 0){
-        gyro_buffer[0].x = gyro.x;
-        gyro_buffer[0].y = gyro.y;
-        gyro_buffer[0].z = gyro.z;
-        for(i = 1; i < IMU_BUFFER_SIZE; i++) {
-            gyro.x += gyro_buffer[i].x;
-            gyro.y += gyro_buffer[i].y;
-            gyro.z += gyro_buffer[i].z;
-        }
-        gyro.x /= IMU_BUFFER_SIZE;
-        gyro.y /= IMU_BUFFER_SIZE;
-        gyro.z /= IMU_BUFFER_SIZE;
-    }
-    gyro.x = (gyro.x - gyro_avg.x) / GYRO_X_GAIN;
-    gyro.y = (gyro.y - gyro_avg.y) / GYRO_Y_GAIN;
-    gyro.z = (gyro.z - gyro_avg.z) / GYRO_Z_GAIN;
-}
-
-void CalibrateGyro() {
-    unsigned char temp[6];
-    int i;
-    for(i = 0; i < 100; i++) {
-        I2C_ReadRegisters(0xD0, 0x43, temp, 6);
-        gyro_avg.y = (signed short)(temp[0] << 8 | temp[1]);
-        gyro_avg.x = (signed short)(temp[2] << 8 | temp[3]);
-        gyro_avg.z = (signed short)(temp[4] << 8 | temp[5]);
-        delay_ms(1);
-    }
-    gyro_avg.x /= 100.0;
-    gyro_avg.y /= 100.0;
-    gyro_avg.z /= 100.0;
-}
-
-//-----------------------------------------HMC5883---------------------------------
-
-void HMC5883Init() {
-    unsigned char i;
-    I2C_WriteRegisters(0xD0, (unsigned char[2]){0x6A, 0x00}, 2);
-    I2C_WriteRegisters(0xD0, (unsigned char[2]){0x37, 0x02}, 2);
-    for(i = 0; i < 5; i++) {
-        compass_buffer[i].x = 0;
-        compass_buffer[i].y = 0;
-        compass_buffer[i].z = 0;
-    }
-    I2C_WriteRegisters(0x3C, (unsigned char[2]){0, 0x14}, 2);
-    I2C_WriteRegisters(0x3C, (unsigned char[2]){1, 0x20}, 2);
-    I2C_WriteRegisters(0x3C, (unsigned char[2]){2, 0x00}, 2);
-    
-    I2C_WriteRegisters(0xD0, (unsigned char[2]){0x6A, 0x20}, 2);
-    I2C_WriteRegisters(0xD0, (unsigned char[2]){0x37, 0x00}, 2);
-    for(i = 0; i < 5; i++) {
-        compass_buffer[i].x = 0;
-        compass_buffer[i].y = 0;
-        compass_buffer[i].z = 0;
-    }
-}
-
-void GetCompass() {
-    unsigned char temp[6];
-    unsigned char i;
-    if(IMU_BUFFER_SIZE > 0){
-        for(i = (IMU_BUFFER_SIZE - 1); i >= 1; i--) {
-            compass_buffer[i].x = compass_buffer[i - 1].x;
-            compass_buffer[i].y = compass_buffer[i - 1].y;
-            compass_buffer[i].z = compass_buffer[i - 1].z;
-        }
-    }
-    I2C_WriteRegisters(0xD0, (unsigned char[2]){0x6A, 0x00}, 2);
-    I2C_WriteRegisters(0xD0, (unsigned char[2]){0x37, 0x02}, 2);
-    I2C_ReadRegisters(0x3C, 0x03, temp, 6);
-    I2C_WriteRegisters(0xD0, (unsigned char[2]){0x6A, 0x20}, 2);
-    I2C_WriteRegisters(0xD0, (unsigned char[2]){0x37, 0x00}, 2);
-    compass.y = (signed short)(temp[0] << 8 | temp[1]);
-    compass.z = (signed short)(temp[2] << 8 | temp[3]);
-    compass.x = (signed short)(temp[4] << 8 | temp[5]);
-    if(IMU_BUFFER_SIZE > 0) {
-        compass_buffer[0].x = compass.x;
-        compass_buffer[0].y = compass.y;
-        compass_buffer[0].z = compass.z;
-        for(i = 1; i < IMU_BUFFER_SIZE; i++) {
-            compass.x += compass_buffer[i].x;
-            compass.y += compass_buffer[i].y;
-            compass.z += compass_buffer[i].z;
-        }
-        compass.x /= IMU_BUFFER_SIZE;
-        compass.y /= IMU_BUFFER_SIZE;
-        compass.z /= IMU_BUFFER_SIZE;
-    }
-    compass.x = (compass.x - COMPASS_X_OFFSET) * COMPASS_X_GAIN;
-    compass.y = (compass.y - COMPASS_Y_OFFSET) * COMPASS_Y_GAIN;
-    compass.z = (compass.z - COMPASS_Z_OFFSET) * COMPASS_Z_GAIN;
-}
-//----------------------------------------------------------------------
-void GetRawIMU() {
-    GetRawAcc();
-    GetRawGyro();
-    GetRawCompass();
 }
 
 void GetRawAcc() {
@@ -215,6 +81,22 @@ void GetRawAcc() {
     acc.z = (signed short)(temp[4] << 8 | temp[5]) * (-1);
 }
 
+void GetAcc() {    
+    GetRawAcc();
+    
+#if IMU_BUFFER_SIZE > 0
+    unsigned char i;    
+    for(i = (IMU_BUFFER_SIZE - 1); i >= 1; i--)
+        acc_buffer[i] = acc_buffer[i - 1];
+
+    acc_buffer[0] = acc;
+    for(i = 1; i < IMU_BUFFER_SIZE; i++)
+        acc = VectorAdd(acc, acc_buffer[i]);
+    
+    acc = VectorScale(acc, 1.0f / (float)IMU_BUFFER_SIZE);
+#endif
+}
+
 void GetRawGyro() {
     unsigned char temp[6];
     I2C_ReadRegisters(0xD0, 0x43, temp, 6);
@@ -223,16 +105,95 @@ void GetRawGyro() {
     gyro.z = (signed short)(temp[4] << 8 | temp[5]);
 }
 
-void GetRawCompass() {
-    unsigned char temp[6];
+void GetGyro() {    
+    GetRawGyro();
+    
+#if IMU_BUFFER_SIZE > 0
+    unsigned char i;
+    
+    for(i = (IMU_BUFFER_SIZE - 1); i >= 1; i--)
+        gyro_buffer[i] = gyro_buffer[i - 1];
+
+    gyro_buffer[0] = gyro;
+    for(i = 1; i < IMU_BUFFER_SIZE; i++)
+        gyro = VectorAdd(gyro, gyro_buffer[i]);
+
+    gyro = VectorScale(gyro, 1.0f / (float)IMU_BUFFER_SIZE);
+#endif
+    gyro.x = (gyro.x - gyro_avg.x) / GYRO_X_GAIN;
+    gyro.y = (gyro.y - gyro_avg.y) / GYRO_Y_GAIN;
+    gyro.z = (gyro.z - gyro_avg.z) / GYRO_Z_GAIN;
+}
+
+//-----------------------------------------HMC5883---------------------------------
+
+void HMC5883Init() {
+    unsigned char i;
+    
+#if board_version == 1 || board_version == 2 || board_version == 3
     I2C_WriteRegisters(0xD0, (unsigned char[2]){0x6A, 0x00}, 2);
     I2C_WriteRegisters(0xD0, (unsigned char[2]){0x37, 0x02}, 2);
-    I2C_ReadRegisters(0x3C, 0x03, temp, 6);
+#endif
+    
+    I2C_WriteRegisters(0x3C, (unsigned char[2]){0, 0x14}, 2);
+    I2C_WriteRegisters(0x3C, (unsigned char[2]){1, 0x20}, 2);
+    I2C_WriteRegisters(0x3C, (unsigned char[2]){2, 0x00}, 2);
+    
+#if board_version == 1 || board_version == 2 || board_version == 3
     I2C_WriteRegisters(0xD0, (unsigned char[2]){0x6A, 0x20}, 2);
     I2C_WriteRegisters(0xD0, (unsigned char[2]){0x37, 0x00}, 2);
+#endif
+
+#if IMU_BUFFER_SIZE > 0
+    for(i = 0; i < IMU_BUFFER_SIZE; i++)
+        compass_buffer[i] = (XYZ){0.0, 0.0, 0.0};
+#endif
+}
+
+void GetRawCompass() {
+    unsigned char temp[6];
+    
+#if board_version == 1 || board_version == 2 || board_version == 3
+    I2C_WriteRegisters(0xD0, (unsigned char[2]){0x6A, 0x00}, 2);
+    I2C_WriteRegisters(0xD0, (unsigned char[2]){0x37, 0x02}, 2);
+#endif
+    
+    I2C_ReadRegisters(0x3C, 0x03, temp, 6);
+    
+#if board_version == 1 || board_version == 2 || board_version == 3
+    I2C_WriteRegisters(0xD0, (unsigned char[2]){0x6A, 0x20}, 2);
+    I2C_WriteRegisters(0xD0, (unsigned char[2]){0x37, 0x00}, 2);
+#endif
     compass.y = (signed short)(temp[0] << 8 | temp[1]);
     compass.z = (signed short)(temp[2] << 8 | temp[3]);
     compass.x = (signed short)(temp[4] << 8 | temp[5]);
+}
+
+void GetCompass() {
+    GetRawCompass();
+    
+#if IMU_BUFFER_SIZE > 0
+    unsigned char i;
+    for(i = (IMU_BUFFER_SIZE - 1); i >= 1; i--)
+        compass_buffer[i] = compass_buffer[i - 1];
+
+    compass_buffer[0] = compass;
+    for(i = 1; i < IMU_BUFFER_SIZE; i++)
+        compass = VectorAdd(compass, compass_buffer[i]);
+
+    compass = VectorScale(compass, 1.0f / IMU_BUFFER_SIZE);
+#endif
+
+    compass.x = (compass.x - COMPASS_X_OFFSET) * COMPASS_X_GAIN;
+    compass.y = (compass.y - COMPASS_Y_OFFSET) * COMPASS_Y_GAIN;
+    compass.z = (compass.z - COMPASS_Z_OFFSET) * COMPASS_Z_GAIN;
+}
+//----------------------------------------------------------------------
+
+void GetRawIMU() {
+    GetRawAcc();
+    GetRawGyro();
+    GetRawCompass();
 }
 
 //-----------------------------------------BMP180---------------------------------

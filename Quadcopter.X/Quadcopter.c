@@ -3,6 +3,7 @@
 #include <math.h>
 #include <stdbool.h>
 #include <sys/attribs.h>
+
 #include "settings.h"
 #include "pic32.h"
 #include "bitbang_I2C.h"
@@ -18,11 +19,7 @@
 #include "init.h"
 #include "menu.h"
 #include "ToF.h"
-
-#if board_version == 4
-    #include "EEPROM.h"
-    
-#endif
+#include "EEPROM.h"   
 
 #include "GPS_ISR.h"
 #include "XBee_ISR.h"
@@ -59,16 +56,14 @@ void main() {
     rx XBee_rx;
     unsigned char tx_buffer_timer = 0;                                              //Counter to for the BMP delays
     float q[4];                                                                     //Quaternion
-    double take_off_altitude, temperature;                                          //Offsets
+    float take_off_altitude, temperature;                                           //Offsets
     float heading, take_off_heading, yaw_difference;                                //yaw
     float remote_magnitude, remote_angle, remote_angle_difference;                  //RC
-    double altitude_setpoint, altitude_buffer[ALTITUDE_BUFFER_SIZE];                //altitude
+    float altitude_setpoint;                                                        //altitude
     int ToF_distance;                                                               //ToF data
-    double latitude_offset, longitude_offset, take_off_latitude, take_off_longitude;//GPS
+    float latitude_offset, longitude_offset, take_off_latitude, take_off_longitude; //GPS
     float GPS_bearing_difference;                                                   //GPS bearing relative to yaw
     double loop_time;             
-    unsigned char altitude_stage;
-    unsigned long int raw_temperature, raw_pressure;
     char loop_mode, p_loop_mode;                                                    //Stabilize/alt-hold/pos-hold
     bool kill, p_kill;
     
@@ -107,7 +102,6 @@ void main() {
         WriteRGBLed(4095, 2500, 0); //Yellow
         
         delay_ms(100);
-        CalibrateGyro();
         
         DELAY_TIMER_ON = 1;
         TX_TIMER_ON = 1;
@@ -149,7 +143,7 @@ void main() {
 
         //Read take-off altitude
         altitude_KF_reset();
-        take_off_altitude = GetTakeoffAltitude(altitude_buffer);
+        take_off_altitude = GetTakeoffAltitude();
         
         if(GPS_signal) { 
             take_off_latitude = latitude; 
@@ -161,7 +155,6 @@ void main() {
         
         loop_mode = 0;
         kill = 0;
-        altitude_stage = 0;
         ToF_counter = 0;
         tx_buffer_timer = 0;
         
@@ -226,7 +219,6 @@ void main() {
                     if(loop_mode == 'A') {
                         altitude_setpoint = (float)XBee_rx.y2 / THROTTLE_MAX * MAX_SPEED;
                         altitude.sum = 0;
-                        altitude.derivative = 0;
                         altitude.offset = altitude.error;
                     }
                     else if(loop_mode == 'P') {
@@ -245,7 +237,9 @@ void main() {
                 yaw_difference = yaw.error - yaw.offset;
                 LimitAngle(&yaw_difference);
                 
-                LoopAltitude(&altitude_stage, &raw_pressure, &raw_temperature, altitude_buffer, take_off_altitude, &temperature);
+                if(LoopAltitude(&altitude.error, &temperature)) {
+                    altitude_KF_update(altitude.error);
+                }
                 altitude.error = altitude_KF_getAltitude() - take_off_altitude;
                 altitude.derivative = -1.0 * altitude_KF_getVelocity();
 

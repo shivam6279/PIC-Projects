@@ -46,17 +46,16 @@ extern XYZ VectorScale(XYZ, float);
 
 //MPU6050
 extern void MPU6050Init();
+extern void GetRawAcc();
 extern void GetAcc();
+extern void GetRawGyro();
 extern void GetGyro();
-extern void CalibrateGyro();
 //HMC5883
 extern void HMC5883Init();
+extern void GetRawCompass();
 extern void GetCompass();
 
 extern void GetRawIMU();
-extern void GetRawAcc();
-extern void GetRawGyro();
-extern void GetRawCompass();
 
 //Pressure sensors
 unsigned char oversampling_delay;
@@ -91,8 +90,12 @@ unsigned char oversampling_delay;
 	unsigned int MS5611_fc[6];
 #endif
 
-XYZ acc, acc_buffer[IMU_BUFFER_SIZE];
-XYZ gyro, gyro_buffer[IMU_BUFFER_SIZE], gyro_avg;
-XYZ compass, compass_buffer[IMU_BUFFER_SIZE];
+extern XYZ acc;
+extern XYZ gyro, gyro_avg;
+extern XYZ compass;
+
+#if IMU_BUFFER_SIZE > 0
+extern XYZ acc_buffer[IMU_BUFFER_SIZE], gyro_buffer[IMU_BUFFER_SIZE], compass_buffer[IMU_BUFFER_SIZE];
+#endif
 
 #endif
