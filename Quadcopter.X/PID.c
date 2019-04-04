@@ -34,13 +34,14 @@ volatile unsigned char altitude_timer = 0;
 volatile unsigned int ToF_counter = 0;
 
 
-void LimitAngle(float *a) {
-    while(*a < (-180) || *a > 180) { 
-        if(*a < (-180)) 
-            *a += 360; 
-        else if(*a > 180) 
-            *a -= 360; 
+float LimitAngle(float a) {
+    while(a < (-180.0) || a > 180.0) { 
+        if(a < (-180.0)) 
+            a += 360.0; 
+        else if(*a > 180.0) 
+            a -= 360.0; 
     }
+    return a;
 }
 
 void PIDSet(PID *x, float kp, float ki, float kd) {
@@ -53,6 +54,32 @@ void PIDSet(PID *x, float kp, float ki, float kd) {
     x->error = 0.0f;
     x->p_error = 0.0f;
     x->offset = 0.0f;
+}
+
+void PIDIntegerate(PID *a, float deltat) {
+    a->sum += (a->error - a->offset) * deltat;
+}
+
+void PIDIntegerateAngle(PID *a, float deltat) {
+    a->sum += LimitAngle(a->error - a->offset) * deltat;
+}
+
+void PIDDifferentiate(PID *a, float deltat) {
+    a->derivative = (a->error - a->p_error) / deltat;
+    a->p_error = a->error;
+}
+
+void PIDDifferentiateAngle(PID *a, float deltat) {
+    a->derivative = LimitAngle(a->error - a->p_error) / deltat;
+    a->p_error = a->error;
+}
+
+void PIDOutput(PID *a) {
+    a->output = a->p * (a->error - a->offset) + a->i * a->sum + a->d * roll.derivative;
+}
+
+void PIDOutputAngle(PID *a) {
+    a->output = a->p * LimitAngle(a->error - a->offset) + a->i * a->sum + a->d * roll.derivative;
 }
 
 void StrWriteInt(int a, unsigned char precision, char str[], unsigned char n) {
@@ -71,9 +98,8 @@ void StrWriteInt(int a, unsigned char precision, char str[], unsigned char n) {
     if(precision >= 1) str[n++] = (a % 10) + 48;
     */
 
-    for(; precision > 0; precision--) {
+    for(; precision > 0; precision--)
         str[n++] = ((a / (int)pow(10, (precision - 1))) % 10) + 48;
-    }
 }
 
 void StrWriteFloat(double a, unsigned char left, unsigned char right, char str[], unsigned char n) {
@@ -98,22 +124,20 @@ void StrWriteFloat(double a, unsigned char left, unsigned char right, char str[]
     if(left >= 1) str[n++] = ((int)a % 10) + 48;
     */
 
-    for(; left > 0; left--) {
+    for(; left > 0; left--)
         str[n++] = ((int)(a / pow(10, (left - 1))) % 10) + 48;
-    }
 
     str[n++] = '.';
-    for(i = 0; i < right; i++, tens *= 10, n++) {
+    for(i = 0; i < right; i++, tens *= 10, n++)
         str[n] = ((long int)(a * tens) % 10) + 48;
-    }
 }
 
 void WriteRGBLed(unsigned int r, unsigned int g, unsigned int b) {
-    #if board_version == 4
-        r = (int)((float)r * (float)MOTOR_MAX / 4095.0);
-        g = (int)((float)g * (float)MOTOR_MAX / 4095.0);
-        b = (int)((float)b * (float)MOTOR_MAX / 4095.0);
-    #endif
+#if board_version == 4
+    r = (int)((float)r * (float)MOTOR_MAX / 4095.0);
+    g = (int)((float)g * (float)MOTOR_MAX / 4095.0);
+    b = (int)((float)b * (float)MOTOR_MAX / 4095.0);
+#endif
     write_pwm(RGBLED_RED_PIN, r); 
     write_pwm(RGBLED_GREEN_PIN, g); 
     write_pwm(RGBLED_BLUE_PIN, b);

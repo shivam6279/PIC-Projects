@@ -10,7 +10,7 @@ char lat_str[16] = {'V', '\0'}, lon_str[16] = {'V', '\0'}, alt_str[6] = {'V', '\
 unsigned char GPS_rx_byte, GPS_stage = 0;
 volatile bool GPS_signal = 0, GPS_connected = 0;
 
-double DifferenceLatLon(double lat1, double lon1, double lat2, double lon2){
+double DifferenceLatLon(double lat1, double lon1, double lat2, double lon2) {
     double a;
     lat1 /= RAD_TO_DEGREES; 
     lat2 /= RAD_TO_DEGREES; 
@@ -21,17 +21,15 @@ double DifferenceLatLon(double lat1, double lon1, double lat2, double lon2){
     return (6371000.0 * a);
 }
 
-float DifferenceBearing(double lat1, double lon1, double lat2, double lon2){
-    double r;
+float DifferenceBearing(double lat1, double lon1, double lat2, double lon2) {
     lat1 /= RAD_TO_DEGREES; 
     lat2 /= RAD_TO_DEGREES; 
     lon1 /= RAD_TO_DEGREES; 
     lon2 /= RAD_TO_DEGREES;
-    r = (atan2(-(sin(lon2 - lon1) * cos(lat2)), (cos(lat1) * sin(lat2) - sin(lat1) * cos(lat2) * cos(lon2 - lon1)))) * RAD_TO_DEGREES;
-    return r;
+    return (atan2(-(sin(lon2 - lon1) * cos(lat2)), (cos(lat1) * sin(lat2) - sin(lat1) * cos(lat2) * cos(lon2 - lon1)))) * RAD_TO_DEGREES;
 }
 
-void GetLocation(){
+void GetLocation() {
     int left, i;
     double temp_left, temp_right, tens;
     if(!GPS_signal) { 

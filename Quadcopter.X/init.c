@@ -10,17 +10,9 @@
 #include "settings.h"
 
 void Init() {
-    XBee.x1 = 0;
-    XBee.y1 = 0;
-    XBee.x2 = 0;
-    XBee.y2 = 0;
-    XBee.ls = 0;
-    XBee.rs = 0;
-    XBee.signal = 0;
-    XBee.data_ready = 0;
-    
     PICInit();
     
+    XBeeReset();
     USART1_init(111111);    // XBee
     timer7_init(1000.0);    // Safety timer for Xbee - 1kHz
     SAFETY_TIMER_ON = 1;

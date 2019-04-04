@@ -19,12 +19,14 @@ extern volatile rx XBee, XBee_temp;
 
 extern volatile int safety_counter;
 
+extern volatile unsigned char tx_buffer_timer = 0;
 extern volatile unsigned char tx_buffer_index;
 extern volatile bool tx_flag;
-extern volatile bool signal_temp;
+extern volatile bool XBee_signal_temp;
 
 extern char tx_buffer[200];
 
+extern void XBeeReset();
 extern rx ReadXBee();
 extern void SendCalibrationData();
 extern void SendFlightData(PID, PID, PID, PID, char);

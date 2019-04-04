@@ -54,10 +54,9 @@ void main() {
     float gravity_mag;
     int i;                                                                          //General purpose loop counter
     rx XBee_rx;
-    unsigned char tx_buffer_timer = 0;                                              //Counter to for the BMP delays
     float q[4];                                                                     //Quaternion
     float take_off_altitude, temperature;                                           //Offsets
-    float heading, take_off_heading, yaw_difference;                                //yaw
+    float heading, take_off_heading;                                                //yaw
     float remote_magnitude, remote_angle, remote_angle_difference;                  //RC
     float altitude_setpoint;                                                        //altitude
     int ToF_distance;                                                               //ToF data
@@ -138,8 +137,7 @@ void main() {
         //MultiplyVectorQuarternion(q, acc, &gravity);
 
         //Read initial heading
-        take_off_heading = -atan2(2.0f * (q[1] * q[2] + q[0] * q[3]), q[0] * q[0] + q[1] * q[1] - q[2] * q[2] - q[3] * q[3]) * RAD_TO_DEGREES - HEADINGOFFSET;
-        LimitAngle(&take_off_heading);   
+        take_off_heading = LimitAngle(-atan2(2.0f * (q[1] * q[2] + q[0] * q[3]), q[0] * q[0] + q[1] * q[1] - q[2] * q[2] - q[3] * q[3]) * RAD_TO_DEGREES - HEADINGOFFSET);
 
         //Read take-off altitude
         altitude_KF_reset();
@@ -186,12 +184,19 @@ void main() {
             GetCompensatedAcc(q, gravity_mag, &acc_pure, &acc_comp);
             altitude_KF_propagate(acc_comp.z, loop_time);         
 
-            if(XBee_rx.y2 > 1 && !kill){
-                roll.sum  += (roll.error  - roll.offset)  * loop_time;
-                pitch.sum += (pitch.error - pitch.offset) * loop_time;
-                yaw.sum   += (yaw_difference)             * loop_time;
+            if(XBee_rx.y2 > 1 && !kill) {
+                PIDIntegrateAngle(&roll, loop_time);
+                PIDIntegrateAngle(&pitch, loop_time);
+                PIDIntegrateAngle(&yaw, loop_time);
             }
-          
+
+            /*
+            if(XBee.data_ready) {
+                XBee_rx = ReadXBee();
+                XBee_data_ready = 0;
+            }
+            */
+
             if(esc_counter >= ESC_TIME_us) {
                 esc_counter = 0;
                 p_kill = kill;
@@ -232,10 +237,7 @@ void main() {
                 
                 QuaternionToEuler(q, &roll.error, &pitch.error, &heading);
 
-                yaw.error = heading - take_off_heading;
-                LimitAngle(&yaw.error);
-                yaw_difference = yaw.error - yaw.offset;
-                LimitAngle(&yaw_difference);
+                yaw.error = LimitAngle(heading - take_off_heading);
                 
                 if(LoopAltitude(&altitude.error, &temperature)) {
                     altitude_KF_update(altitude.error);
@@ -251,8 +253,7 @@ void main() {
                         remote_angle = 0;
                     else 
                         remote_angle = -atan2((float)XBee_rx.x1, (float)XBee_rx.y1) * RAD_TO_DEGREES;  //Angle with respect to pilot/starting position
-                    remote_angle_difference = yaw.error - remote_angle; //Remote's angle with respect to quad's current direction
-                    LimitAngle(&remote_angle_difference);
+                    remote_angle_difference = LimitAngle(yaw.error - remote_angle); //Remote's angle with respect to quad's current direction
 
                     pitch.offset = -MAX_PITCH_ROLL_TILT * remote_magnitude / REMOTE_MAX * cos(remote_angle_difference / RAD_TO_DEGREES);
                     roll.offset = MAX_PITCH_ROLL_TILT * remote_magnitude / REMOTE_MAX * sin(remote_angle_difference / RAD_TO_DEGREES);
@@ -287,8 +288,7 @@ void main() {
                 else if(loop_mode == 'P') {
                     altitude.output = (float)XBee_rx.y2 / THROTTLE_MAX * MAX_SPEED;
                     GPS.error = DifferenceLatLon(take_off_latitude, take_off_longitude, latitude, longitude);
-                    GPS_bearing_difference = heading - DifferenceBearing(take_off_latitude, take_off_longitude, latitude, longitude);
-                    LimitAngle(&GPS_bearing_difference);
+                    GPS_bearing_difference = LimitAngle(heading - DifferenceBearing(take_off_latitude, take_off_longitude, latitude, longitude));
                     GPS.output = (GPS.p * GPS.error); 
                     pitch.offset = -1 * GPS.output * cos((GPS_bearing_difference / RAD_TO_DEGREES) + PI);
                     roll.offset = GPS.output * sin((GPS_bearing_difference / RAD_TO_DEGREES) + PI);
@@ -304,20 +304,16 @@ void main() {
                 }
 
                 //---------------------------------------------------------Roll/Pitch/Yaw - PID----------------------------------------------------------------------------
-                
-                roll.derivative  = (roll.error  - roll.p_error)  * ESC_FREQ;
-                pitch.derivative = (pitch.error - pitch.p_error) * ESC_FREQ;
-                yaw.derivative   = (yaw.error   - yaw.p_error)   * ESC_FREQ;
-                
-                roll.p_error = roll.error;
-                pitch.p_error = pitch.error;
-                yaw.p_error = yaw.error;
 
-                roll.output  = (roll.p  * (roll.error  - roll.offset)  + roll.i  * roll.sum  + roll.d  * roll.derivative);
-                pitch.output = (pitch.p * (pitch.error - pitch.offset) + pitch.i * pitch.sum + pitch.d * pitch.derivative);
+                PIDDifferentiate(&roll,  1.0f / ESC_FREQ);
+                PIDDifferentiate(&pitch, 1.0f / ESC_FREQ);
+                PIDDifferentiate(&yaw,   1.0f / ESC_FREQ);
+
+                PIDOutputAngle(&roll);
+                PIDOutputAngle(&pitch);
 
                 if(XBee_rx.x2 < 3 && XBee_rx.x2 > (-3)) {
-                    yaw.output = (yaw.p * (yaw_difference) + yaw.i * yaw.sum + yaw.d * yaw.derivative);
+                    PIDOutputAngle(&yaw);
                 } else {
                     yaw.output = (yaw.d * (yaw.derivative + (float)XBee_rx.x2 / REMOTE_MAX * MAX_YAW_RATE));
                     yaw.sum = 0;
@@ -335,33 +331,31 @@ void main() {
 
                 //-----------------------------------------------------------Output to ESC's-------------------------------------------------------------------------------
 
-                if(!kill) {
+                if(!kill)
                     WriteMotors(speed);
-                } else {
+                else 
                     TurnMotorsOff();
-                }
-
-                //--------------------------------------------------------Send Data to remote-----------------------------------------------------------------------------
-
-                if(tx_buffer_timer++ >= 10) {    
-                    //SendFlightData(roll, pitch, yaw, altitude, loop_mode);
-
-                    tx_buffer[0] = 'C';
-                    StrWriteFloat(roll.error, 3, 2, tx_buffer, 1);
-                    StrWriteFloat(pitch.error, 3, 2, tx_buffer, 8);
-                    StrWriteFloat(yaw.error, 3, 2, tx_buffer, 15);
-                    StrWriteFloat(altitude.offset - altitude.error, 3, 2, tx_buffer, 22);
-                    StrWriteFloat(altitude.derivative, 3, 8, tx_buffer, 29);
-                    StrWriteFloat(altitude.output - altitude_setpoint, 3, 8, tx_buffer, 42);
-                    tx_buffer[55] = loop_mode;
-                    tx_buffer[56] = '\r';
-                    tx_buffer[57] = '\0';     
-
-                    tx_buffer_timer = 0;
-                    tx_flag = 1;
-                }
 
                 //---------------------------------------------------------------------------------------------------------------------------------------------------------                
+            }
+
+            //--------------------------------------------------------Send Data to remote-----------------------------------------------------------------------------
+            if(tx_buffer_timer >= 20) {    
+                //SendFlightData(roll, pitch, yaw, altitude, loop_mode);
+
+                tx_buffer[0] = 'C';
+                StrWriteFloat(roll.error, 3, 2, tx_buffer, 1);
+                StrWriteFloat(pitch.error, 3, 2, tx_buffer, 8);
+                StrWriteFloat(yaw.error, 3, 2, tx_buffer, 15);
+                StrWriteFloat(altitude.offset - altitude.error, 3, 2, tx_buffer, 22);
+                StrWriteFloat(altitude.derivative, 3, 8, tx_buffer, 29);
+                StrWriteFloat(altitude.output - altitude_setpoint, 3, 8, tx_buffer, 42);
+                tx_buffer[55] = loop_mode;
+                tx_buffer[56] = '\r';
+                tx_buffer[57] = '\0';     
+
+                tx_buffer_timer = 0;
+                tx_flag = 1;
             }
         }
         LOOP_TIMER_ON = 0;

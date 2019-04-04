@@ -67,9 +67,9 @@ void QuaternionToEuler(float q[], float *roll, float *pitch, float *yaw) {
     *yaw = -atan2(2.0f * (q[0] * q[3] + q[1] * q[2]), 1.0f - 2.0f * (a + q[3] * q[3])) * RAD_TO_DEGREES - HEADINGOFFSET;
     
     //Limit angles within -180 and +180 degrees
-    LimitAngle(yaw);
-    LimitAngle(roll);
-    LimitAngle(pitch);
+    *roll = LimitAngle(*roll)
+    *pitch = LimitAngle(*pitch)
+    *yaw = LimitAngle(*yaw)
 }
 
 void MadgwickQuaternionUpdate(float q[], XYZ a, XYZ g, XYZ m, float deltat) {

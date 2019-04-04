@@ -9,11 +9,23 @@ volatile rx XBee, XBee_temp;
 
 volatile int safety_counter = 0;
 
+volatile unsigned char tx_buffer_timer = 0;
 volatile unsigned char tx_buffer_index = 0;
 volatile bool tx_flag = 0;
-volatile bool signal_temp = 0;
+volatile bool XBee_signal_temp = 0;
 
 char tx_buffer[200];
+
+void XBeeReset() {
+    XBee.x1 = 0;
+    XBee.y1 = 0;
+    XBee.x2 = 0;
+    XBee.y2 = 0;
+    XBee.ls = 0;
+    XBee.rs = 0;
+    XBee.signal = 0;
+    XBee.data_ready = 0;
+}
 
 rx ReadXBee() {
     return XBee;
@@ -23,13 +35,8 @@ void SendCalibrationData() {
     XYZ compass_max, compass_min;
     
     GetRawIMU();
-    compass_max.x = compass.x;
-    compass_max.y = compass.y;
-    compass_max.z = compass.z;
-    
-    compass_min.x = compass.x;
-    compass_min.y = compass.y;
-    compass_min.z = compass.z;    
+    compass_max = compass;    
+    compass_min = compass; 
     
     DELAY_TIMER_ON = 1;
     TX_TIMER_ON = 1;
