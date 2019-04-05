@@ -136,7 +136,6 @@ void main() {
         gyro_avg = VectorScale(gyro_avg, 1 / 1000.0);
         
         gravity_mag = sqrt(acc_avg.x * acc_avg.x + acc_avg.y * acc_avg.y + acc_avg.z * acc_avg.z);
-        //MultiplyVectorQuarternion(q, acc, &gravity);
 
         //Read initial heading
         take_off_heading = LimitAngle(-atan2(2.0f * (q[1] * q[2] + q[0] * q[3]), q[0] * q[0] + q[1] * q[1] - q[2] * q[2] - q[3] * q[3]) * RAD_TO_DEGREES - HEADINGOFFSET);
@@ -179,7 +178,7 @@ void main() {
             #if board_version == 4
                 if(ToF_counter >= 10) {
                     ToF_distance = ToF_readRange();
-                    if(ToF_valueGood != 0)
+                    if(ToF_valueGood() != 0)
                         ToF_distance = -1;
                 }
             #endif
@@ -261,8 +260,8 @@ void main() {
                         remote_angle = -atan2((float)XBee_rx.x1, (float)XBee_rx.y1) * RAD_TO_DEGREES;  //Angle with respect to pilot/starting position
                     remote_angle_difference = LimitAngle(yaw.error - remote_angle); //Remote's angle with respect to quad's current direction
 
-                    pitch.offset = -MAX_PITCH_ROLL_TILT * remote_magnitude / REMOTE_MAX * cos(remote_angle_difference / RAD_TO_DEGREES);
-                    roll.offset = MAX_PITCH_ROLL_TILT * remote_magnitude / REMOTE_MAX * sin(remote_angle_difference / RAD_TO_DEGREES);
+                    pitch.offset = MAX_PITCH_ROLL_TILT * remote_magnitude / REMOTE_MAX * -cos(remote_angle_difference / RAD_TO_DEGREES);
+                    roll.offset  = MAX_PITCH_ROLL_TILT * remote_magnitude / REMOTE_MAX *  sin(remote_angle_difference / RAD_TO_DEGREES);
                 }
 
                 //---------------------------------------------------------------3 modes----------------------------------------------------------------------------------

@@ -197,13 +197,13 @@ void GetCompensatedAcc(float q[4], float gravity_mag, XYZ *acc_pure, XYZ *acc_co
     acc_comp->z = -1 * ((num8 - num11) * acc_pure->x + (num9 + num10) * acc_pure->y + (1.0 - (num4 + num5)) * acc_pure->z);
 }
 
-float altitude_kf_P[2][2] = { { 1.0f, 0.0f },
+static float altitude_kf_P[2][2] = { { 1.0f, 0.0f },
                               { 0.0f, 1.0f } };
 
-float altitude_kf_h = 0.0;
-float altitude_kf_v = 0.0;
+static float altitude_kf_h = 0.0;
+static float altitude_kf_v = 0.0;
 
-float altitude_kf_acc_buffer[ALITUDE_KF_ACC_BUFFER_SIZE];
+static float altitude_kf_acc_buffer[ALITUDE_KF_ACC_BUFFER_SIZE];
 
 void altitude_KF_reset() {
     altitude_kf_P[0][0] = 1.0f;
