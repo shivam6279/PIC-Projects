@@ -19,7 +19,7 @@ extern volatile rx XBee, XBee_temp;
 
 extern volatile int safety_counter;
 
-extern volatile unsigned char tx_buffer_timer = 0;
+//extern volatile unsigned char tx_buffer_timer;
 extern volatile unsigned char tx_buffer_index;
 extern volatile bool tx_flag;
 extern volatile bool XBee_signal_temp;

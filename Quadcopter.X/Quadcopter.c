@@ -66,6 +66,8 @@ void main() {
     char loop_mode, p_loop_mode;                                                    //Stabilize/alt-hold/pos-hold
     bool kill, p_kill;
     
+    unsigned char tx_buffer_timer = 0;
+    
     Init();
     delay_ms(100);
     Init_10DOF();
@@ -153,11 +155,15 @@ void main() {
         
         loop_mode = 0;
         kill = 0;
+        esc_counter = 0;
+        loop_counter = 0;
         ToF_counter = 0;
         tx_buffer_timer = 0;
         
         LOOP_TIMER_ON = 1;
         TX_TIMER_ON = 1;
+        
+        XBee_rx = ReadXBee();
         
         //Main Loop
         while(XBee.rs == 0) {
@@ -305,9 +311,9 @@ void main() {
 
                 //---------------------------------------------------------Roll/Pitch/Yaw - PID----------------------------------------------------------------------------
 
-                PIDDifferentiate(&roll,  1.0f / ESC_FREQ);
-                PIDDifferentiate(&pitch, 1.0f / ESC_FREQ);
-                PIDDifferentiate(&yaw,   1.0f / ESC_FREQ);
+                PIDDifferentiateAngle(&roll,  1.0f / ESC_FREQ);
+                PIDDifferentiateAngle(&pitch, 1.0f / ESC_FREQ);
+                PIDDifferentiateAngle(&yaw,   1.0f / ESC_FREQ);
 
                 PIDOutputAngle(&roll);
                 PIDOutputAngle(&pitch);
@@ -336,9 +342,27 @@ void main() {
                 else 
                     TurnMotorsOff();
 
-                //---------------------------------------------------------------------------------------------------------------------------------------------------------                
-            }
+                //---------------------------------------------------------------------------------------------------------------------------------------------------------     
+                
+                if(tx_buffer_timer++ >= 10) {    
+                    //SendFlightData(roll, pitch, yaw, altitude, loop_mode);
 
+                    tx_buffer[0] = 'C';
+                    StrWriteFloat(roll.error, 3, 2, tx_buffer, 1);
+                    StrWriteFloat(pitch.error, 3, 2, tx_buffer, 8);
+                    StrWriteFloat(yaw.error, 3, 2, tx_buffer, 15);
+                    StrWriteFloat(altitude.offset - altitude.error, 3, 2, tx_buffer, 22);
+                    StrWriteFloat(altitude.derivative, 3, 8, tx_buffer, 29);
+                    StrWriteFloat(altitude.output - altitude_setpoint, 3, 8, tx_buffer, 42);
+                    tx_buffer[55] = loop_mode;
+                    tx_buffer[56] = '\r';
+                    tx_buffer[57] = '\0';     
+
+                    tx_buffer_timer = 0;
+                    tx_flag = 1;
+                }
+            }
+            /*
             //--------------------------------------------------------Send Data to remote-----------------------------------------------------------------------------
             if(tx_buffer_timer >= 20) {    
                 //SendFlightData(roll, pitch, yaw, altitude, loop_mode);
@@ -356,7 +380,7 @@ void main() {
 
                 tx_buffer_timer = 0;
                 tx_flag = 1;
-            }
+            }*/
         }
         LOOP_TIMER_ON = 0;
         TX_TIMER_ON = 0;

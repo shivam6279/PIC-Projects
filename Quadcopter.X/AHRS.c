@@ -62,14 +62,9 @@ void QuaternionToEuler(float q[], float *roll, float *pitch, float *yaw) {
     */
 
     //Converting quaternion to Euler angles
-    *roll = -(asin(2.0f * (q[0] * q[2] - q[3] * q[1]))) * RAD_TO_DEGREES - ROLLOFFSET;
-    *pitch = (atan2(2.0f * (q[0] * q[1] + q[2] * q[3]), 1.0f - 2.0f * (q[1] * q[1] + a)) + PI) * RAD_TO_DEGREES - PITCHOFFSET;
-    *yaw = -atan2(2.0f * (q[0] * q[3] + q[1] * q[2]), 1.0f - 2.0f * (a + q[3] * q[3])) * RAD_TO_DEGREES - HEADINGOFFSET;
-    
-    //Limit angles within -180 and +180 degrees
-    *roll = LimitAngle(*roll)
-    *pitch = LimitAngle(*pitch)
-    *yaw = LimitAngle(*yaw)
+    *roll = LimitAngle(-(asin(2.0f * (q[0] * q[2] - q[3] * q[1]))) * RAD_TO_DEGREES - ROLLOFFSET);
+    *pitch = LimitAngle((atan2(2.0f * (q[0] * q[1] + q[2] * q[3]), 1.0f - 2.0f * (q[1] * q[1] + a)) + PI) * RAD_TO_DEGREES - PITCHOFFSET);
+    *yaw = LimitAngle(-atan2(2.0f * (q[0] * q[3] + q[1] * q[2]), 1.0f - 2.0f * (a + q[3] * q[3])) * RAD_TO_DEGREES - HEADINGOFFSET);
 }
 
 void MadgwickQuaternionUpdate(float q[], XYZ a, XYZ g, XYZ m, float deltat) {

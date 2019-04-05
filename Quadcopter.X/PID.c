@@ -38,7 +38,7 @@ float LimitAngle(float a) {
     while(a < (-180.0) || a > 180.0) { 
         if(a < (-180.0)) 
             a += 360.0; 
-        else if(*a > 180.0) 
+        else if(a > 180.0) 
             a -= 360.0; 
     }
     return a;
@@ -56,11 +56,11 @@ void PIDSet(PID *x, float kp, float ki, float kd) {
     x->offset = 0.0f;
 }
 
-void PIDIntegerate(PID *a, float deltat) {
+void PIDIntegrate(PID *a, float deltat) {
     a->sum += (a->error - a->offset) * deltat;
 }
 
-void PIDIntegerateAngle(PID *a, float deltat) {
+void PIDIntegrateAngle(PID *a, float deltat) {
     a->sum += LimitAngle(a->error - a->offset) * deltat;
 }
 
@@ -75,11 +75,11 @@ void PIDDifferentiateAngle(PID *a, float deltat) {
 }
 
 void PIDOutput(PID *a) {
-    a->output = a->p * (a->error - a->offset) + a->i * a->sum + a->d * roll.derivative;
+    a->output = a->p * (a->error - a->offset) + a->i * a->sum + a->d * a->derivative;
 }
 
 void PIDOutputAngle(PID *a) {
-    a->output = a->p * LimitAngle(a->error - a->offset) + a->i * a->sum + a->d * roll.derivative;
+    a->output = a->p * LimitAngle(a->error - a->offset) + a->i * a->sum + a->d * a->derivative;
 }
 
 void StrWriteInt(int a, unsigned char precision, char str[], unsigned char n) {
