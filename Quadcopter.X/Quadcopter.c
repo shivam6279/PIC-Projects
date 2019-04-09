@@ -66,7 +66,7 @@ void main() {
     char loop_mode, p_loop_mode;                                                    //Stabilize/alt-hold/pos-hold
     bool kill, p_kill;
     
-    unsigned char tx_buffer_timer = 0;
+    //unsigned char tx_buffer_timer = 0;
     
     Init();
     delay_ms(100);
@@ -155,9 +155,10 @@ void main() {
         loop_mode = 0;
         kill = 0;
         esc_counter = 0;
-        loop_counter = 0;
+        data_aq_counter = 0;
         ToF_counter = 0;
         tx_buffer_timer = 0;
+        altitude_setpoint = 0;
         
         LOOP_TIMER_ON = 1;
         TX_TIMER_ON = 1;
@@ -165,34 +166,37 @@ void main() {
         XBee_rx = ReadXBee();
         
         //Main Loop
-        while(XBee.rs == 0) {
-            loop_time = (double)loop_counter / 1000000.0;   // Loop time in seconds: 
-            loop_counter = 0;
+        while(XBee_rx.rs == 0) {
             
-            //--------------------------------------------------------IMU data acquisition---------------------------------------------------------------------------
+            //----------------------------------------------------------IMU data acquisition-----------------------------------------------------------------------------
+            if(data_aq_counter >= 50) {
+                loop_time = (float)data_aq_counter / 1000000.0f;   // Loop time in seconds: 
+                data_aq_counter = 0;                
 
-            GetAcc();
-            GetGyro();
-            GetCompass(); 
-            
-            #if board_version == 4
-                if(ToF_counter >= 10) {
-                    ToF_distance = ToF_readRange();
-                    if(ToF_valueGood() != 0)
-                        ToF_distance = -1;
+                GetAcc();
+                GetGyro();
+                GetCompass(); 
+
+                #if board_version == 4
+                    if(ToF_counter >= 10) {
+                        ToF_distance = ToF_readRange();
+                        if(ToF_valueGood() != 0)
+                            ToF_distance = -1;
+                    }
+                #endif
+
+                //Update quaternion
+                MadgwickQuaternionUpdate(q, acc, gyro, compass, loop_time);
+                
+                //Update altitude kalman filter
+                GetCompensatedAcc(q, gravity_mag, &acc_pure, &acc_comp);
+                altitude_KF_propagate(acc_comp.z, loop_time);         
+
+                if(XBee_rx.y2 > 1 && !kill) {
+                    PIDIntegrateAngle(&roll, loop_time);
+                    PIDIntegrateAngle(&pitch, loop_time);
+                    PIDIntegrateAngle(&yaw, loop_time);
                 }
-            #endif
-
-            //------------------------------------------------------Update quaternion and get angles-----------------------------------------------------------------
-
-            MadgwickQuaternionUpdate(q, acc, gyro, compass, loop_time); //Update the quaternion with the current accelerometer, gyroscope and magnetometer vectors
-            GetCompensatedAcc(q, gravity_mag, &acc_pure, &acc_comp);
-            altitude_KF_propagate(acc_comp.z, loop_time);         
-
-            if(XBee_rx.y2 > 1 && !kill) {
-                PIDIntegrateAngle(&roll, loop_time);
-                PIDIntegrateAngle(&pitch, loop_time);
-                PIDIntegrateAngle(&yaw, loop_time);
             }
 
             /*
@@ -201,7 +205,8 @@ void main() {
                 XBee_data_ready = 0;
             }
             */
-
+            
+            //----------------------------------------------------------IMU data acquisition-----------------------------------------------------------------------------
             if(esc_counter >= ESC_TIME_us) {
                 esc_counter = 0;
                 p_kill = kill;
@@ -241,7 +246,7 @@ void main() {
                 //---------------------------------------------------------------Altitude---------------------------------------------------------------------------------
                 
                 QuaternionToEuler(q, &roll.error, &pitch.error, &heading);
-
+                
                 yaw.error = LimitAngle(heading - take_off_heading);
                 
                 if(LoopAltitude(&altitude.error, &temperature)) {
@@ -309,14 +314,16 @@ void main() {
                 }
 
                 //---------------------------------------------------------Roll/Pitch/Yaw - PID----------------------------------------------------------------------------
-
+                
+                
                 PIDDifferentiateAngle(&roll,  1.0f / ESC_FREQ);
                 PIDDifferentiateAngle(&pitch, 1.0f / ESC_FREQ);
                 PIDDifferentiateAngle(&yaw,   1.0f / ESC_FREQ);
 
                 PIDOutputAngle(&roll);
                 PIDOutputAngle(&pitch);
-
+                
+                    
                 if(XBee_rx.x2 < 3 && XBee_rx.x2 > (-3)) {
                     PIDOutputAngle(&yaw);
                 } else {
@@ -340,30 +347,10 @@ void main() {
                     WriteMotors(speed);
                 else 
                     TurnMotorsOff();
-
-                //---------------------------------------------------------------------------------------------------------------------------------------------------------     
-                
-                if(tx_buffer_timer++ >= 10) {    
-                    //SendFlightData(roll, pitch, yaw, altitude, loop_mode);
-
-                    tx_buffer[0] = 'C';
-                    StrWriteFloat(roll.error, 3, 2, tx_buffer, 1);
-                    StrWriteFloat(pitch.error, 3, 2, tx_buffer, 8);
-                    StrWriteFloat(yaw.error, 3, 2, tx_buffer, 15);
-                    StrWriteFloat(altitude.offset - altitude.error, 3, 2, tx_buffer, 22);
-                    StrWriteFloat(altitude.derivative, 3, 8, tx_buffer, 29);
-                    StrWriteFloat(altitude.output - altitude_setpoint, 3, 8, tx_buffer, 42);
-                    tx_buffer[55] = loop_mode;
-                    tx_buffer[56] = '\r';
-                    tx_buffer[57] = '\0';     
-
-                    tx_buffer_timer = 0;
-                    tx_flag = 1;
-                }
             }
-            /*
+            
             //--------------------------------------------------------Send Data to remote-----------------------------------------------------------------------------
-            if(tx_buffer_timer >= 20) {    
+            if(tx_buffer_timer >= 50) {    
                 //SendFlightData(roll, pitch, yaw, altitude, loop_mode);
 
                 tx_buffer[0] = 'C';
@@ -379,7 +366,7 @@ void main() {
 
                 tx_buffer_timer = 0;
                 tx_flag = 1;
-            }*/
+            }
         }
         LOOP_TIMER_ON = 0;
         TX_TIMER_ON = 0;

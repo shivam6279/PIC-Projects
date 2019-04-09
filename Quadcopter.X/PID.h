@@ -9,8 +9,8 @@ typedef struct {
     float output;
 } PID;
 
-extern volatile unsigned long int loop_counter;
 extern volatile unsigned long int esc_counter;
+extern volatile unsigned long int data_aq_counter;
 extern volatile unsigned char altitude_timer;
 extern volatile unsigned int ToF_counter;
 
@@ -23,8 +23,8 @@ extern void PIDIntegrateAngle(PID*, float);
 extern void PIDDifferentiate(PID*, float);
 extern void PIDCompute(PID*);
 
-extern void StrWriteInt(int, unsigned char, char[], unsigned char);
-extern void StrWriteFloat(double, unsigned char, unsigned char, char[], unsigned char);
+extern void StrWriteInt(int, unsigned char, volatile char[], unsigned char);
+extern void StrWriteFloat(double, unsigned char, unsigned char, volatile char[], unsigned char);
 extern void WriteRGBLed(unsigned int, unsigned int, unsigned int);
 
 #endif

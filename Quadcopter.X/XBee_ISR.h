@@ -40,6 +40,7 @@ void __ISR_AT_VECTOR(_UART1_RX_VECTOR, IPL6SRS) Xbee_rx(void) {
                 XBee_temp.d1 = (XBee_rx_byte & 0b00000011);
                 safety_counter = 0;
                 if(XBee_signal_temp) {
+                    XBee_signal_temp = 0;
                     XBee_temp.signal = 1;
                     XBee_temp.data_ready = 1;
 
@@ -48,12 +49,13 @@ void __ISR_AT_VECTOR(_UART1_RX_VECTOR, IPL6SRS) Xbee_rx(void) {
                 break;
         }
     }while(U1STAbits.URXDA);
-
-    //IFS3bits.U1RXIF = 0; 
+    
+    IFS3bits.U1RXIF = 0; 
 }
 
 void __ISR_AT_VECTOR(_TIMER_6_VECTOR, IPL4SRS) Xbee_tx(void) {
     IFS0bits.T6IF = 0;
+    
     if(tx_flag) {
         while(!U1STAbits.UTXBF) {
             U1TXREG = tx_buffer[tx_buffer_index];
@@ -67,11 +69,11 @@ void __ISR_AT_VECTOR(_TIMER_6_VECTOR, IPL4SRS) Xbee_tx(void) {
     }
 }
 
-void __ISR_AT_VECTOR(_TIMER_7_VECTOR, IPL4SRS) safety_timer(void) {
+void __ISR_AT_VECTOR(_TIMER_7_VECTOR, IPL4SRS) general_purpose_1KHz(void) {
     IFS1bits.T7IF = 0;
     altitude_timer++;
     ToF_counter++;
-    //tx_buffer_timer++;
+    tx_buffer_timer++;
     if(safety_counter < 500) {
         safety_counter++;
     } 

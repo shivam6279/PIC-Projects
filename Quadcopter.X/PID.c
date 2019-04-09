@@ -28,8 +28,8 @@ void SetPIDGain(PID *roll, PID* pitch, PID *yaw, PID *altitude, PID *GPS) {
     #endif
 }
 
-volatile unsigned long int loop_counter = 0;
 volatile unsigned long int esc_counter = 0;
+volatile unsigned long int data_aq_counter;
 volatile unsigned char altitude_timer = 0;
 volatile unsigned int ToF_counter = 0;
 
@@ -82,7 +82,7 @@ void PIDOutputAngle(PID *a) {
     a->output = a->p * LimitAngle(a->error - a->offset) + a->i * a->sum + a->d * a->derivative;
 }
 
-void StrWriteInt(int a, unsigned char precision, char str[], unsigned char n) {
+void StrWriteInt(int a, unsigned char precision, volatile char str[], unsigned char n) {
     if(a < 0) { 
         a *= (-1); 
         str[n++] = '-'; 
@@ -102,7 +102,7 @@ void StrWriteInt(int a, unsigned char precision, char str[], unsigned char n) {
         str[n++] = ((a / (int)pow(10, (precision - 1))) % 10) + 48;
 }
 
-void StrWriteFloat(double a, unsigned char left, unsigned char right, char str[], unsigned char n) {
+void StrWriteFloat(double a, unsigned char left, unsigned char right, volatile char str[], unsigned char n) {
     unsigned char i;
     long int tens = 10;
     if(a < 0) { 

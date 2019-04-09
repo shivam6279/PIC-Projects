@@ -8,13 +8,12 @@
 volatile rx XBee, XBee_temp;
 
 volatile int safety_counter = 0;
-
-//volatile unsigned char tx_buffer_timer = 0;
 volatile unsigned char tx_buffer_index = 0;
+volatile unsigned char tx_buffer_timer = 0;
 volatile bool tx_flag = 0;
 volatile bool XBee_signal_temp = 0;
 
-char tx_buffer[200];
+volatile char tx_buffer[200];
 
 void XBeeReset() {
     XBee.x1 = 0;

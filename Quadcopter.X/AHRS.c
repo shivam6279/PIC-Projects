@@ -1,6 +1,7 @@
 #include "AHRS.h"
 #include "10DOF.h"
 #include "GPS.h"
+#include "PID.h"
 #include <math.h>
 
 void MultiplyVectorQuarternion(float q[4], XYZ r, XYZ *v) {
@@ -62,9 +63,13 @@ void QuaternionToEuler(float q[], float *roll, float *pitch, float *yaw) {
     */
 
     //Converting quaternion to Euler angles
-    *roll = LimitAngle(-(asin(2.0f * (q[0] * q[2] - q[3] * q[1]))) * RAD_TO_DEGREES - ROLLOFFSET);
-    *pitch = LimitAngle((atan2(2.0f * (q[0] * q[1] + q[2] * q[3]), 1.0f - 2.0f * (q[1] * q[1] + a)) + PI) * RAD_TO_DEGREES - PITCHOFFSET);
-    *yaw = LimitAngle(-atan2(2.0f * (q[0] * q[3] + q[1] * q[2]), 1.0f - 2.0f * (a + q[3] * q[3])) * RAD_TO_DEGREES - HEADINGOFFSET);
+    *roll = -(asin(2.0f * (q[0] * q[2] - q[3] * q[1]))) * RAD_TO_DEGREES - ROLLOFFSET;
+    *pitch = (atan2(2.0f * (q[0] * q[1] + q[2] * q[3]), 1.0f - 2.0f * (q[1] * q[1] + a)) + PI) * RAD_TO_DEGREES - PITCHOFFSET;
+    *yaw = -atan2(2.0f * (q[0] * q[3] + q[1] * q[2]), 1.0f - 2.0f * (a + q[3] * q[3])) * RAD_TO_DEGREES - HEADINGOFFSET;
+    
+    *roll = LimitAngle(*roll);
+    *pitch = LimitAngle(*pitch);
+    *yaw = LimitAngle(*yaw);
 }
 
 void MadgwickQuaternionUpdate(float q[], XYZ a, XYZ g, XYZ m, float deltat) {
