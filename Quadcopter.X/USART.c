@@ -11,14 +11,13 @@ void USART1_init(unsigned long int baud_rate) {
         U1RXRbits.U1RXR = 8;
         RPB3Rbits.RPB3R = 1;
         CFGCONbits.IOLOCK = 1;
-
     #elif board_version == 4
-        TRISCbits.TRISC14 = 1;
-        TRISCbits.TRISC13 = 0;
+        TRISDbits.TRISD10 = 1;
+        TRISDbits.TRISD11 = 0;
         U1MODEbits.ON = 0;
         CFGCONbits.IOLOCK = 0;
-        U1RXRbits.U1RXR = 0b0111;
-        RPC13Rbits.RPC13R = 0b0001;
+        U1RXRbits.U1RXR = 0b0011;
+        RPD11Rbits.RPD11R = 0b0001;
         CFGCONbits.IOLOCK = 1;
     #endif
     
@@ -147,10 +146,10 @@ void USART5_init(unsigned long int baud_rate) {
 
 void USART3_init(unsigned long int baud_rate) {
     TRISDbits.TRISD11 = 1;
-    U5MODEbits.ON = 0;
+    U3MODEbits.ON = 0;
     CFGCONbits.IOLOCK = 0;
-    U3RXRbits.U3RXR = 0b0011;   //U3RX at RD11
-    RPD10Rbits.RPD10R = 0b0001;  //U3TX at RD10
+    U3RXRbits.U3RXR = 0b0111;   //U3RX at RC13
+    RPC14Rbits.RPC14R = 0b0001;  //U3TX at RC14
     CFGCONbits.IOLOCK = 1;
     
     U3BRG = (100000000.0f / (float)baud_rate / 4.0f) - 1;
