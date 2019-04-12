@@ -5,6 +5,8 @@
 #include "AHRS.h"
 #include "settings.h"
 
+float max_altitude_rate = MAX_ALLTITUDE_RATE;
+
 #if ALTITUDE_BUFFER_SIZE > 0
     float altitude_buffer[ALTITUDE_BUFFER_SIZE];
 #endif

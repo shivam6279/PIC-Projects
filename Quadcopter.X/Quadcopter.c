@@ -138,7 +138,7 @@ void main() {
         gravity_mag = sqrt(acc_avg.x * acc_avg.x + acc_avg.y * acc_avg.y + acc_avg.z * acc_avg.z);
 
         //Read initial heading
-        take_off_heading = LimitAngle(-atan2(2.0f * (q[1] * q[2] + q[0] * q[3]), q[0] * q[0] + q[1] * q[1] - q[2] * q[2] - q[3] * q[3]) * RAD_TO_DEGREES - HEADINGOFFSET);
+        take_off_heading = LimitAngle(-atan2(2.0f * (q[1] * q[2] + q[0] * q[3]), q[0] * q[0] + q[1] * q[1] - q[2] * q[2] - q[3] * q[3]) * RAD_TO_DEGREES - heading_offset);
 
         //Read take-off altitude
         altitude_KF_reset();
@@ -168,7 +168,7 @@ void main() {
         //Main Loop
         while(XBee_rx.rs == 0) {
             
-            //----------------------------------------------------------IMU data acquisition-----------------------------------------------------------------------------
+            //------------------------------------------------------------IMU data acquisition---------------------------------------------------------------------------
             if(data_aq_counter >= 50) {
                 loop_time = (float)data_aq_counter / 1000000.0f;   // Loop time in seconds: 
                 data_aq_counter = 0;                
@@ -206,7 +206,6 @@ void main() {
             }
             */
             
-            //----------------------------------------------------------IMU data acquisition-----------------------------------------------------------------------------
             if(esc_counter >= ESC_TIME_us) {
                 esc_counter = 0;
                 p_kill = kill;
@@ -265,8 +264,8 @@ void main() {
                         remote_angle = -atan2((float)XBee_rx.x1, (float)XBee_rx.y1) * RAD_TO_DEGREES;  //Angle with respect to pilot/starting position
                     remote_angle_difference = LimitAngle(yaw.error - remote_angle); //Remote's angle with respect to quad's current direction
 
-                    pitch.offset = MAX_PITCH_ROLL_TILT * remote_magnitude / REMOTE_MAX * -cos(remote_angle_difference / RAD_TO_DEGREES);
-                    roll.offset  = MAX_PITCH_ROLL_TILT * remote_magnitude / REMOTE_MAX *  sin(remote_angle_difference / RAD_TO_DEGREES);
+                    pitch.offset = max_pitch_roll_tilt * remote_magnitude / REMOTE_MAX * -cos(remote_angle_difference / RAD_TO_DEGREES);
+                    roll.offset  = max_pitch_roll_tilt * remote_magnitude / REMOTE_MAX *  sin(remote_angle_difference / RAD_TO_DEGREES);
                 }
 
                 //---------------------------------------------------------------3 modes----------------------------------------------------------------------------------
@@ -291,16 +290,17 @@ void main() {
                         altitude.offset = altitude.error;                
                     }
                     //if(altitude_rate.output < 0.0) altitude_rate.output *= 1.2;
-                    //altitude_rate.output += altitude_setpoint;
                 }
 
                 //--Pos-hold---
                 else if(loop_mode == 'P') {
                     altitude.output = (float)XBee_rx.y2 / THROTTLE_MAX * MAX_SPEED;
+
                     GPS.error = DifferenceLatLon(take_off_latitude, take_off_longitude, latitude, longitude);
                     GPS_bearing_difference = LimitAngle(heading - DifferenceBearing(take_off_latitude, take_off_longitude, latitude, longitude));
                     GPS.output = (GPS.p * GPS.error); 
-                    pitch.offset = -1 * GPS.output * cos((GPS_bearing_difference / RAD_TO_DEGREES) + PI);
+
+                    pitch.offset = -GPS.output * cos((GPS_bearing_difference / RAD_TO_DEGREES) + PI);
                     roll.offset = GPS.output * sin((GPS_bearing_difference / RAD_TO_DEGREES) + PI);
 
                     if(roll.offset > 18) 

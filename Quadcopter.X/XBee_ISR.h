@@ -74,6 +74,7 @@ void __ISR_AT_VECTOR(_TIMER_7_VECTOR, IPL4SRS) general_purpose_1KHz(void) {
     altitude_timer++;
     ToF_counter++;
     tx_buffer_timer++;
+    
     if(safety_counter < 500) {
         safety_counter++;
     } 

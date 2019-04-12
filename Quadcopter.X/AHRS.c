@@ -4,6 +4,10 @@
 #include "PID.h"
 #include <math.h>
 
+float roll_offset = ROLLOFFSET;
+float pitch_offset = PITCHOFFSET;
+float heading_offset = HEADINGOFFSET;
+
 void MultiplyVectorQuarternion(float q[4], XYZ r, XYZ *v) {
     float num1 = q[0] * 2.0;
 	float num2 = q[1] * 2.0;
@@ -56,16 +60,10 @@ void RotateVector(float roll, float pitch, float yaw, XYZ *v) {
 void QuaternionToEuler(float q[], float *roll, float *pitch, float *yaw) {
     float a = q[2] * q[2];
 
-    /*
-    *roll = (atan2(2.0f * (q[0] * q[2] - q[3] * q[1]), q[0] * q[0] - q[1] * q[1] - q[2] * q[2] + q[3] * q[3]) + PI) * RAD_TO_DEGREES - ROLLOFFSET;
-    *pitch = (atan2(2.S0f * (q[0] * q[1] + q[2] * q[3]), q[0] * q[0] - q[1] * q[1] - q[2] * q[2] + q[3] * q[3]) + PI) * RAD_TO_DEGREES - PITCHOFFSET;
-    *heading = -atan2(2.0f * (q[1] * q[2] + q[0] * q[3]), q[0] * q[0] + q[1] * q[1] - q[2] * q[2] - q[3] * q[3]) * RAD_TO_DEGREES - HEADINGOFFSET;
-    */
-
     //Converting quaternion to Euler angles
-    *roll = -(asin(2.0f * (q[0] * q[2] - q[3] * q[1]))) * RAD_TO_DEGREES - ROLLOFFSET;
-    *pitch = (atan2(2.0f * (q[0] * q[1] + q[2] * q[3]), 1.0f - 2.0f * (q[1] * q[1] + a)) + PI) * RAD_TO_DEGREES - PITCHOFFSET;
-    *yaw = -atan2(2.0f * (q[0] * q[3] + q[1] * q[2]), 1.0f - 2.0f * (a + q[3] * q[3])) * RAD_TO_DEGREES - HEADINGOFFSET;
+    *roll = -(asin(2.0f * (q[0] * q[2] - q[3] * q[1]))) * RAD_TO_DEGREES - roll_offset;
+    *pitch = (atan2(2.0f * (q[0] * q[1] + q[2] * q[3]), 1.0f - 2.0f * (q[1] * q[1] + a)) + PI) * RAD_TO_DEGREES - pitch_offset;
+    *yaw = -atan2(2.0f * (q[0] * q[3] + q[1] * q[2]), 1.0f - 2.0f * (a + q[3] * q[3])) * RAD_TO_DEGREES - heading_offset;
     
     *roll = LimitAngle(*roll);
     *pitch = LimitAngle(*pitch);
@@ -203,7 +201,7 @@ void GetCompensatedAcc(float q[4], float gravity_mag, XYZ *acc_pure, XYZ *acc_co
 }
 
 static float altitude_kf_P[2][2] = { { 1.0f, 0.0f },
-                              { 0.0f, 1.0f } };
+                                     { 0.0f, 1.0f } };
 
 static float altitude_kf_h = 0.0;
 static float altitude_kf_v = 0.0;

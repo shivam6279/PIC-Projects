@@ -27,4 +27,6 @@ extern void StrWriteInt(int, unsigned char, volatile char[], unsigned char);
 extern void StrWriteFloat(double, unsigned char, unsigned char, volatile char[], unsigned char);
 extern void WriteRGBLed(unsigned int, unsigned int, unsigned int);
 
+extern float max_pitch_roll_tilt, max_yaw_rate;
+
 #endif

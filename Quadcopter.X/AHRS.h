@@ -25,11 +25,6 @@ extern void altitude_KF_update(float);
 extern float altitude_KF_getAltitude();
 extern float altitude_KF_getVelocity();
 
-/*
-extern float altitude_kf_acc_buffer[ALITUDE_KF_ACC_BUFFER_SIZE];
-extern float altitude_kf_P[2][2];
-extern float altitude_kf_h;
-extern float altitude_kf_v;
-*/
+extern float roll_offset, pitch_offset, heading_offset;
 
 #endif
