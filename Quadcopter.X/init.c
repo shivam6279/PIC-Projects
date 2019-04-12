@@ -22,9 +22,9 @@ void Init() {
     timer5_init(10.0);      // GPS timer - 10Hz
     timer6_init(312500.0);  // XBee tx timer - 312.5kHz
     
-    #ifdef board_v4
+    #if board_version == 4
         USART3_init(9600);      // GPS
-        ToF_init();
+        VL6180_init();
     #else
         USART5_init(9600);      // GPS
     #endif

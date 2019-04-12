@@ -36,7 +36,7 @@ int MOTOR_OFF, MOTOR_MAX;
         temp = MOTOR_OFF_TIME / 1000000.0 * freq * (float)PWM_MAX;
         MOTOR_OFF = (int)temp;
         temp = MOTOR_MAX_TIME / 1000000.0 * freq * (float)PWM_MAX;
-        MOTOR_OFF = (int)temp;
+        MOTOR_MAX = (int)temp;
 
         OC1CON = 0;  
         OC1R = MOTOR_OFF;
@@ -77,7 +77,7 @@ int MOTOR_OFF, MOTOR_MAX;
         PR3 = PWM_MAX;
         T3CONbits.TON   = 1;
         
-        OC1CONbits.ON = 1;
+        OC1CONbits.ON = 1;.
         OC2CONbits.ON = 1;
         OC3CONbits.ON = 1;
         OC4CONbits.ON = 1;
