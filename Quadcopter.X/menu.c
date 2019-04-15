@@ -7,7 +7,7 @@
 #include "GPS.h"
 #include <xc.h>
 
-void Menu(PID *x, PID *y, PID *a){
+void Menu(PID *x, PID *y, PID *z, PID *a){
     bool flag_menu = 1; 
     signed char cursor = 0; 
     unsigned int r, g, b;
@@ -64,30 +64,36 @@ void Menu(PID *x, PID *y, PID *a){
                 if(XBee.x1 > 12) {
                     x->p += 0.01; 
                     y->p += 0.01; 
+                    z->p += 0.01;
                 }
                 else if(XBee.x1 < (-12)) {
                     x->p -= 0.01; 
                     y->p -= 0.01; 
+                    z->p -= 0.01;
                 }
                 break;
             case 1:
                 if(XBee.x1 > 12) { 
                     x->i += 0.01; 
                     y->i += 0.01; 
+                    z->i += 0.01;
                 }
                 else if(XBee.x1 < (-12)) { 
                     x->i -= 0.01; 
                     y->i -= 0.01; 
+                    z->i -= 0.01;
                 }
                 break;
             case 2:
                 if(XBee.x1 > 12) { 
                     x->d += 0.01; 
                     y->d += 0.01; 
+                    z->d += 0.01;
                 }
                 else if(XBee.x1 < (-12)) { 
                     x->d -= 0.01; 
                     y->d -= 0.01; 
+                    z->d -= 0.01;
                 }
                 break;
             case 3:

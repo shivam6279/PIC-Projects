@@ -10,8 +10,11 @@ void PICInit(){
     TRISE = 0; 
     TRISF = 0;
     ANSELB = 0;
+    
+#if board_version == 1 || board_version == 2 || board_version == 3
     LATBbits.LATB15 = 0;
     TRISBbits.TRISB15 = 1;
+#endif
     
     PRECONbits.PREFEN = 3;
     PRECONbits.PFMWS = 2;

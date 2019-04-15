@@ -1,5 +1,6 @@
 #include "motor.h"
 #include "PWM.h"
+#include "XBee.h"
 
 void LimitSpeed(Motors *x){
     if(x->upRight < 0.0) 
@@ -30,11 +31,17 @@ void MotorsReset(Motors *x) {
 void CalibrateESC() {
     //TurnMotorsOff();
     //delay_ms(500);
+    WriteRGBLed(0, 0, 4095);   
+    delay_ms(5000); 
+    WriteRGBLed(0, 4095, 4095); 
     write_pwm(MOTOR_UPRIGHT_PIN, MOTOR_MAX);
     write_pwm(MOTOR_DOWNLEFT_PIN, MOTOR_MAX);
     write_pwm(MOTOR_UPLEFT_PIN, MOTOR_MAX);
     write_pwm(MOTOR_DOWNRIGHT_PIN, MOTOR_MAX);
-    delay_ms(7000);
+     while(XBee.y2 > 5) {
+        delay_ms(10);
+    }
+    TurnMotorsOff();
 }
 
 void WriteMotors(Motors x) {

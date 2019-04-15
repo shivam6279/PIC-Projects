@@ -10,7 +10,7 @@ extern void write_pwm(int num, int val);
 	extern void set_pwm(int num, int on, int off);
 #endif
 
-extern int PWM_MAX;
-extern int MOTOR_OFF, MOTOR_MAX;
+extern unsigned int PWM_MAX;
+extern unsigned int MOTOR_OFF, MOTOR_MAX;
 
 #endif

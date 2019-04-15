@@ -1,6 +1,8 @@
 #ifndef _menu_H_
 #define _menu_H_
 
-extern void Menu();
+#include "PID.h"
+
+extern void Menu(PID*, PID*, PID*, PID*);
 
 #endif

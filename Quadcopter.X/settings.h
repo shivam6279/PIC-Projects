@@ -2,7 +2,7 @@
 #define _settings_H_
 
 //-----------------------------PCB----------------------------
-#define micro		//micro / mini / big
+#define mini		//micro / mini / big
 #define board_version 4
 //------------------------------------------------------------
 
@@ -46,9 +46,9 @@
 	#define SDA PORTFbits.RF4  
 	#define SDA_TRIS TRISFbits.TRISF4
 #elif board_version == 3
-	#define RGBLED_RED_PIN 9
-	#define RGBLED_GREEN_PIN 10
-	#define RGBLED_BLUE_PIN 8
+	#define RGBLED_RED_PIN 8
+	#define RGBLED_GREEN_PIN 9
+	#define RGBLED_BLUE_PIN 10
 	#define MOTOR_UPRIGHT_PIN 3
 	#define MOTOR_DOWNLEFT_PIN 1
 	#define MOTOR_UPLEFT_PIN 0 
@@ -67,8 +67,8 @@
 	#define MOTOR_UPLEFT_PIN 2		//RB2  - OC2
 	#define MOTOR_DOWNRIGHT_PIN 3	//RB5  - OC3
 
-	#define SCL PORTFbits.RF5
-	#define SCL_TRIS TRISFbits.TRISF5
+	#define SCL PORTDbits.RD9
+	#define SCL_TRIS TRISDbits.TRISD9
 	#define SDA PORTFbits.RF4  
 	#define SDA_TRIS TRISFbits.TRISF4
 #endif

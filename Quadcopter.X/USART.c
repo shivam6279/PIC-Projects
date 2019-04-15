@@ -106,12 +106,22 @@ void USART1_write_float(double a, unsigned char left, unsigned char right) {
 }
 
 void USART5_init(unsigned long int baud_rate) {
+#if board_version == 1 || board_version == 2 || board_version == 3
     TRISDbits.TRISD10 = 1;
     U5MODEbits.ON = 0;
     CFGCONbits.IOLOCK = 0;
-    U5RXRbits.U5RXR = 3;    //U5RX at RD10
+    U5RXRbits.U5RXR = 0b0011;   //U5RX at RD10
     //U5TX select
     CFGCONbits.IOLOCK = 1;
+#elif board_version == 4
+    TRISCbits.TRISC14 = 1;
+    TRISCbits.TRISC13 = 0;
+    U5MODEbits.ON = 0;
+    CFGCONbits.IOLOCK = 0;
+    U5RXRbits.U5RXR = 0b0111;   //U5RX at RC14
+    RPC13Rbits.RPC13R = 0b0011; //U5TX at RC13
+    CFGCONbits.IOLOCK = 1;
+#endif
     
     U5BRG = (100000000.0f / (float)baud_rate / 4.0f) - 1;
     

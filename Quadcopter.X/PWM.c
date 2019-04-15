@@ -4,8 +4,8 @@
 #include "settings.h"
 #include <xc.h>
 
-int PWM_MAX;
-int MOTOR_OFF, MOTOR_MAX;
+unsigned int PWM_MAX;
+unsigned int MOTOR_OFF, MOTOR_MAX;
 
 #if board_version == 4
     void pwm_init(float freq) {
@@ -16,10 +16,6 @@ int MOTOR_OFF, MOTOR_MAX;
             pre++; 
         }
         unsigned int t = (unsigned int)f;
-        while(t % 2 == 0 && pre < 8) { 
-            t /= 2; 
-            pre++; 
-        }
         if(pre == 7) {
             if(t > 32767) {
                 t /= 2;
@@ -37,54 +33,57 @@ int MOTOR_OFF, MOTOR_MAX;
         MOTOR_OFF = (int)temp;
         temp = MOTOR_MAX_TIME / 1000000.0 * freq * (float)PWM_MAX;
         MOTOR_MAX = (int)temp;
+        
+        CFGCONbits.OCACLK = 0;
 
         OC1CON = 0;  
-        OC1R = MOTOR_OFF;
-        OC1RS = MOTOR_OFF;
-        OC1CON = 0b1100;   
+        OC1R = 0;
+        OC1RS = 0;
+        OC1CON = 0b1110;   
 
         OC2CON = 0;  
-        OC2R = MOTOR_OFF;
-        OC2RS = MOTOR_OFF;
-        OC2CON = 0b1100;   
+        OC2R = 0;
+        OC2RS = 0;
+        OC2CON = 0b1110;   
 
         OC3CON = 0;  
-        OC3R = MOTOR_OFF;
-        OC3RS = MOTOR_OFF;
-        OC3CON = 0b1100;   
+        OC3R = 0;
+        OC3RS = 0;
+        OC3CON = 0b1110;   
 
         OC4CON = 0;  
-        OC4R = MOTOR_OFF;
-        OC4RS = MOTOR_OFF;
-        OC4CON = 0b1100;   
+        OC4R = 0;
+        OC4RS = 0;
+        OC4CON = 0b1110;   
 
         OC5CON = 0;  
-        OC5R = MOTOR_OFF;
-        OC5RS = MOTOR_OFF;
-        OC5CON = 0b1100;   
+        OC5R = 0;
+        OC5RS = 0;
+        OC5CON = 0b1110;   
 
         OC8CON = 0;  
-        OC8R = MOTOR_OFF;
-        OC8RS = MOTOR_OFF;
-        OC8CON = 0b1100;   
+        OC8R = 0;
+        OC8RS = 0;
+        OC8CON = 0b1110;   
 
         OC9CON = 0;  
-        OC9R = MOTOR_OFF;
-        OC9RS = MOTOR_OFF;
-        OC9CON = 0b1100;
+        OC9R = 0;
+        OC9RS = 0;
+        OC9CON = 0b1110;
 
         T3CONbits.TCKPS = pre & 0b111;
         PR3 = PWM_MAX;
-        T3CONbits.TON   = 1;
+        IPC3bits.T3IP = 4;
+        IFS0bits.T3IF = 0;
+        IEC0bits.T3IE = 1;
         
-        OC1CONbits.ON = 1;.
+        OC1CONbits.ON = 1;
         OC2CONbits.ON = 1;
         OC3CONbits.ON = 1;
         OC4CONbits.ON = 1;
         OC5CONbits.ON = 1;
         OC8CONbits.ON = 1;
-        OC9CONbits.ON = 1;  
-
+        OC9CONbits.ON = 1;
         
         TRISBbits.TRISB2 = 0;
         TRISBbits.TRISB3 = 0;
@@ -105,7 +104,10 @@ int MOTOR_OFF, MOTOR_MAX;
         RPB14Rbits.RPB14R = 0b1101;  //OC9
 
         CFGCONbits.IOLOCK = 1;  // Lock IO       
+        
+        T3CONbits.TON = 1;
     }
+    
     void write_pwm(int num, int val){
         if (val <= 0) {
             val = 0;
@@ -113,25 +115,35 @@ int MOTOR_OFF, MOTOR_MAX;
         else if (val >= PWM_MAX) {
             val = PWM_MAX;
         }
-        if(num == 1) {
-            OC1R = val;
-        } else if(num == 2) {
-            OC2R = val;
-        } else if(num == 3) {
-            OC3R = val;
-        } else if(num == 4) { 
-            OC4R = val;
-        } else if(num == 5) {
-            OC5R = val;
-        } else if(num == 6) {
-            OC6R = val;
-        } else if(num == 7) {
-            OC7R = val;
-        } else if(num == 8) {
-            OC8R = val;
-        } else if(num == 9) {
-            OC9R = val;
-        }  
+        switch(num) {
+            case 1:
+                OC1RS = val;
+                break;                
+            case 2:
+                OC2RS = val;
+                break;                
+            case 3:
+                OC3RS = val;
+                break;                
+            case 4:
+                OC4RS = val;
+                break;                
+            case 5:
+                OC5RS = val;
+                break;                
+            case 6:
+                OC6RS = val;
+                break;                
+            case 7:
+                OC7RS = val;
+                break;                
+            case 8:
+                OC8RS = val;
+                break;                
+            case 9:
+                OC9RS = val;
+                break;
+        }
     }
     
 #elif board_version == 1 || board_version == 2 || board_version == 3

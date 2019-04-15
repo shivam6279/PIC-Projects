@@ -21,9 +21,9 @@ void SetPIDGain(PID *roll, PID* pitch, PID *yaw, PID *altitude, PID *GPS) {
     PIDSet(GPS,      1.50, 0.05, 0.00);
 #endif
 #ifdef mini
-    PIDSet(roll,     1.00, 2.70, 0.70);
-    PIDSet(pitch,    1.00, 2.70, 0.70);
-    PIDSet(yaw,      1.50, 4.00, 1.00);
+    PIDSet(roll,     1.00, 1.00, 0.30);
+    PIDSet(pitch,    1.00, 1.00, 0.30);
+    PIDSet(yaw,      1.00, 1.00, 0.30);
     PIDSet(altitude, 36.0, 0.80, 0.00);
     PIDSet(GPS,      1.50, 0.05, 0.00);
 #endif
@@ -114,9 +114,14 @@ void StrWriteFloat(double a, unsigned char left, unsigned char right, volatile c
 
 void WriteRGBLed(unsigned int r, unsigned int g, unsigned int b) {
 #if board_version == 4
-    r = (int)((float)r * (float)PWM_MAX / 4095.0);
-    g = (int)((float)g * (float)PWM_MAX / 4095.0);
-    b = (int)((float)b * (float)PWM_MAX / 4095.0);
+    float rr, gg, bb;
+    rr = (float)r * (float)PWM_MAX / 4095.0;
+    gg = (float)g * (float)PWM_MAX / 4095.0;
+    bb = (float)b * (float)PWM_MAX / 4095.0;
+    
+    r = rr;
+    g = gg;
+    b = bb;
 #endif
     write_pwm(RGBLED_RED_PIN, r); 
     write_pwm(RGBLED_GREEN_PIN, g); 

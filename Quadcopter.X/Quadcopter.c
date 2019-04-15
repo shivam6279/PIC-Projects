@@ -69,20 +69,18 @@ void main() {
     //unsigned char tx_buffer_timer = 0;
     
     Init();
+    
+    WriteRGBLed(4095, 0, 0);                            //Red
+    
     delay_ms(100);
     Init_10DOF();
     
-    if(XBee.y2 > 29 && XBee.x2 > 13) {                  //Calibrate ESCs
-        WriteRGBLed(0, 4095, 4095);   
-        delay_ms(5000);                                 //Cyan
+    if(XBee.y2 > 29 && XBee.x2 > 13)                    //Calibrate ESCs
         CalibrateESC();
-    }
     
-    WriteRGBLed(4095, 0, 0);                            //Red
     TurnMotorsOff();
     
     delay_ms(100);
-    
     if(XBee.y1 > 13 && XBee.x1 > 13) {                  //display sensor readings
         WriteRGBLed(4095, 0, 3800);                     //Magenta
         SendCalibrationData();
@@ -96,9 +94,17 @@ void main() {
     while(1) {
         ResetPID(&roll, &pitch, &yaw, &altitude, &GPS); //Clear PID variables
         ResetQuaternion(q);                             //Reset quaternion
-        MotorsReset(&speed);                            //Clear motor speeds        
+        MotorsReset(&speed);                            //Clear motor speeds       
         
-        Menu(&roll, &pitch, &altitude);
+#if board_version == 4
+        eeprom_readPID(&roll, &pitch, &yaw, &altitude, &GPS);
+#endif
+        
+        Menu(&roll, &pitch, &yaw, &altitude);
+        
+#if board_version == 4
+        eeprom_writePID(&roll, &pitch, &yaw, &altitude, &GPS);
+#endif
         
         WriteRGBLed(4095, 2500, 0); //Yellow
         
