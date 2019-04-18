@@ -15,6 +15,18 @@
 #define ALTITUDE_ADDR   64
 #define GPS_ADDR        80
 
+#define COMPASS_X_MIN_ADDR  96
+#define COMPASS_Y_MIN_ADDR  100
+#define COMPASS_z_MIN_ADDR  104
+
+#define COMPASS_X_MAX_ADDR  112
+#define COMPASS_Y_MAX_ADDR  116
+#define COMPASS_z_MAX_ADDR  120
+
+#define GYRO_X_OFFSET_ADDR  128
+#define GYRO_Y_OFFSET_ADDR  132
+#define GYRO_Z_OFFSET_ADDR  136
+
 bool eeprom_writeByte(unsigned char addr, unsigned char byte) {    
     I2C_WriteRegisters(EEPROM_ADDRESS, (unsigned char[2]){addr, byte}, 2);
 }

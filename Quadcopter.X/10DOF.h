@@ -23,17 +23,18 @@
 #define COMPASS_X_OFFSET (COMPASS_X_MAX + COMPASS_X_MIN) / 2.0f
 #define COMPASS_Y_OFFSET (COMPASS_Y_MAX + COMPASS_Y_MIN) / 2.0f
 #define COMPASS_Z_OFFSET (COMPASS_Z_MAX + COMPASS_Z_MIN) / 2.0f
-#define COMPASS_X_GAIN 1.0f / ((COMPASS_X_MAX - COMPASS_X_MIN) / 2.0f)
-#define COMPASS_Y_GAIN -1.0f / ((COMPASS_Y_MAX - COMPASS_Y_MIN) / 2.0f)
-#define COMPASS_Z_GAIN 1.0f / ((COMPASS_Z_MAX - COMPASS_Z_MIN) / 2.0f)
+#define COMPASS_X_GAIN  2.0f / (COMPASS_X_MAX - COMPASS_X_MIN) 
+#define COMPASS_Y_GAIN -2.0f / (COMPASS_Y_MAX - COMPASS_Y_MIN)
+#define COMPASS_Z_GAIN  2.0f / (COMPASS_Z_MAX - COMPASS_Z_MIN)
 
 #ifdef BMP180
-	#define OVERSAMPLING 3  //0 - 3
-	#define SEA_LEVEL_PRESSURE 101325UL
+#define OVERSAMPLING 3  //0 - 3
+#define SEA_LEVEL_PRESSURE 101325UL
 #endif
+
 #ifdef MS5611
-	#define OVERSAMPLING 4  //0 - 4
-	#define COMPENSATION 0
+#define OVERSAMPLING 4  //0 - 4
+#define COMPENSATION 0
 #endif
 
 typedef struct {
@@ -42,6 +43,7 @@ typedef struct {
 
 extern void VectorReset(XYZ *v);
 extern XYZ VectorAdd(XYZ, XYZ);
+extern XYZ VectorSubtract(XYZ, XYZ);
 extern XYZ VectorScale(XYZ, float);
 
 //MPU6050
@@ -50,44 +52,48 @@ extern void GetRawAcc();
 extern void GetAcc();
 extern void GetRawGyro();
 extern void GetGyro();
+
+//Magnetometer
+extern XYZ compass_min, compass_max;
+
 //HMC5883
-extern void HMC5883Init();
+#ifdef HMC5883
+void HMC5883Init();
+#endif
+
+//QMC5883
+#ifdef QMC5883
+void QMC5883Init();
+bool QMC5883DataRdy();
+#endif
+
 extern void GetRawCompass();
 extern void GetCompass();
 
 extern void GetRawIMU();
 
 //Pressure sensors
-unsigned char oversampling_delay;
-
 //BMP180
 #ifdef BMP180
-	extern void BMP180Init();
-	extern void StartPressureRead();
-	extern void ReadRawPressure();
-	extern void StartTemperatureRead();
-	extern void ReadRawTemperature();
-	extern double ComputeTemperature();
-	extern float GetAltitude();
-
-	signed short ac1, ac2, ac3, b1, b2, mb, mc, md;
-	unsigned short ac4, ac5, ac6;
-	unsigned long int UT;
-	float B5;
+extern void BMP180Init();
+extern void StartPressureRead();
+extern void ReadRawPressure();
+extern void StartTemperatureRead();
+extern void ReadRawTemperature();
+extern double ComputeTemperature();
+extern float GetAltitude();
 #endif
 
 //MS5611
 #ifdef MS5611
-	extern void MS5611Init();
-	extern void StartPressureRead();
-	extern unsigned long int ReadRawPressure();
-	extern void StartTemperatureRead();
-	extern unsigned long int ReadRawTemperature();
-	extern long int ComputePressure(unsigned long int, unsigned long int);
-	extern double ComputeTemperature(unsigned long int);
-	extern double GetAltitude(unsigned long int);
-
-	unsigned int MS5611_fc[6];
+extern void MS5611Init();
+extern void StartPressureRead();
+extern unsigned long int ReadRawPressure();
+extern void StartTemperatureRead();
+extern unsigned long int ReadRawTemperature();
+extern long int ComputePressure(unsigned long int, unsigned long int);
+extern double ComputeTemperature(unsigned long int);
+extern double GetAltitude(unsigned long int);
 #endif
 
 extern XYZ acc;

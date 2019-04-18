@@ -25,6 +25,14 @@ XYZ VectorAdd(XYZ a, XYZ b) {
     return r;
 }
 
+XYZ VectorSubtract(XYZ a, XYZ b) {
+    XYZ r;
+    r.x = a.x - b.x;
+    r.y = a.y - b.y;
+    r.z = a.z - b.z;
+    return r;
+}
+
 XYZ VectorScale(XYZ a, float scale) {
     XYZ r;
     r.x = a.x * scale;
@@ -33,7 +41,7 @@ XYZ VectorScale(XYZ a, float scale) {
     return r;
 }
 
-//-----------------------------------------MPU6050---------------------------------
+//---------------------------------------MPU6050-----------------------------------
 void MPU6050Init() {
     unsigned char i;
     
@@ -42,9 +50,9 @@ void MPU6050Init() {
     I2C_WriteRegisters(0xD0, (unsigned char[2]){0x1A, 0x03}, 2);
     I2C_WriteRegisters(0xD0, (unsigned char[2]){0x1B, 0x00}, 2);
     I2C_WriteRegisters(0xD0, (unsigned char[2]){0x1C, 0x00}, 2);
-    for(i = 0x1D; i <= 0x23; i++) {
+    for(i = 0x1D; i <= 0x23; i++) 
         I2C_WriteRegisters(0xD0, (unsigned char[2]){i, 0x00}, 2);
-    }
+    
     I2C_WriteRegisters(0xD0, (unsigned char[2]){0x24, 0x40}, 2);
     I2C_WriteRegisters(0xD0, (unsigned char[2]){0x25, 0x8C}, 2);
     I2C_WriteRegisters(0xD0, (unsigned char[2]){0x26, 0x02}, 2);
@@ -125,8 +133,13 @@ void GetGyro() {
     gyro.z = (gyro.z - gyro_avg.z) / GYRO_Z_GAIN;
 }
 
-//-----------------------------------------HMC5883---------------------------------
+//-----------------------------------Magnetometer----------------------------------
 
+XYZ compass_min, compass_max;
+
+//--HMC5883--
+
+#ifdef HMC5883
 void HMC5883Init() {
     unsigned char i;
     
@@ -148,6 +161,9 @@ void HMC5883Init() {
     for(i = 0; i < IMU_BUFFER_SIZE; i++)
         compass_buffer[i] = (XYZ){0.0, 0.0, 0.0};
 #endif
+
+    compass_min = (XYZ){COMPASS_X_MIN, COMPASS_Y_MIN, COMPASS_Z_MIN};
+    compass_max = (XYZ){COMPASS_X_MIN, COMPASS_Y_MIN, COMPASS_Z_MIN};
 }
 
 void GetRawCompass() {
@@ -168,8 +184,115 @@ void GetRawCompass() {
     compass.z = (signed short)(temp[2] << 8 | temp[3]);
     compass.x = (signed short)(temp[4] << 8 | temp[5]);
 }
+#endif
+
+//--QMC5883--
+
+#define QMC5883L_ADDR 0x1A
+
+//Register numbers
+#define QMC5883L_X_LSB 0
+#define QMC5883L_X_MSB 1
+#define QMC5883L_Y_LSB 2
+#define QMC5883L_Y_MSB 3
+#define QMC5883L_Z_LSB 4
+#define QMC5883L_Z_MSB 5
+#define QMC5883L_STATUS 6
+#define QMC5883L_TEMP_LSB 7
+#define QMC5883L_TEMP_MSB 8
+#define QMC5883L_CONFIG 9
+#define QMC5883L_CONFIG2 10
+#define QMC5883L_RESET 11
+#define QMC5883L_RESERVED 12
+#define QMC5883L_CHIP_ID 13
+
+//Bit values for the STATUS register
+#define QMC5883L_STATUS_DRDY 1
+#define QMC5883L_STATUS_OVL 2
+#define QMC5883L_STATUS_DOR 4
+
+//Oversampling values for the CONFIG register
+#define QMC5883L_CONFIG_OS512 0b00000000
+#define QMC5883L_CONFIG_OS256 0b01000000
+#define QMC5883L_CONFIG_OS128 0b10000000
+#define QMC5883L_CONFIG_OS64  0b11000000
+
+//Range values for the CONFIG register
+#define QMC5883L_CONFIG_2GAUSS 0b00000000
+#define QMC5883L_CONFIG_8GAUSS 0b00010000
+
+//Rate values for the CONFIG register
+#define QMC5883L_CONFIG_10HZ   0b00000000
+#define QMC5883L_CONFIG_50HZ   0b00000100
+#define QMC5883L_CONFIG_100HZ  0b00001000
+#define QMC5883L_CONFIG_200HZ  0b00001100
+
+//Mode values for the CONFIG register
+#define QMC5883L_CONFIG_STANDBY 0b00000000
+#define QMC5883L_CONFIG_CONT 0b00000001
+
+#ifdef QMC5883
+void QMC5883Init() {
+    unsigned char i;
+    
+#if board_version == 1 || board_version == 2 || board_version == 3
+    I2C_WriteRegisters(0xD0, (unsigned char[2]){0x6A, 0x00}, 2);
+    I2C_WriteRegisters(0xD0, (unsigned char[2]){0x37, 0x02}, 2);
+#endif
+    
+    I2C_WriteRegisters(QMC5883L_ADDR, (unsigned char[2]){QMC5883L_RESET, 0x01}, 2);
+    I2C_WriteRegisters(QMC5883L_ADDR, (unsigned char[2]){QMC5883L_CONFIG, (QMC5883L_CONFIG_OS512 | QMC5883L_CONFIG_2GAUSS | QMC5883L_CONFIG_50HZ | QMC5883L_CONFIG_CONT)}, 2);
+    
+#if board_version == 1 || board_version == 2 || board_version == 3
+    I2C_WriteRegisters(0xD0, (unsigned char[2]){0x6A, 0x20}, 2);
+    I2C_WriteRegisters(0xD0, (unsigned char[2]){0x37, 0x00}, 2);
+#endif
+
+#if IMU_BUFFER_SIZE > 0
+    for(i = 0; i < IMU_BUFFER_SIZE; i++)
+        compass_buffer[i] = (XYZ){0.0, 0.0, 0.0};
+#endif
+
+    compass_min = (XYZ){COMPASS_X_MIN, COMPASS_Y_MIN, COMPASS_Z_MIN};
+    compass_max = (XYZ){COMPASS_X_MIN, COMPASS_Y_MIN, COMPASS_Z_MIN};
+}
+
+bool QMC5883DataRdy() {
+    unsigned char status;
+    I2C_ReadRegisters(QMC5883L_ADDR, QMC5883L_STATUS, status, 1);
+    if(status & QMC5883L_STATUS_DRDY)
+        return 1;
+    return 0;
+}
+
+void GetRawCompass() {
+    unsigned char temp[6];
+    
+#if board_version == 1 || board_version == 2 || board_version == 3
+    I2C_WriteRegisters(0xD0, (unsigned char[2]){0x6A, 0x00}, 2);
+    I2C_WriteRegisters(0xD0, (unsigned char[2]){0x37, 0x02}, 2);
+#endif
+    
+    if(QMC5883DataRdy()) {
+        I2C_ReadRegisters(QMC5883L_ADDR, QMC5883L_X_LSB, temp, 6);
+        compass.y = (signed short)(temp[1] << 8 | temp[0]);
+        compass.x = (signed short)(temp[3] << 8 | temp[2]);
+        compass.z = (signed short)(temp[5] << 8 | temp[4]);
+    }
+    
+#if board_version == 1 || board_version == 2 || board_version == 3
+    I2C_WriteRegisters(0xD0, (unsigned char[2]){0x6A, 0x20}, 2);
+    I2C_WriteRegisters(0xD0, (unsigned char[2]){0x37, 0x00}, 2);
+#endif
+}
+
+#endif
+
+//----------------------------------------------------------------------
 
 void GetCompass() {
+    static XYZ compass_offset, compass_gain;
+
     GetRawCompass();
     
 #if IMU_BUFFER_SIZE > 0
@@ -184,11 +307,18 @@ void GetCompass() {
     compass = VectorScale(compass, 1.0f / IMU_BUFFER_SIZE);
 #endif
 
-    compass.x = (compass.x - COMPASS_X_OFFSET) * COMPASS_X_GAIN;
-    compass.y = (compass.y - COMPASS_Y_OFFSET) * COMPASS_Y_GAIN;
-    compass.z = (compass.z - COMPASS_Z_OFFSET) * COMPASS_Z_GAIN;
+    compass_offset.x = (compass_min.x + compass_max.x) / 2.0f;
+    compass_offset.y = (compass_min.y + compass_max.y) / 2.0f;
+    compass_offset.z = (compass_min.z + compass_max.z) / 2.0f;
+
+    compass_gain.x = 2.0f / (compass_max.x - compass_min.x);
+    compass_gain.y = 2.0f / (compass_max.y - compass_min.y);
+    compass_gain.z = 2.0f / (compass_max.z - compass_min.z);
+
+    compass.x = (compass.x - compass_offset.x) * compass_gain.x;
+    compass.y = (compass.y - compass_offset.y) * compass_gain.y;
+    compass.z = (compass.z - compass_offset.z) * compass_gain.z;
 }
-//----------------------------------------------------------------------
 
 void GetRawIMU() {
     GetRawAcc();
@@ -196,8 +326,19 @@ void GetRawIMU() {
     GetRawCompass();
 }
 
-//-----------------------------------------BMP180---------------------------------
+//------------------------------------Altimeter-----------------------------------
+
+static unsigned char oversampling_delay;
+
+//-------------------------------------BMP180-------------------------------------
+
 #ifdef BMP180
+
+static signed short ac1, ac2, ac3, b1, b2, mb, mc, md;
+static unsigned short ac4, ac5, ac6;
+static unsigned long int UT;
+static float B5;
+
 void BMP180Init() {
     unsigned char temp[22];
     I2C_ReadRegisters(0xEE, 0xAA, temp, 22);
@@ -271,8 +412,10 @@ float GetAltitude() {
     B4 = (float)ac4 * ((X3 + 32768)) / 32768.0f;
     B7 = ((float)UP - B3) * (50000 / pow(2, OVERSAMPLING));
 
-    if(B7 < 0x80000000) p = (B7 * 2) / B4;
-    else p = (B7 / B4) * 2;
+    if(B7 < 0x80000000) 
+        p = (B7 * 2) / B4;
+    else 
+        p = (B7 / B4) * 2;
     X1 = ((float)p / 256.0f) * ((float)p / 256.0f);
     X1 = (X1 * 3038) / 65536.0f;
     X2 = (-7357 * (float)p) / 65536.0f;
@@ -283,7 +426,12 @@ float GetAltitude() {
 }
 #endif
 
+//-------------------------------------MS5611-------------------------------------
+
 #ifdef MS5611
+
+static unsigned int MS5611_fc[6];
+
 void MS5611Init() {
     unsigned char temp[2];
     I2C_WriteRegisters(0xEE, (unsigned char[1]){0x1E}, 1);
@@ -342,21 +490,21 @@ long int ComputePressure(unsigned long int d1, unsigned long int d2) {
     long long int off = (long long int)MS5611_fc[1] * 65536 + (long long int)MS5611_fc[3] * dt / 128;
     long long int sens = (long long int)MS5611_fc[0] * 32768 + (long long int)MS5611_fc[2] * dt / 256;
     
-    #if COMPENSATION == 1
-        unsigned long int temp;
-        temp = 2000 + (long long int)dt * MS5611_fc[5] / 8388608;
-        long long int off2 = 0, sens2 = 0;
-        if(temp < 2000) {
-            off2 = 5 * ((temp - 2000) * (temp - 2000)) / 2;
-            sens2 = 5 * ((temp - 2000) * (temp - 2000)) / 4;
-        }
-        if(temp < -1500) {
-            off2 = off2 + 7 * ((temp + 1500) * (temp + 1500));
-    	    sens2 = sens2 + 11 * ((temp + 1500) * (temp + 1500)) / 2;
-        }
-        off = off - off2;
-        sens = sens - sens2;
-    #endif
+#if COMPENSATION == 1
+    unsigned long int temp;
+    temp = 2000 + (long long int)dt * MS5611_fc[5] / 8388608;
+    long long int off2 = 0, sens2 = 0;
+    if(temp < 2000) {
+        off2 = 5 * ((temp - 2000) * (temp - 2000)) / 2;
+        sens2 = 5 * ((temp - 2000) * (temp - 2000)) / 4;
+    }
+    if(temp < -1500) {
+        off2 = off2 + 7 * ((temp + 1500) * (temp + 1500));
+	    sens2 = sens2 + 11 * ((temp + 1500) * (temp + 1500)) / 2;
+    }
+    off = off - off2;
+    sens = sens - sens2;
+#endif
     
     unsigned long int p = (d1 * sens / 2097152 - off) / 32768;
     return p;

@@ -96,6 +96,8 @@
     #define MOTOR_SPIN 1.0f
 #endif
 
+//IMU
+#define QMC5883	//HMC5883 or QMC5883
 #define MS5611	//BMP180 or MS5611
 #define IMU_BUFFER_SIZE 10
 

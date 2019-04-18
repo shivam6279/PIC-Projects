@@ -31,9 +31,7 @@ rx ReadXBee() {
     return XBee;
 }
 
-void SendCalibrationData() {
-    XYZ compass_max, compass_min;
-    
+void SendCalibrationData() {    
     GetRawIMU();
     compass_max = compass;    
     compass_min = compass; 
@@ -41,7 +39,7 @@ void SendCalibrationData() {
     DELAY_TIMER_ON = 1;
     TX_TIMER_ON = 1;
     tx_buffer_index = 0;
-    while(1) {
+    while(XBee.rs == 0) {
         GetRawIMU();
         if(compass.x > compass_max.x) compass_max.x = compass.x;
         if(compass.y > compass_max.y) compass_max.y = compass.y;
@@ -61,12 +59,12 @@ void SendCalibrationData() {
         StrWriteInt(compass.x, 6, tx_buffer, 43);
         StrWriteInt(compass.y, 6, tx_buffer, 50);
         StrWriteInt(compass.z, 6, tx_buffer, 57);
-        StrWriteInt(compass_max.x, 6, tx_buffer, 64);
-        StrWriteInt(compass_max.y, 6, tx_buffer, 71);
-        StrWriteInt(compass_max.z, 6, tx_buffer, 78);
-        StrWriteInt(compass_min.x, 6, tx_buffer, 85);
-        StrWriteInt(compass_min.y, 6, tx_buffer, 92);
-        StrWriteInt(compass_min.z, 6, tx_buffer, 99);
+        StrWriteInt(compass_min.x, 6, tx_buffer, 64);
+        StrWriteInt(compass_min.y, 6, tx_buffer, 71);
+        StrWriteInt(compass_min.z, 6, tx_buffer, 78);
+        StrWriteInt(compass_max.x, 6, tx_buffer, 85);
+        StrWriteInt(compass_max.y, 6, tx_buffer, 92);
+        StrWriteInt(compass_max.z, 6, tx_buffer, 99);
         tx_buffer[106] = '\r';
         tx_buffer[107] = '\0';
     
