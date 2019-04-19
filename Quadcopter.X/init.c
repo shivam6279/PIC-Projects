@@ -33,13 +33,18 @@ void Init() {
 
 void Init_10DOF(){
     MPU6050Init();
+#ifdef HMC5883
     HMC5883Init();
-    #ifdef BMP180
-        BMP180Init();
-    #endif
-    #ifdef MS5611
-        MS5611Init();
-    #endif
+#endif
+#ifdef QMC5883
+    QMC5883Init();
+#endif
+#ifdef BMP180
+    BMP180Init();
+#endif
+#ifdef MS5611
+    MS5611Init();
+#endif
 }
 
 void ResetPID(PID *roll, PID *pitch, PID *yaw, PID *altitude, PID *GPS) {

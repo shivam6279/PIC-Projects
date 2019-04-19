@@ -259,7 +259,7 @@ void QMC5883Init() {
 
 bool QMC5883DataRdy() {
     unsigned char status;
-    I2C_ReadRegisters(QMC5883L_ADDR, QMC5883L_STATUS, status, 1);
+    I2C_ReadRegisters(QMC5883L_ADDR, QMC5883L_STATUS, &status, 1);
     if(status & QMC5883L_STATUS_DRDY)
         return 1;
     return 0;
@@ -328,7 +328,7 @@ void GetRawIMU() {
 
 //------------------------------------Altimeter-----------------------------------
 
-static unsigned char oversampling_delay;
+unsigned char oversampling_delay;
 
 //-------------------------------------BMP180-------------------------------------
 

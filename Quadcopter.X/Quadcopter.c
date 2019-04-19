@@ -98,6 +98,7 @@ void main() {
         
 #if board_version == 4
         eeprom_readPID(&roll, &pitch, &yaw, &altitude, &GPS);
+        eeprom_writeCalibration();
 #endif
         
         Menu(&roll, &pitch, &yaw, &altitude);

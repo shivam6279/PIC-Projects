@@ -2,6 +2,7 @@
 #include "bitbang_I2C.h"
 #include "PID.h"
 #include "pic32.h"
+#include "10DOF.h"
 #include <stdbool.h>
 
 #define EEPROM_ADDRESS  0xA0
@@ -128,6 +129,42 @@ void eeprom_writePID(PID *roll, PID *pitch, PID *yaw, PID *alt, PID *gps) {
     *(float*)(str + 4) = gps->i;
     *(float*)(str + 8) = gps->d;
     eeprom_writeBytes(GPS_ADDR, str, 12);
+    delay_ms(6);
+    
+    eeprom_writeByte(EEPROM_INITIAL_ADDRESS, EEPROM_INITIAL_KEY);
+    delay_ms(6);
+}
+
+void eeprom_readCalibration() {
+    unsigned char str[12];
+    
+    if(eeprom_readByte(EEPROM_INITIAL_ADDRESS) == EEPROM_INITIAL_KEY) {
+        //Read previously saved data
+        eeprom_readBytes(COMPASS_X_MIN_ADDR, str, 12);
+        compass_min.x = *(float*)(unsigned char[4]){str[0], str[1], str[2], str[3]};
+        compass_min.y = *(float*)(unsigned char[4]){str[4], str[5], str[6], str[7]};
+        compass_min.z = *(float*)(unsigned char[4]){str[8], str[9], str[10], str[11]};
+        
+        eeprom_readBytes(COMPASS_X_MAX_ADDR, str, 12);
+        compass_max.x = *(float*)(unsigned char[4]){str[0], str[1], str[2], str[3]};
+        compass_max.y = *(float*)(unsigned char[4]){str[4], str[5], str[6], str[7]};
+        compass_max.z = *(float*)(unsigned char[4]){str[8], str[9], str[10], str[11]};
+    } 
+}
+
+void eeprom_writeCalibration() {
+    unsigned char str[12];
+    
+    *(float*)(str) = compass_min.x;
+    *(float*)(str + 4) = compass_min.y;
+    *(float*)(str + 8) = compass_min.z;
+    eeprom_writeBytes(COMPASS_X_MIN_ADDR, str, 12);
+    delay_ms(6);
+    
+    *(float*)(str) = compass_max.x;
+    *(float*)(str + 4) = compass_max.y;
+    *(float*)(str + 8) = compass_max.z;
+    eeprom_writeBytes(COMPASS_X_MAX_ADDR, str, 12);
     delay_ms(6);
     
     eeprom_writeByte(EEPROM_INITIAL_ADDRESS, EEPROM_INITIAL_KEY);

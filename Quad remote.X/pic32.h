@@ -9,6 +9,6 @@ extern void timer3_init(float);
 extern void timer4_init(float);
 extern void timer5_init(float);
 
-unsigned long int delay_counter = 0;
+extern unsigned long int delay_counter;
 
 #endif

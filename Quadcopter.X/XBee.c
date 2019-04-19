@@ -4,6 +4,7 @@
 #include "PID.h"
 #include "GPS.h"
 #include "USART.h"
+#include "EEPROM.h"
 
 volatile rx XBee, XBee_temp;
 
@@ -72,6 +73,9 @@ void SendCalibrationData() {
         delay_counter = 0;
         while(delay_counter < 25);
     }
+#if board_version == 4
+    eeprom_writeCalibration();
+#endif
 }
 
 void SendFlightData(PID roll, PID pitch, PID yaw, PID altitude, char loop_mode) { 

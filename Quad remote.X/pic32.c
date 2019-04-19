@@ -1,6 +1,8 @@
 #include "pic32.h"
 #include <xc.h>
 
+unsigned long int delay_counter = 0;
+
 void adc_init(){
     ADCCON1bits.ON = 0; 
     

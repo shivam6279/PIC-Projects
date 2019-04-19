@@ -2,6 +2,7 @@
 #define _10DOF_H_
 
 #include "settings.h"
+#include <stdbool.h>
 
 #define GYRO_X_OFFSET 125
 #define GYRO_Y_OFFSET -250
@@ -73,6 +74,9 @@ extern void GetCompass();
 extern void GetRawIMU();
 
 //Pressure sensors
+
+extern unsigned char oversampling_delay;
+
 //BMP180
 #ifdef BMP180
 extern void BMP180Init();
