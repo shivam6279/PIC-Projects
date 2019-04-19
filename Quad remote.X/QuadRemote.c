@@ -33,11 +33,11 @@ unsigned int rx_time_counter = 0;
 bool rx_signal = 0;
 
 char mode = 0;
-float pid_p = 0, pid_i = 0, pid_d = 0, altitude_p, altitude_i, altitude_d;//Mode 'A'
-unsigned char cursor = 0, arming_counter = 0, GPS_signal = 0, GPS_connected = 0;//Mode 'A'
-int arming_time;//Mode 'B'
-float pitch, roll, yaw, altitude, latitude, longitude, loop_mode;//Mode 'C'
-int acc_x, acc_y, acc_z, gyro_x, gyro_y, gyro_z, compass_x, compass_y, compass_z;//Mode 'D' 
+float pid_p = 0, pid_i = 0, pid_d = 0, altitude_p, altitude_i, altitude_d;          //Mode 'A'
+unsigned char cursor = 0, arming_counter = 0, GPS_signal = 0, GPS_connected = 0;    //Mode 'A'
+int arming_time;                                                                    //Mode 'B'
+float pitch, roll, yaw, altitude, latitude, longitude, loop_mode;                   //Mode 'C'
+int acc_x, acc_y, acc_z, gyro_x, gyro_y, gyro_z, compass_x, compass_y, compass_z;   //Mode 'D' 
 int compass_max_x, compass_max_y, compass_max_z, compass_min_x, compass_min_y, compass_min_z; 
 
 void main() {
@@ -68,8 +68,8 @@ void main() {
     delay_ms(50);
     ColorLCD_init();
     delay_ms(120);     
-    ColorLCD_writecommand(0x29);    //Display on  
-    FillRect(0, 0, 320, 250, 0xFFFF);//Clear screen   
+    ColorLCD_writecommand(0x29);        //Display on  
+    FillRect(0, 0, 320, 250, 0xFFFF);   //Clear screen   
     
     DrawDisplayBounds();
     FillRect(270, (float)(31 - analog2_y) * 240.0/31.0, 50, (float)(analog2_y) * 240.0/31.0, 0xFFA0);
@@ -89,7 +89,7 @@ void main() {
         if(mode != 'Z') {
             //--------------------------------New mode: clear screen and display new constants for that mode---------------------------
             if(mode != pre_mode){
-                FillRect(0, 8, 250, 9 * 8, 0xFFFF);
+                FillRect(0, 8, 250, 15 * 8, 0xFFFF);
                 if(mode == 'A') {
                     WriteStr("  P:", 0, 1 * 8, 0x0000);
                     WriteStr("  I:", 0, 2 * 8, 0x0000);
@@ -115,6 +115,24 @@ void main() {
                     WriteStr(" Altitude:", 0, 5 * 8, 0x0000);
                     WriteStr(" Latitude:", 0, 6 * 8, 0x0000);
                     WriteStr(" Longitude:", 0, 7 * 8, 0x0000);
+                } 
+                else if(mode == 'D') {
+                    WriteStr("Calibration", 0, 0, 0xF80F);
+                    WriteStr("Acc x:", 0, 1*8, 0xF80F);
+                    WriteStr("Acc y:", 0, 2*8, 0xF80F);
+                    WriteStr("Acc z:", 0, 3*8, 0xF80F);
+                    WriteStr("Gyro x:", 0, 4*8, 0xF80F);
+                    WriteStr("Gyro y:", 0, 5*8, 0xF80F);
+                    WriteStr("Gyro z:", 0, 6*8, 0xF80F);
+                    WriteStr("Compass x:", 0, 7*8, 0xF80F);
+                    WriteStr("Compass y:", 0, 8*8, 0xF80F);
+                    WriteStr("Compass z:", 0, 9*8, 0xF80F);
+                    WriteStr("Compass x Max:", 0, 10*8, 0xF80F);
+                    WriteStr("Compass y Max:", 0, 11*8, 0xF80F);
+                    WriteStr("Compass z Max:", 0, 12*8, 0xF80F);
+                    WriteStr("Compass x Min:", 0, 13*8, 0xF80F);
+                    WriteStr("Compass y Min:", 0, 14*8, 0xF80F);
+                    WriteStr("Compass z Min:", 0, 15*8, 0xF80F);
                 }
             }
             pre_mode = mode;
@@ -159,22 +177,6 @@ void main() {
             }
 
             if(mode == 'D') {
-                WriteStr("Calibration", 0, 0, 0xF80F);
-                WriteStr("Acc x:", 0, 1*8, 0xF80F);
-                WriteStr("Acc y:", 0, 2*8, 0xF80F);
-                WriteStr("Acc z:", 0, 3*8, 0xF80F);
-                WriteStr("Gyro x:", 0, 4*8, 0xF80F);
-                WriteStr("Gyro y:", 0, 5*8, 0xF80F);
-                WriteStr("Gyro z:", 0, 6*8, 0xF80F);
-                WriteStr("Compass x:", 0, 7*8, 0xF80F);
-                WriteStr("Compass y:", 0, 8*8, 0xF80F);
-                WriteStr("Compass z:", 0, 9*8, 0xF80F);
-                WriteStr("Compass x Max:", 0, 10*8, 0xF80F);
-                WriteStr("Compass y Max:", 0, 11*8, 0xF80F);
-                WriteStr("Compass z Max:", 0, 12*8, 0xF80F);
-                WriteStr("Compass x Min:", 0, 13*8, 0xF80F);
-                WriteStr("Compass y Min:", 0, 14*8, 0xF80F);
-                WriteStr("Compass z Min:", 0, 15*8, 0xF80F);
                 WriteInt(acc_x, 6, 7*6, 1*8, 0x0000);
                 WriteInt(acc_y, 6, 7*6, 2*8, 0x0000);
                 WriteInt(acc_z, 6, 7*6, 3*8, 0x0000);

@@ -21,13 +21,6 @@
 #define COMPASS_Z_MIN -908.0f
 #define COMPASS_Z_MAX 129.0f
 
-#define COMPASS_X_OFFSET (COMPASS_X_MAX + COMPASS_X_MIN) / 2.0f
-#define COMPASS_Y_OFFSET (COMPASS_Y_MAX + COMPASS_Y_MIN) / 2.0f
-#define COMPASS_Z_OFFSET (COMPASS_Z_MAX + COMPASS_Z_MIN) / 2.0f
-#define COMPASS_X_GAIN  2.0f / (COMPASS_X_MAX - COMPASS_X_MIN) 
-#define COMPASS_Y_GAIN -2.0f / (COMPASS_Y_MAX - COMPASS_Y_MIN)
-#define COMPASS_Z_GAIN  2.0f / (COMPASS_Z_MAX - COMPASS_Z_MIN)
-
 #ifdef BMP180
 #define OVERSAMPLING 3  //0 - 3
 #define SEA_LEVEL_PRESSURE 101325UL
@@ -39,7 +32,9 @@
 #endif
 
 typedef struct {
-    float x, y, z;
+    float x;
+    float y;
+    float z;
 } XYZ;
 
 extern void VectorReset(XYZ *v);
@@ -55,7 +50,7 @@ extern void GetRawGyro();
 extern void GetGyro();
 
 //Magnetometer
-extern XYZ compass_min, compass_max;
+extern XYZ compass_offset, compass_gain;
 
 //HMC5883
 #ifdef HMC5883

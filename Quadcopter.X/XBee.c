@@ -32,12 +32,13 @@ rx ReadXBee() {
     return XBee;
 }
 
-void SendCalibrationData() {    
+void SendCalibrationData() {   
+    XYZ compass_min, compass_max;
+
     GetRawIMU();
     compass_max = compass;    
     compass_min = compass; 
     
-    DELAY_TIMER_ON = 1;
     TX_TIMER_ON = 1;
     tx_buffer_index = 0;
     while(XBee.rs == 0) {
@@ -70,9 +71,13 @@ void SendCalibrationData() {
         tx_buffer[107] = '\0';
     
         tx_flag = 1;
-        delay_counter = 0;
-        while(delay_counter < 25);
+        while(tx_flag)
+            delay_ms(1);
+        delay_ms(1);
     }
+
+    ComputeCompassOffsetGain(compass_min, compass_max);
+
 #if board_version == 4
     eeprom_writeCalibration();
 #endif

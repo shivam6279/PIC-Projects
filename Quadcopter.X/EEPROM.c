@@ -16,13 +16,13 @@
 #define ALTITUDE_ADDR   64
 #define GPS_ADDR        80
 
-#define COMPASS_X_MIN_ADDR  96
-#define COMPASS_Y_MIN_ADDR  100
-#define COMPASS_z_MIN_ADDR  104
+#define COMPASS_X_OFFSET_ADDR  96
+#define COMPASS_Y_OFFSET_ADDR  100
+#define COMPASS_z_OFFSET_ADDR  104
 
-#define COMPASS_X_MAX_ADDR  112
-#define COMPASS_Y_MAX_ADDR  116
-#define COMPASS_z_MAX_ADDR  120
+#define COMPASS_X_GAIN_ADDR  112
+#define COMPASS_Y_GAIN_ADDR  116
+#define COMPASS_z_GAIN_ADDR  120
 
 #define GYRO_X_OFFSET_ADDR  128
 #define GYRO_Y_OFFSET_ADDR  132
@@ -140,31 +140,31 @@ void eeprom_readCalibration() {
     
     if(eeprom_readByte(EEPROM_INITIAL_ADDRESS) == EEPROM_INITIAL_KEY) {
         //Read previously saved data
-        eeprom_readBytes(COMPASS_X_MIN_ADDR, str, 12);
-        compass_min.x = *(float*)(unsigned char[4]){str[0], str[1], str[2], str[3]};
-        compass_min.y = *(float*)(unsigned char[4]){str[4], str[5], str[6], str[7]};
-        compass_min.z = *(float*)(unsigned char[4]){str[8], str[9], str[10], str[11]};
+        eeprom_readBytes(COMPASS_X_OFFSET_ADDR, str, 12);
+        compass_offset.x = *(float*)(unsigned char[4]){str[0], str[1], str[2], str[3]};
+        compass_offset.y = *(float*)(unsigned char[4]){str[4], str[5], str[6], str[7]};
+        compass_offset.z = *(float*)(unsigned char[4]){str[8], str[9], str[10], str[11]};
         
-        eeprom_readBytes(COMPASS_X_MAX_ADDR, str, 12);
-        compass_max.x = *(float*)(unsigned char[4]){str[0], str[1], str[2], str[3]};
-        compass_max.y = *(float*)(unsigned char[4]){str[4], str[5], str[6], str[7]};
-        compass_max.z = *(float*)(unsigned char[4]){str[8], str[9], str[10], str[11]};
+        eeprom_readBytes(COMPASS_X_GAIN_ADDR, str, 12);
+        compass_gain.x = *(float*)(unsigned char[4]){str[0], str[1], str[2], str[3]};
+        compass_gain.y = *(float*)(unsigned char[4]){str[4], str[5], str[6], str[7]};
+        compass_gain.z = *(float*)(unsigned char[4]){str[8], str[9], str[10], str[11]};
     } 
 }
 
 void eeprom_writeCalibration() {
     unsigned char str[12];
     
-    *(float*)(str) = compass_min.x;
-    *(float*)(str + 4) = compass_min.y;
-    *(float*)(str + 8) = compass_min.z;
+    *(float*)(str) = compass_offset.x;
+    *(float*)(str + 4) = compass_offset.y;
+    *(float*)(str + 8) = compass_offset.z;
     eeprom_writeBytes(COMPASS_X_MIN_ADDR, str, 12);
     delay_ms(6);
     
-    *(float*)(str) = compass_max.x;
-    *(float*)(str + 4) = compass_max.y;
-    *(float*)(str + 8) = compass_max.z;
-    eeprom_writeBytes(COMPASS_X_MAX_ADDR, str, 12);
+    *(float*)(str) = compass_gain.x;
+    *(float*)(str + 4) = compass_gain.y;
+    *(float*)(str + 8) = compass_gain.z;
+    eeprom_writeBytes(COMPASS_X_GAIN_ADDR, str, 12);
     delay_ms(6);
     
     eeprom_writeByte(EEPROM_INITIAL_ADDRESS, EEPROM_INITIAL_KEY);

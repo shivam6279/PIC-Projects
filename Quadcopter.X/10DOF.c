@@ -161,9 +161,7 @@ void HMC5883Init() {
     for(i = 0; i < IMU_BUFFER_SIZE; i++)
         compass_buffer[i] = (XYZ){0.0, 0.0, 0.0};
 #endif
-
-    compass_min = (XYZ){COMPASS_X_MIN, COMPASS_Y_MIN, COMPASS_Z_MIN};
-    compass_max = (XYZ){COMPASS_X_MIN, COMPASS_Y_MIN, COMPASS_Z_MIN};
+    ComputeCompassOffsetGain((XYZ){COMPASS_X_MIN, COMPASS_Y_MIN, COMPASS_Z_MIN}, (XYZ){COMPASS_X_MIN, COMPASS_Y_MIN, COMPASS_Z_MIN});
 }
 
 void GetRawCompass() {
@@ -253,8 +251,7 @@ void QMC5883Init() {
         compass_buffer[i] = (XYZ){0.0, 0.0, 0.0};
 #endif
 
-    compass_min = (XYZ){COMPASS_X_MIN, COMPASS_Y_MIN, COMPASS_Z_MIN};
-    compass_max = (XYZ){COMPASS_X_MIN, COMPASS_Y_MIN, COMPASS_Z_MIN};
+    ComputeCompassOffsetGain((XYZ){COMPASS_X_MIN, COMPASS_Y_MIN, COMPASS_Z_MIN}, (XYZ){COMPASS_X_MIN, COMPASS_Y_MIN, COMPASS_Z_MIN});
 }
 
 bool QMC5883DataRdy() {
@@ -275,9 +272,9 @@ void GetRawCompass() {
     
     if(QMC5883DataRdy()) {
         I2C_ReadRegisters(QMC5883L_ADDR, QMC5883L_X_LSB, temp, 6);
-        compass.y = (signed short)(temp[1] << 8 | temp[0]);
-        compass.x = (signed short)(temp[3] << 8 | temp[2]);
-        compass.z = (signed short)(temp[5] << 8 | temp[4]);
+        compass.y = (signed short)(temp[0] | temp[1] << 8);
+        compass.x = (signed short)(temp[2] | temp[3] << 8);
+        compass.z = (signed short)(temp[4] | temp[5] << 8);
     }
     
 #if board_version == 1 || board_version == 2 || board_version == 3
@@ -290,9 +287,17 @@ void GetRawCompass() {
 
 //----------------------------------------------------------------------
 
-void GetCompass() {
-    static XYZ compass_offset, compass_gain;
+void ComputeCompassOffsetGain(XYZ min, XYZ max) {
+    compass_offset.x = (compass_max.x + compasss_min.x) / 2.0f;
+    compass_offset.y = (compass_max.y + compasss_min.y) / 2.0f;
+    compass_offset.z = (compass_max.z + compasss_min.z) / 2.0f;
 
+    compass_gain.x = 2.0f / (compass_max.x - compasss_min.x);
+    compass_gain.y = 2.0f / (compass_max.y - compasss_min.y);
+    compass_gain.z = 2.0f / (compass_max.z - compasss_min.z);
+}
+
+void GetCompass() {
     GetRawCompass();
     
 #if IMU_BUFFER_SIZE > 0
@@ -306,14 +311,6 @@ void GetCompass() {
 
     compass = VectorScale(compass, 1.0f / IMU_BUFFER_SIZE);
 #endif
-
-    compass_offset.x = (compass_min.x + compass_max.x) / 2.0f;
-    compass_offset.y = (compass_min.y + compass_max.y) / 2.0f;
-    compass_offset.z = (compass_min.z + compass_max.z) / 2.0f;
-
-    compass_gain.x = 2.0f / (compass_max.x - compass_min.x);
-    compass_gain.y = 2.0f / (compass_max.y - compass_min.y);
-    compass_gain.z = 2.0f / (compass_max.z - compass_min.z);
 
     compass.x = (compass.x - compass_offset.x) * compass_gain.x;
     compass.y = (compass.y - compass_offset.y) * compass_gain.y;

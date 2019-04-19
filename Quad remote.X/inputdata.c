@@ -77,16 +77,16 @@ void ShowInputData() {
 
 void DrawDisplayBounds() {
     WriteStr("Dial2", 200, 135, 0x0000);//Dial2    
-    FillRect(267, 0, 3, 320, 0xF000);//Throttle divide
-    FillRect(25, 135, 87, 87, 0xF000);//Analog indicator box
-    FillRect(27, 137, 83, 83, 0xFFFF);//?
-    FillRect(114, 143, 64, 24, 0x0000);//Dial 1 box
-    FillRect(116, 145, 60, 20, 0xFFFF);//?
-    FillRect(134, 145, 3, 20, 0x0000);//?
-    FillRect(155, 145, 3, 20, 0x0000);//?
+    FillRect(267, 0, 3, 320, 0xF000);   //Throttle divide
+    FillRect(25, 135, 87, 87, 0xF000);  //Analog indicator box
+    FillRect(27, 137, 83, 83, 0xFFFF);  //?
+    FillRect(114, 143, 64, 24, 0x0000); //Dial 1 box
+    FillRect(116, 145, 60, 20, 0xFFFF); //?
+    FillRect(134, 145, 3, 20, 0x0000);  //?
+    FillRect(155, 145, 3, 20, 0x0000);  //?
     WriteStr("Dial1", 130, 135, 0x0000);//Dial1
-    FillRect(184, 143, 64, 24, 0x0000);//Dial2 box
-    FillRect(186, 145, 60, 20, 0xFFFF);//?
-    FillRect(204, 145, 3, 20, 0x0000);//?
-    FillRect(225, 145, 3, 20, 0x0000);//?
+    FillRect(184, 143, 64, 24, 0x0000); //Dial2 box
+    FillRect(186, 145, 60, 20, 0xFFFF); //?
+    FillRect(204, 145, 3, 20, 0x0000);  //?
+    FillRect(225, 145, 3, 20, 0x0000);  //?
 }
