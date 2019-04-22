@@ -119,15 +119,33 @@ void Menu(PID *x, PID *y, PID *z, PID *a){
         T2CONbits.TON = 1;
         GetGyro();
         USART1_send('A');
-        USART1_send((cursor % 10) + 48);        USART1_send(',');
-        USART1_write_float(x->p, 2, 2);         USART1_send(',');
-        USART1_write_float(x->i, 2, 2);         USART1_send(',');
-        USART1_write_float(x->d, 2, 2);         USART1_send(',');
-        USART1_write_float(a->p, 3, 1);         USART1_send(',');
-        USART1_write_float(a->i, 2, 2);         USART1_send(',');
-        USART1_write_float(a->d, 3, 1);         USART1_send(',');
-        USART1_send((GPS_signal % 10) + 48);    USART1_send(',');
-        USART1_send((GPS_connected % 10) + 48); USART1_send(',');
+        USART1_send((cursor % 10) + 48);
+        USART1_send(',');
+
+        USART1_write_float(x->p, 2);
+        USART1_send(',');
+
+        USART1_write_float(x->i, 2);
+        USART1_send(',');
+
+        USART1_write_float(x->d, 2);
+        USART1_send(',');
+
+        USART1_write_float(a->p, 1);
+        USART1_send(',');
+
+        USART1_write_float(a->i, 2);
+        USART1_send(',');
+
+        USART1_write_float(a->d, 1);
+        USART1_send(',');
+
+        USART1_send((GPS_signal % 10) + 48);
+        USART1_send(',');
+
+        USART1_send((GPS_connected % 10) + 48);
+        USART1_send(',');
+        
         USART1_send(((arming_counter / 10) % 10) + 48); 
         USART1_send((arming_counter % 10) + 48);
         USART1_send('\r');

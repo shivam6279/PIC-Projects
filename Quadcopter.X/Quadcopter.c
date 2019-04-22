@@ -177,17 +177,21 @@ void main() {
             GetCompass(); 
             
             tx_buffer[0] = 'C';
-            StrWriteFloat(compass_offset.x / 100.0, 3, 2, tx_buffer, 1);
-            StrWriteFloat(compass_offset.y / 100.0, 3, 2, tx_buffer, 8);
-            StrWriteFloat(compass_offset.z / 100.0, 3, 2, tx_buffer, 15);
-            StrWriteFloat(compass.x * 100.0, 3, 2, tx_buffer, 22);
-            StrWriteFloat(compass.y * 100.0, 3, 8, tx_buffer, 29);
-            StrWriteFloat(compass.z * 100.0, 3, 8, tx_buffer, 42);
+            StrWriteFloat(compass_offset.x / 100.0, 2, tx_buffer, 1);
+            tx_buffer[8] = ',';
+            StrWriteFloat(compass_offset.y / 100.0, 2, tx_buffer, 8);
+            tx_buffer[8] = ',';
+            StrWriteFloat(compass_offset.z / 100.0, 2, tx_buffer, 15);
+            tx_buffer[8] = ',';
+            StrWriteFloat(compass.x * 100.0, 2, tx_buffer, 22);
+            tx_buffer[8] = ',';
+            StrWriteFloat(compass.y * 100.0, 8, tx_buffer, 29);
+            tx_buffer[8] = ',';
+            StrWriteFloat(compass.z * 100.0, 8, tx_buffer, 42);
             tx_buffer[55] = loop_mode;
             tx_buffer[56] = '\r';
-            tx_buffer[57] = '\0';     
-
-            tx_flag = 1;
+            tx_buffer[57] = '\0'; 
+            USART1_writeBuffer(tx_buffer);
         }
         
         XBee_rx = ReadXBee();

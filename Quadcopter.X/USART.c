@@ -1,5 +1,6 @@
 #include "USART.h"
 #include "settings.h"
+#include "string.h"
 #include <xc.h>
 
 void USART1_init(unsigned long int baud_rate) {
@@ -24,7 +25,7 @@ void USART1_init(unsigned long int baud_rate) {
     U1BRG = (100000000.0f / (float)baud_rate / 4.0f) - 1;
     
     U1STAbits.ADM_EN = 0;
-    U1STAbits.UTXISEL = 3;
+    U1STAbits.UTXISEL = 0;
     U1STAbits.UTXINV = 0;
     U1STAbits.URXISEL = 2;
     U1STAbits.OERR = 0;
@@ -50,9 +51,18 @@ void USART1_init(unsigned long int baud_rate) {
     IEC3bits.U1RXIE = 1;
     
     IFS3bits.U1TXIF = 0;
-    IPC28bits.U1TXIP = 5;
+    IPC28bits.U1TXIP = 6;
     IPC28bits.U1TXIS = 0; 
-    IEC3bits.U1TXIE = 0;
+    UART1_TX_INTERRUPT = 1;
+}
+
+void USART1_writeBuffer(char str) {
+    strcpy(tx_buffer, str);
+    for(tx_buffer_index = 0, tx_flag = 1; !U1STAbits.UTXBF && tx_buffer[tx_buffer_index] != '\0', tx_buffer_index++)
+        U1TXREG = tx_buffer[tx_buffer_index];
+    if(tx_buffer[tx_buffer_index] == '\0')
+        tx_flag = 0;
+    //UART1_TX_INTERRUPT = 1;
 }
 
 void USART1_send(unsigned char byte) {
@@ -68,41 +78,38 @@ void USART1_send_str(char str[]) {
 }
 
 void USART1_write_int(int a, unsigned char precision) {
+    long int tens;
+
     if(a < 0) {
         a *= (-1);
         USART1_send('-');
-    } else {
-        USART1_send('+');
     }
-    if(precision >= 6) USART1_send(((a / 100000) % 10) + 48);
-    if(precision >= 5) USART1_send(((a / 10000) % 10) + 48);
-    if(precision >= 4) USART1_send(((a / 1000) % 10) + 48);
-    if(precision >= 3) USART1_send(((a / 100) % 10) + 48);
-    if(precision >= 2) USART1_send(((a / 10) % 10) + 48);
-    if(precision >= 1) USART1_send((a % 10) + 48);
+    //else USART1_send('+');
+
+    for(tens = 1; tens < a; tens *= 10);
+    tens /= 10;
+    for(; tens > 0; tens /= 10)
+        USART1_send(((a / tens) % 10) + 48);
 }
 
-void USART1_write_float(double a, unsigned char left, unsigned char right) {
+void USART1_write_float(double a, unsigned char right) {
     unsigned char i;
-    long int tens = 10;
+    long int tens;
+
     if(a < 0) {
         a *= (-1);
         USART1_send('-');
-    } else {
-        USART1_send('+');
-    }    
-    if(left >= 7) USART1_send(((int)(a / 1000000) % 10) + 48);
-    if(left >= 6) USART1_send(((int)(a / 100000) % 10) + 48);
-    if(left >= 5) USART1_send(((int)(a / 10000) % 10) + 48);
-    if(left >= 4) USART1_send(((int)(a / 1000) % 10) + 48);
-    if(left >= 3) USART1_send(((int)(a / 100) % 10) + 48);
-    if(left >= 2) USART1_send(((int)(a / 10) % 10) + 48);
-    if(left >= 1) USART1_send(((int)a % 10) + 48);
+    } 
+    //else USART1_send('+');
+
+    for(tens = 1; tens < a; tens *= 10);
+    tens /= 10;
+    for(; tens > 0; tens /= 10)
+        USART1_send(((long int)(a / tens) % 10) + 48);
+
     USART1_send('.');
-    for(i = 0; i < right; i++) {
+    for(i = 0, tens = 10; i < right; i++, tens *= 10)
         USART1_send(((long int)(a * tens) % 10) + 48);
-        tens *= 10;
-    }
 }
 
 void USART5_init(unsigned long int baud_rate) {

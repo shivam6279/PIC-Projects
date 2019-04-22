@@ -3,7 +3,9 @@
 
 #include "Xbee.h"
 
-void __ISR_AT_VECTOR(_UART1_RX_VECTOR, IPL6SRS) Xbee_rx(void) {
+
+//XBee receiver
+void __ISR_AT_VECTOR(_UART1_RX_VECTOR, IPL6SRS) XBee_rx(void) {
     IFS3bits.U1RXIF = 0; 
 
     static unsigned char XBee_rx_byte, XBee_address;
@@ -53,7 +55,20 @@ void __ISR_AT_VECTOR(_UART1_RX_VECTOR, IPL6SRS) Xbee_rx(void) {
     IFS3bits.U1RXIF = 0; 
 }
 
-void __ISR_AT_VECTOR(_TIMER_6_VECTOR, IPL4SRS) Xbee_tx(void) {
+//XBee transmitter
+void __ISR_AT_VECTOR(_UART1_TX_VECTOR, IPL6SRS) XBee_tx(void) {
+    IFS3bits.U1TXIF = 0; 
+    if(tx_flag) {
+        U1TXREG = tx_buffer[tx_buffer_index++];
+        if(tx_buffer[tx_buffer_index] == '\0')
+            tx_buffer_index = 0;
+            tx_flag = 0;
+            //UART1_TX_INTERRUPT = 0;
+    }
+}
+
+/*
+void __ISR_AT_VECTOR(_TIMER_6_VECTOR, IPL4SRS) XBee_tx(void) {
     IFS0bits.T6IF = 0;
     
     if(tx_flag) {
@@ -67,6 +82,7 @@ void __ISR_AT_VECTOR(_TIMER_6_VECTOR, IPL4SRS) Xbee_tx(void) {
         }
     }
 }
+*/
 
 void __ISR_AT_VECTOR(_TIMER_7_VECTOR, IPL4SRS) general_purpose_1KHz(void) {
     IFS1bits.T7IF = 0;

@@ -89,7 +89,7 @@ void StrWriteInt(int a, unsigned char precision, volatile char str[], unsigned c
         a *= (-1); 
         str[n++] = '-'; 
     }
-    else str[n++] = '+';
+    //else str[n++] = '+';
 
     for(; precision > 0; precision--)
         str[n++] = ((a / (int)pow(10, (precision - 1))) % 10) + 48;
@@ -102,7 +102,7 @@ void StrWriteFloat(double a, unsigned char left, unsigned char right, volatile c
         a *= (-1.0); 
         str[n++] = '-'; 
     }
-    else str[n++] = '+';
+    //else str[n++] = '+';
 
     for(; left > 0; left--)
         str[n++] = ((int)(a / pow(10, (left - 1))) % 10) + 48;
@@ -114,14 +114,9 @@ void StrWriteFloat(double a, unsigned char left, unsigned char right, volatile c
 
 void WriteRGBLed(unsigned int r, unsigned int g, unsigned int b) {
 #if board_version == 4
-    float rr, gg, bb;
-    rr = (float)r * (float)PWM_MAX / 4095.0;
-    gg = (float)g * (float)PWM_MAX / 4095.0;
-    bb = (float)b * (float)PWM_MAX / 4095.0;
-    
-    r = rr;
-    g = gg;
-    b = bb;
+    r = (unsigned int)((float)r * (float)PWM_MAX / 4095.0);
+    g = (unsigned int)((float)g * (float)PWM_MAX / 4095.0);
+    b = (unsigned int)((float)b * (float)PWM_MAX / 4095.0);
 #endif
     write_pwm(RGBLED_RED_PIN, r); 
     write_pwm(RGBLED_GREEN_PIN, g); 
