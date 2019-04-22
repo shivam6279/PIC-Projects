@@ -63,6 +63,7 @@ void QMC5883Init();
 bool QMC5883DataRdy();
 #endif
 
+extern void ComputeCompassOffsetGain(XYZ, XYZ);
 extern void GetRawCompass();
 extern void GetCompass();
 

@@ -90,3 +90,49 @@ void DrawDisplayBounds() {
     FillRect(204, 145, 3, 20, 0x0000);  //?
     FillRect(225, 145, 3, 20, 0x0000);  //?
 }
+
+void DecodeString(char str[], float arr[]) {
+    int c, temp_c, index;
+    static char temp[20];
+    for(c = 1, index = 0; str[c] != '\0'; c++) {
+        for(temp_c = 0; str[c] != ',' && str[c] != '\0'; c++, temp_c++)
+            temp[temp_c] = str[c];
+        temp[temp_c] = '\0';
+        arr[index++] = StrToFloat(temp);
+        if(str[c] == '\0')
+            break;
+    }
+    
+}
+
+float StrToFloat(char str[]) {
+    static signed char c, left, right;
+    static float ret, tens;
+    
+    if(str[0] == '-' || str[0] == '+')
+        c = 1;
+    else
+        c = 0;
+    
+    for(left = 0; str[left] != '.' && str[left ] != '\0'; left++);
+    
+    right = left + 1;
+    left--;
+    ret = 0.0;
+        
+    if(str[left + c + 1] == '\0') {
+        for(tens = 1.0; left >= c; left--, tens *= 10.0)
+            ret += (float)(str[left] - 48) * tens;
+    } else {
+        for(tens = 1.0; left >= c; left--, tens *= 10.0)
+            ret += (float)(str[left] - 48) * tens;
+
+        for(tens = 10.0; str[right] != '\0'; right++, tens *= 10.0)
+            ret += (float)(str[right] - 48) / tens;
+    }
+    
+    if(str[0] == '-')
+        return -ret;
+    
+    return ret;
+}

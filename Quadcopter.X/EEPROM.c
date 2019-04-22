@@ -7,8 +7,11 @@
 
 #define EEPROM_ADDRESS  0xA0
 
-#define EEPROM_INITIAL_ADDRESS  0x00
-#define EEPROM_INITIAL_KEY      0x3C
+#define EEPROM_INITIAL_ADDR 0x00
+#define EEPROM_INITIAL_KEY  0x4A
+
+#define EEPROM_CALIB_FLAG_ADDR  0x01
+#define EEPROM_CALIB_FLAG       0x1E
 
 #define ROLL_ADDR       16
 #define PITCH_ADDR      32
@@ -68,7 +71,7 @@ unsigned char eeprom_readBytes(unsigned char addr, unsigned char *bytes, unsigne
 void eeprom_readPID(PID *roll, PID *pitch, PID *yaw, PID *alt, PID *gps) {
     unsigned char str[12];
     
-    if(eeprom_readByte(EEPROM_INITIAL_ADDRESS) == EEPROM_INITIAL_KEY) {
+    if(eeprom_readByte(EEPROM_INITIAL_ADDR) == EEPROM_INITIAL_KEY) {
         //Read previously saved data
         eeprom_readBytes(ROLL_ADDR, str, 12);
         roll->p = *(float*)(unsigned char[4]){str[0], str[1], str[2], str[3]};
@@ -131,14 +134,14 @@ void eeprom_writePID(PID *roll, PID *pitch, PID *yaw, PID *alt, PID *gps) {
     eeprom_writeBytes(GPS_ADDR, str, 12);
     delay_ms(6);
     
-    eeprom_writeByte(EEPROM_INITIAL_ADDRESS, EEPROM_INITIAL_KEY);
+    eeprom_writeByte(EEPROM_INITIAL_ADDR, EEPROM_INITIAL_KEY);
     delay_ms(6);
 }
 
 void eeprom_readCalibration() {
     unsigned char str[12];
     
-    if(eeprom_readByte(EEPROM_INITIAL_ADDRESS) == EEPROM_INITIAL_KEY) {
+    if(eeprom_readByte(EEPROM_CALIB_FLAG_ADDR) == EEPROM_CALIB_FLAG) {
         //Read previously saved data
         eeprom_readBytes(COMPASS_X_OFFSET_ADDR, str, 12);
         compass_offset.x = *(float*)(unsigned char[4]){str[0], str[1], str[2], str[3]};
@@ -158,7 +161,7 @@ void eeprom_writeCalibration() {
     *(float*)(str) = compass_offset.x;
     *(float*)(str + 4) = compass_offset.y;
     *(float*)(str + 8) = compass_offset.z;
-    eeprom_writeBytes(COMPASS_X_MIN_ADDR, str, 12);
+    eeprom_writeBytes(COMPASS_X_OFFSET_ADDR, str, 12);
     delay_ms(6);
     
     *(float*)(str) = compass_gain.x;
@@ -167,6 +170,6 @@ void eeprom_writeCalibration() {
     eeprom_writeBytes(COMPASS_X_GAIN_ADDR, str, 12);
     delay_ms(6);
     
-    eeprom_writeByte(EEPROM_INITIAL_ADDRESS, EEPROM_INITIAL_KEY);
+    eeprom_writeByte(EEPROM_CALIB_FLAG_ADDR, EEPROM_CALIB_FLAG);
     delay_ms(6);
 }

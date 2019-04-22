@@ -2,7 +2,7 @@
 #define _settings_H_
 
 //-----------------------------PCB----------------------------
-#define mini		//micro / mini / big
+#define micro		//micro / mini / big
 #define board_version 4
 //------------------------------------------------------------
 

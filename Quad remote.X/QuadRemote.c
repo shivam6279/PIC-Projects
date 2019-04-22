@@ -29,21 +29,15 @@ unsigned char receive1;
 char rx_buffer[200];
 int buffer_counter = 0;
 
+unsigned char mode = 0;
 unsigned int rx_time_counter = 0;
 bool rx_signal = 0;
-
-char mode = 0;
-float pid_p = 0, pid_i = 0, pid_d = 0, altitude_p, altitude_i, altitude_d;          //Mode 'A'
-unsigned char cursor = 0, arming_counter = 0, GPS_signal = 0, GPS_connected = 0;    //Mode 'A'
-int arming_time;                                                                    //Mode 'B'
-float pitch, roll, yaw, altitude, latitude, longitude, loop_mode;                   //Mode 'C'
-int acc_x, acc_y, acc_z, gyro_x, gyro_y, gyro_z, compass_x, compass_y, compass_z;   //Mode 'D' 
-int compass_max_x, compass_max_y, compass_max_z, compass_min_x, compass_min_y, compass_min_z; 
 
 void main() {
     bool rx_signal_flag = 1;
     int i, j;
     unsigned char pre_cursor = 100, pre_mode = 0;
+    float data[10];
     
     char monitor[30][54], pre_monitor[30][54];
     
@@ -76,6 +70,10 @@ void main() {
     FillRect(270, 0, 50, (float)(31 - analog2_y) * 240.0/31.0,0xFFFF);
     
     while(1) {
+        DecodeString(rx_buffer, data);
+        
+        mode = rx_buffer[0];
+                
         if(mode == 0 && rx_signal_flag == 1) {
             FillRect(0, 8, 250, 9 * 8, 0xFFFF);
             rx_signal_flag = 0;
@@ -140,58 +138,66 @@ void main() {
             //--------------------------------------------Display variables for the current mode---------------------------------------
 
             if(mode == 'A') {
-                if(cursor != pre_cursor) {
+                if((int)data[0] != pre_cursor) {
                     WriteStr(" ", 4, (pre_cursor + 1) * 8, 0x0000);
-                    WriteStr(">", 4, (cursor + 1) * 8, 0x0000);
+                    WriteStr(">", 4, ((int)data[0] + 1) * 8, 0x0000);
                 }
-                pre_cursor = cursor;
-                WriteFloat(pid_p, 2, 2, 5 * 6, 1 * 8, 0x0000);
-                WriteFloat(pid_i, 2, 2, 5 * 6, 2 * 8, 0x0000);
-                WriteFloat(pid_d, 2, 2, 5 * 6, 3 * 8, 0x0000);
-                WriteFloat(altitude_p, 3, 1, 14 * 6, 4 * 8, 0x0000);
-                WriteFloat(altitude_i, 2, 2, 14 * 6, 5 * 8, 0x0000);
-                WriteFloat(altitude_d, 3, 1, 14 * 6, 6 * 8, 0x0000);
-                if(GPS_connected) WriteStr("Yes", 17 * 6, 7 * 8, 0x0000);
-                else WriteStr("No ", 17 * 6, 7 * 8, 0x0000);
-                if(GPS_signal) WriteStr("Yes", 14 * 6, 8 * 8, 0x0000);
-                else WriteStr("No ", 14 * 6, 8 * 8, 0x0000);
-                if(arming_counter) FillRect(81, 10, arming_counter * 3, 8, 0xFFA0);
-                else FillRect(81, 10, 60, 8, 0xFFFF);
+                pre_cursor = (int)data[0];
+                WriteFloat(data[1], 3, 3, 5 * 6, 1 * 8, 0x0000);
+                WriteFloat(data[2], 3, 3, 5 * 6, 2 * 8, 0x0000);
+                WriteFloat(data[3], 3, 3, 5 * 6, 3 * 8, 0x0000);
+                WriteFloat(data[4], 3, 3, 14 * 6, 4 * 8, 0x0000);
+                WriteFloat(data[5], 3, 3, 14 * 6, 5 * 8, 0x0000);
+                WriteFloat(data[6], 3, 3, 14 * 6, 6 * 8, 0x0000);
+                if((int)data[7]) 
+                    WriteStr("Yes", 17 * 6, 7 * 8, 0x0000);
+                else 
+                    WriteStr("No ", 17 * 6, 7 * 8, 0x0000);
+                
+                if((int)data[8]) 
+                    WriteStr("Yes", 14 * 6, 8 * 8, 0x0000);
+                else 
+                    WriteStr("No ", 14 * 6, 8 * 8, 0x0000);
+                
+                if((int)data[9]) 
+                    FillRect(81, 10, (int)data[9] * 3, 8, 0xFFA0);
+                else 
+                    FillRect(81, 10, 60, 8, 0xFFFF);
             }
 
             if(mode == 'B') {
-                FillRect(2, 20, (arming_time / 10) + 1, 15, 0xFFA0);
+                FillRect(2, 20, ((int)data[0] / 10) + 1, 15, 0xFFA0);
             }
 
             if(mode == 'C') {
-                if(loop_mode == 'S') WriteStr("RC      ", 7 * 6, 1 * 8, 0xF80F);
-                else if(loop_mode == 'A') WriteStr("Alt-hold", 7 * 6, 1 * 8, 0xF80F);
-                else if(loop_mode == 'P') WriteStr("Pos-hold", 7 * 6, 1 * 8, 0xF80F);
-                else if(loop_mode == 'K') WriteStr("Killed  ", 7 * 6, 1 * 8, 0xF80F);
-                WriteFloat(pitch, 3, 2, 8 * 6, 2 * 8, 0x0000);
-                WriteFloat(roll, 3, 2, 7 * 6, 3 * 8, 0x0000);
-                WriteFloat(yaw, 3, 2, 6 * 6, 4 * 8, 0x0000);
-                WriteFloat(altitude, 3, 2, 11 * 6, 5 * 8, 0x0000);
-                WriteFloat(latitude, 3, 6, 11 * 6, 6 * 8, 0x0000);
-                WriteFloat(longitude, 3, 6, 12 * 6, 7 * 8, 0x0000);
+                if((int)data[0] == 'S') WriteStr("RC      ", 7 * 6, 1 * 8, 0xF80F);
+                else if((int)data[0] == 'A') WriteStr("Alt-hold", 7 * 6, 1 * 8, 0xF80F);
+                else if((int)data[0] == 'P') WriteStr("Pos-hold", 7 * 6, 1 * 8, 0xF80F);
+                else if((int)data[0] == 'K') WriteStr("Killed  ", 7 * 6, 1 * 8, 0xF80F);
+                WriteFloat(data[1], 3, 2, 8 * 6, 2 * 8, 0x0000);
+                WriteFloat(data[2], 3, 2, 7 * 6, 3 * 8, 0x0000);
+                WriteFloat(data[3], 3, 2, 6 * 6, 4 * 8, 0x0000);
+                WriteFloat(data[4], 3, 2, 11 * 6, 5 * 8, 0x0000);
+                WriteFloat(data[5], 3, 6, 11 * 6, 6 * 8, 0x0000);
+                WriteFloat(data[6], 3, 6, 12 * 6, 7 * 8, 0x0000);
             }
 
             if(mode == 'D') {
-                WriteInt(acc_x, 6, 7*6, 1*8, 0x0000);
-                WriteInt(acc_y, 6, 7*6, 2*8, 0x0000);
-                WriteInt(acc_z, 6, 7*6, 3*8, 0x0000);
-                WriteInt(gyro_x, 6, 8*6, 4*8, 0x0000);
-                WriteInt(gyro_y, 6, 8*6, 5*8, 0x0000);
-                WriteInt(gyro_z, 6, 8*6, 6*8, 0x0000);
-                WriteInt(compass_x, 6, 11*6, 7*8, 0x0000);
-                WriteInt(compass_y, 6, 11*6, 8*8, 0x0000);
-                WriteInt(compass_z, 6, 11*6, 9*8, 0x0000);
-                WriteInt(compass_min_x, 6, 15*6, 10*8, 0x0000);
-                WriteInt(compass_min_y, 6, 15*6, 11*8, 0x0000);
-                WriteInt(compass_min_z, 6, 15*6, 12*8, 0x0000);
-                WriteInt(compass_max_x, 6, 15*6, 13*8, 0x0000);
-                WriteInt(compass_max_y, 6, 15*6, 14*8, 0x0000);
-                WriteInt(compass_max_z, 6, 15*6, 15*8, 0x0000);
+                WriteInt(data[0], 6, 7*6, 1*8, 0x0000);
+                WriteInt(data[1], 6, 7*6, 2*8, 0x0000);
+                WriteInt(data[2], 6, 7*6, 3*8, 0x0000);
+                WriteInt(data[3], 6, 8*6, 4*8, 0x0000);
+                WriteInt(data[4], 6, 8*6, 5*8, 0x0000);
+                WriteInt(data[5], 6, 8*6, 6*8, 0x0000);
+                WriteInt(data[6], 6, 11*6, 7*8, 0x0000);
+                WriteInt(data[7], 6, 11*6, 8*8, 0x0000);
+                WriteInt(data[8], 6, 11*6, 9*8, 0x0000);
+                WriteInt(data[9], 6, 15*6, 10*8, 0x0000);
+                WriteInt(data[10], 6, 15*6, 11*8, 0x0000);
+                WriteInt(data[11], 6, 15*6, 12*8, 0x0000);
+                WriteInt(data[12], 6, 15*6, 13*8, 0x0000);
+                WriteInt(data[13], 6, 15*6, 14*8, 0x0000);
+                WriteInt(data[14 ], 6, 15*6, 15*8, 0x0000);
             }
             
             ShowInputData();
@@ -221,8 +227,7 @@ void main() {
     }
 }
 
-void __ISR_AT_VECTOR(_UART1_RX_VECTOR, IPL6SRS) Xbee(void){
-    int i, j;
+void __ISR_AT_VECTOR(_UART1_RX_VECTOR, IPL6SRS) Xbee(void) {
     IFS3bits.U1RXIF = 0; 
     do {
         receive1 = U1RXREG & 0xFF;
@@ -232,98 +237,6 @@ void __ISR_AT_VECTOR(_UART1_RX_VECTOR, IPL6SRS) Xbee(void){
             
             rx_buffer[buffer_counter] = '\0';
             buffer_counter = 0;
-            if(rx_buffer[0] > 64 && rx_buffer[0] < 91) {
-                mode = rx_buffer[0];
-                if(mode == 'A') {
-                    cursor = rx_buffer[1] - 48;
-                    pid_p = 10 * (float)(rx_buffer[3] - 48) + (float)(rx_buffer[4] - 48) + 0.1 * (float)(rx_buffer[6] - 48) + 0.01 * (float)(rx_buffer[7] - 48);
-                    if(rx_buffer[2] == '-') pid_p *= (-1);
-                    pid_i= 10 * (float)(rx_buffer[9] - 48) + (float)(rx_buffer[10] - 48) + 0.1 * (float)(rx_buffer[12] - 48) + 0.01 * (float)(rx_buffer[13] - 48);
-                    if(rx_buffer[8] == '-') pid_i *= (-1);
-                    pid_d = 10 * (float)(rx_buffer[15] - 48) + (float)(rx_buffer[16] - 48) + 0.1 * (float)(rx_buffer[18] - 48) + 0.01 * (float)(rx_buffer[19] - 48);
-                    if(rx_buffer[14] == '-') pid_d *= (-1);
-                    altitude_p = 100 * (float)(rx_buffer[21] - 48) + 10 * (float)(rx_buffer[22] - 48) + (float)(rx_buffer[23] - 48) + 0.1 * (float)(rx_buffer[25] - 48);
-                    if(rx_buffer[20] == '-') altitude_p *= (-1);
-                    altitude_i = 10 * (float)(rx_buffer[27] - 48) + (float)(rx_buffer[28] - 48) + 0.1 * (float)(rx_buffer[30] - 48) + 0.01 * (float)(rx_buffer[31] - 48);
-                    if(rx_buffer[26] == '-') altitude_i *= (-1);
-                    altitude_d = 100 * (float)(rx_buffer[33] - 48) + 10 * (float)(rx_buffer[34] - 48) + (float)(rx_buffer[35] - 48) + 0.1 * (float)(rx_buffer[37] - 48);
-                    if(rx_buffer[32] == '-') altitude_d *= (-1);
-                    GPS_signal = rx_buffer[38] - 48;
-                    GPS_connected = rx_buffer[39] - 48;
-                    arming_counter = 10 * (rx_buffer[40] - 48) + (rx_buffer[41] - 48);
-                }
-                else if(mode == 'B'){
-                    arming_time = (100 * (rx_buffer[1] - 48) + 10 * (rx_buffer[2] - 48) + (rx_buffer[3] - 48));
-                }
-                else if(mode == 'C'){
-                    roll = 100 * (float)(rx_buffer[2] - 48) + 10 * (float)(rx_buffer[3] - 48) + (float)(rx_buffer[4] - 48) + 0.1 * (float)(rx_buffer[6] - 48) + 0.01 * (float)(rx_buffer[7] - 48);
-                    if(rx_buffer[1] == '-') roll *= (-1);
-                    pitch = 100 * (float)(rx_buffer[9] - 48) + 10 * (float)(rx_buffer[10] - 48) + (float)(rx_buffer[11] - 48) + 0.1 * (float)(rx_buffer[13] - 48) + 0.01 * (float)(rx_buffer[14] - 48);
-                    if(rx_buffer[8] == '-') pitch *= (-1);
-                    yaw = 100 * (float)(rx_buffer[16] - 48) + 10 * (float)(rx_buffer[17] - 48) + (float)(rx_buffer[18] - 48) + 0.1 * (float)(rx_buffer[20] - 48) + 0.01 * (float)(rx_buffer[21] - 48);
-                    if(rx_buffer[15] == '-') yaw *= (-1);
-                    altitude = 100 * (float)(rx_buffer[23] - 48) + 10 * (float)(rx_buffer[24] - 48) + (float)(rx_buffer[25] - 48) + 0.1 * (float)(rx_buffer[27] - 48) + 0.01 * (float)(rx_buffer[28] - 48);
-                    if(rx_buffer[22] == '-') altitude *= (-1);
-                    latitude = 100 * (float)(rx_buffer[30] - 48) + 10 * (float)(rx_buffer[31] - 48) + (float)(rx_buffer[32] - 48) + 0.1 * (float)(rx_buffer[34] - 48) + 0.01 * (float)(rx_buffer[35] - 48) + 0.001 * (float)(rx_buffer[36] - 48) + 0.0001 * (float)(rx_buffer[37] - 48) + 0.00001 * (float)(rx_buffer[38] - 48) + 0.000001 * (float)(rx_buffer[39] - 48) + 0.0000001 * (float)(rx_buffer[40] - 48) + 0.00000001 * (float)(rx_buffer[41] - 48);
-                    if(rx_buffer[29] == '-') latitude *= (-1);
-                    longitude = 100 * (float)(rx_buffer[43] - 48) + 10 * (float)(rx_buffer[44] - 48) + (float)(rx_buffer[45] - 48) + 0.1 * (float)(rx_buffer[47] - 48) + 0.01 * (float)(rx_buffer[48] - 48) + 0.001 * (float)(rx_buffer[49] - 48) + 0.0001 * (float)(rx_buffer[50] - 48) + 0.00001 * (float)(rx_buffer[51] - 48) + 0.000001 * (float)(rx_buffer[52] - 48) + 0.0000001 * (float)(rx_buffer[53] - 48) + 0.00000001 * (float)(rx_buffer[54] - 48);
-                    if(rx_buffer[42] == '-') longitude *= (-1);
-                    loop_mode = rx_buffer[55];
-                }
-                else if(mode == 'D'){
-                    acc_x = 100000*(rx_buffer[2] - 48) + 10000*(rx_buffer[3] - 48) + 1000*(rx_buffer[4] - 48) + 100*(rx_buffer[5] - 48) + 10*(rx_buffer[6] - 48) + (rx_buffer[7] - 48);
-                    if(rx_buffer[1] == '-') acc_x *= (-1);
-                    acc_y = 100000*(rx_buffer[9] - 48) + 10000*(rx_buffer[10] - 48) + 1000*(rx_buffer[11] - 48) + 100*(rx_buffer[12] - 48) + 10*(rx_buffer[13] - 48) + (rx_buffer[14] - 48);
-                    if(rx_buffer[8] == '-') acc_y *= (-1);
-                    acc_z = 100000*(rx_buffer[16] - 48) + 10000*(rx_buffer[17] - 48) + 1000*(rx_buffer[18] - 48) + 100*(rx_buffer[19] - 48) + 10*(rx_buffer[20] - 48) + (rx_buffer[21] - 48);
-                    if(rx_buffer[15] == '-') acc_z *= (-1);
-                    
-                    gyro_x = 100000*(rx_buffer[23] - 48) + 10000*(rx_buffer[24] - 48) + 1000*(rx_buffer[25] - 48) + 100*(rx_buffer[26] - 48) + 10*(rx_buffer[27] - 48) + (rx_buffer[28] - 48);
-                    if(rx_buffer[22] == '-') gyro_x *= (-1);
-                    gyro_y = 100000*(rx_buffer[30] - 48) + 10000*(rx_buffer[31] - 48) + 1000*(rx_buffer[32] - 48) + 100*(rx_buffer[33] - 48) + 10*(rx_buffer[34] - 48) + (rx_buffer[35] - 48);
-                    if(rx_buffer[29] == '-') gyro_y *= (-1);
-                    gyro_z = 100000*(rx_buffer[37] - 48) + 10000*(rx_buffer[38] - 48) + 1000*(rx_buffer[39] - 48) + 100*(rx_buffer[40] - 48) + 10*(rx_buffer[41] - 48) + (rx_buffer[42] - 48);
-                    if(rx_buffer[36] == '-') gyro_z *= (-1);
-                    
-                    compass_x = 100000*(rx_buffer[44] - 48) + 10000*(rx_buffer[45] - 48) + 1000*(rx_buffer[46] - 48) + 100*(rx_buffer[47] - 48) + 10*(rx_buffer[48] - 48) + (rx_buffer[49] - 48);
-                    if(rx_buffer[43] == '-') compass_x *= (-1);
-                    compass_y = 100000*(rx_buffer[51] - 48) + 10000*(rx_buffer[52] - 48) + 1000*(rx_buffer[53] - 48) + 100*(rx_buffer[54] - 48) + 10*(rx_buffer[55] - 48) + (rx_buffer[56] - 48);
-                    if(rx_buffer[50] == '-') compass_y *= (-1);
-                    compass_z = 100000*(rx_buffer[58] - 48) + 10000*(rx_buffer[59] - 48) + 1000*(rx_buffer[60] - 48) + 100*(rx_buffer[61] - 48) + 10*(rx_buffer[62] - 48) + (rx_buffer[63] - 48);
-                    if(rx_buffer[57] == '-') compass_z *= (-1);
-                    
-                    compass_min_x = 100000*(rx_buffer[65] - 48) + 10000*(rx_buffer[66] - 48) + 1000*(rx_buffer[67] - 48) + 100*(rx_buffer[68] - 48) + 10*(rx_buffer[69] - 48) + (rx_buffer[70] - 48);
-                    if(rx_buffer[64] == '-') compass_min_x *= (-1);
-                    compass_min_y = 100000*(rx_buffer[72] - 48) + 10000*(rx_buffer[73] - 48) + 1000*(rx_buffer[74] - 48) + 100*(rx_buffer[75] - 48) + 10*(rx_buffer[76] - 48) + (rx_buffer[77] - 48);
-                    if(rx_buffer[71] == '-') compass_min_y *= (-1);
-                    compass_min_z = 100000*(rx_buffer[79] - 48) + 10000*(rx_buffer[80] - 48) + 1000*(rx_buffer[81] - 48) + 100*(rx_buffer[82] - 48) + 10*(rx_buffer[83] - 48) + (rx_buffer[84] - 48);
-                    if(rx_buffer[78] == '-') compass_min_z *= (-1);
-                    
-                    compass_max_x = 100000*(rx_buffer[86] - 48) + 10000*(rx_buffer[87] - 48) + 1000*(rx_buffer[88] - 48) + 100*(rx_buffer[89] - 48) + 10*(rx_buffer[90] - 48) + (rx_buffer[91] - 48);
-                    if(rx_buffer[85] == '-') compass_max_x *= (-1);
-                    compass_max_y = 100000*(rx_buffer[93] - 48) + 10000*(rx_buffer[94] - 48) + 1000*(rx_buffer[95] - 48) + 100*(rx_buffer[96] - 48) + 10*(rx_buffer[97] - 48) + (rx_buffer[98] - 48);
-                    if(rx_buffer[92] == '-') compass_max_y *= (-1);
-                    compass_max_z = 100000*(rx_buffer[100] - 48) + 10000*(rx_buffer[101] - 48) + 1000*(rx_buffer[102] - 48) + 100*(rx_buffer[103] - 48) + 10*(rx_buffer[104] - 48) + (rx_buffer[105] - 48);
-                    if(rx_buffer[99] == '-') compass_max_z *= (-1);
-                }
-                else if(mode == 'Z') {
-                    for(j = 0; j < 30; j++) {
-                        serial_monitor[j][0] = '\0';
-                    }
-                    for(i = 0, j = 0, buffer_counter = 1; rx_buffer[buffer_counter] != '\0'; buffer_counter++) {
-                        if(rx_buffer[buffer_counter] == '\n') {
-                            serial_monitor[j][i] = '\0';
-                            j++;
-                            i = 0;
-                        } else {
-                            serial_monitor[j][i] = rx_buffer[buffer_counter];
-                            i++;
-                        }
-                    }
-                    serial_monitor[j][i] = '\0';
-                    buffer_counter = 0;
-                }
-            }
         } else {
             rx_buffer[buffer_counter++] = receive1;
         }

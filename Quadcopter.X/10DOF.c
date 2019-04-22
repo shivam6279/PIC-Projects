@@ -135,7 +135,7 @@ void GetGyro() {
 
 //-----------------------------------Magnetometer----------------------------------
 
-XYZ compass_min, compass_max;
+XYZ compass_offset, compass_gain;
 
 //--HMC5883--
 
@@ -161,7 +161,7 @@ void HMC5883Init() {
     for(i = 0; i < IMU_BUFFER_SIZE; i++)
         compass_buffer[i] = (XYZ){0.0, 0.0, 0.0};
 #endif
-    ComputeCompassOffsetGain((XYZ){COMPASS_X_MIN, COMPASS_Y_MIN, COMPASS_Z_MIN}, (XYZ){COMPASS_X_MIN, COMPASS_Y_MIN, COMPASS_Z_MIN});
+    ComputeCompassOffsetGain((XYZ){COMPASS_X_MIN, COMPASS_Y_MIN, COMPASS_Z_MIN}, (XYZ){COMPASS_X_MAX, COMPASS_Y_MAX, COMPASS_Z_MAX});
 }
 
 void GetRawCompass() {
@@ -251,7 +251,7 @@ void QMC5883Init() {
         compass_buffer[i] = (XYZ){0.0, 0.0, 0.0};
 #endif
 
-    ComputeCompassOffsetGain((XYZ){COMPASS_X_MIN, COMPASS_Y_MIN, COMPASS_Z_MIN}, (XYZ){COMPASS_X_MIN, COMPASS_Y_MIN, COMPASS_Z_MIN});
+    ComputeCompassOffsetGain((XYZ){COMPASS_X_MIN, COMPASS_Y_MIN, COMPASS_Z_MIN}, (XYZ){COMPASS_X_MAX, COMPASS_Y_MAX, COMPASS_Z_MAX});
 }
 
 bool QMC5883DataRdy() {
@@ -287,14 +287,14 @@ void GetRawCompass() {
 
 //----------------------------------------------------------------------
 
-void ComputeCompassOffsetGain(XYZ min, XYZ max) {
-    compass_offset.x = (compass_max.x + compasss_min.x) / 2.0f;
-    compass_offset.y = (compass_max.y + compasss_min.y) / 2.0f;
-    compass_offset.z = (compass_max.z + compasss_min.z) / 2.0f;
+void ComputeCompassOffsetGain(XYZ compass_min, XYZ compass_max) {
+    compass_offset.x = (compass_max.x + compass_min.x) / 2.0f;
+    compass_offset.y = (compass_max.y + compass_min.y) / 2.0f;
+    compass_offset.z = (compass_max.z + compass_min.z) / 2.0f;
 
-    compass_gain.x = 2.0f / (compass_max.x - compasss_min.x);
-    compass_gain.y = 2.0f / (compass_max.y - compasss_min.y);
-    compass_gain.z = 2.0f / (compass_max.z - compasss_min.z);
+    compass_gain.x = 2.0f / (compass_max.x - compass_min.x);
+    compass_gain.y = 2.0f / (compass_max.y - compass_min.y);
+    compass_gain.z = 2.0f / (compass_max.z - compass_min.z);
 }
 
 void GetCompass() {

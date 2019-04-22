@@ -59,7 +59,6 @@ void __ISR_AT_VECTOR(_TIMER_6_VECTOR, IPL4SRS) Xbee_tx(void) {
     if(tx_flag) {
         while(!U1STAbits.UTXBF) {
             U1TXREG = tx_buffer[tx_buffer_index];
-
             if(tx_buffer[tx_buffer_index++] == '\r') {
                 tx_buffer_index = 0;
                 tx_flag = 0;

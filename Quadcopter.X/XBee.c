@@ -9,8 +9,8 @@
 volatile rx XBee, XBee_temp;
 
 volatile int safety_counter = 0;
-volatile unsigned char tx_buffer_index = 0;
-volatile unsigned char tx_buffer_timer = 0;
+volatile unsigned int tx_buffer_index = 0;
+volatile unsigned int tx_buffer_timer = 0;
 volatile bool tx_flag = 0;
 volatile bool XBee_signal_temp = 0;
 
@@ -52,28 +52,26 @@ void SendCalibrationData() {
         if(compass.z < compass_min.z) compass_min.z = compass.z;
         
         tx_buffer[0] = 'D';
-        StrWriteInt(acc.x, 6, tx_buffer, 1);
-        StrWriteInt(acc.y, 6, tx_buffer, 8);
-        StrWriteInt(acc.z, 6, tx_buffer, 15);
-        StrWriteInt(gyro.x, 6, tx_buffer, 22);
-        StrWriteInt(gyro.y, 6, tx_buffer, 29);
-        StrWriteInt(gyro.z, 6, tx_buffer, 36);
-        StrWriteInt(compass.x, 6, tx_buffer, 43);
-        StrWriteInt(compass.y, 6, tx_buffer, 50);
-        StrWriteInt(compass.z, 6, tx_buffer, 57);
-        StrWriteInt(compass_min.x, 6, tx_buffer, 64);
-        StrWriteInt(compass_min.y, 6, tx_buffer, 71);
-        StrWriteInt(compass_min.z, 6, tx_buffer, 78);
-        StrWriteInt(compass_max.x, 6, tx_buffer, 85);
-        StrWriteInt(compass_max.y, 6, tx_buffer, 92);
-        StrWriteInt(compass_max.z, 6, tx_buffer, 99);
+        StrWriteInt(compass.x, 6, tx_buffer, 1);
+        StrWriteInt(compass.y, 6, tx_buffer, 8);
+        StrWriteInt(compass.z, 6, tx_buffer, 15);
+        StrWriteInt(compass_min.x, 6, tx_buffer, 22);
+        StrWriteInt(compass_min.y, 6, tx_buffer, 29);
+        StrWriteInt(compass_min.z, 6, tx_buffer, 36);
+        StrWriteInt(compass_max.x, 6, tx_buffer, 43);
+        StrWriteInt(compass_max.y, 6, tx_buffer, 50);
+        StrWriteInt(compass_max.z, 6, tx_buffer, 57);
+        StrWriteInt(gyro.x, 6, tx_buffer, 64);
+        StrWriteInt(gyro.y, 6, tx_buffer, 71);
+        StrWriteInt(gyro.z, 6, tx_buffer, 78);
+        StrWriteInt(acc.x, 6, tx_buffer, 85);
+        StrWriteInt(acc.y, 6, tx_buffer, 92);
+        StrWriteInt(acc.z, 6, tx_buffer, 99);
         tx_buffer[106] = '\r';
         tx_buffer[107] = '\0';
     
         tx_flag = 1;
-        while(tx_flag)
-            delay_ms(1);
-        delay_ms(1);
+        delay_ms(35);
     }
 
     ComputeCompassOffsetGain(compass_min, compass_max);

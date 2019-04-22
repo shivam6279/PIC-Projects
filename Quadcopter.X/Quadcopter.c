@@ -98,7 +98,7 @@ void main() {
         
 #if board_version == 4
         eeprom_readPID(&roll, &pitch, &yaw, &altitude, &GPS);
-        eeprom_writeCalibration();
+        eeprom_readCalibration();
 #endif
         
         Menu(&roll, &pitch, &yaw, &altitude);
@@ -169,6 +169,26 @@ void main() {
         
         LOOP_TIMER_ON = 1;
         TX_TIMER_ON = 1;
+        
+        while(XBee.rs == 0) {
+            while(tx_flag)
+                delay_ms(1);
+            
+            GetCompass(); 
+            
+            tx_buffer[0] = 'C';
+            StrWriteFloat(compass_offset.x / 100.0, 3, 2, tx_buffer, 1);
+            StrWriteFloat(compass_offset.y / 100.0, 3, 2, tx_buffer, 8);
+            StrWriteFloat(compass_offset.z / 100.0, 3, 2, tx_buffer, 15);
+            StrWriteFloat(compass.x * 100.0, 3, 2, tx_buffer, 22);
+            StrWriteFloat(compass.y * 100.0, 3, 8, tx_buffer, 29);
+            StrWriteFloat(compass.z * 100.0, 3, 8, tx_buffer, 42);
+            tx_buffer[55] = loop_mode;
+            tx_buffer[56] = '\r';
+            tx_buffer[57] = '\0';     
+
+            tx_flag = 1;
+        }
         
         XBee_rx = ReadXBee();
         
@@ -361,9 +381,9 @@ void main() {
                 //SendFlightData(roll, pitch, yaw, altitude, loop_mode);
 
                 tx_buffer[0] = 'C';
-                StrWriteFloat(roll.error, 3, 2, tx_buffer, 1);
-                StrWriteFloat(pitch.error, 3, 2, tx_buffer, 8);
-                StrWriteFloat(yaw.error, 3, 2, tx_buffer, 15);
+                StrWriteFloat(compass.x * 10.0, 3, 2, tx_buffer, 1);
+                StrWriteFloat(compass.y * 10.0, 3, 2, tx_buffer, 8);
+                StrWriteFloat(compass.z * 10.0, 3, 2, tx_buffer, 15);
                 StrWriteFloat(altitude.offset - altitude.error, 3, 2, tx_buffer, 22);
                 StrWriteFloat(altitude.derivative, 3, 8, tx_buffer, 29);
                 StrWriteFloat(altitude.output - altitude_setpoint, 3, 8, tx_buffer, 42);
