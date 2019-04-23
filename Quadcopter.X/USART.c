@@ -53,16 +53,7 @@ void USART1_init(unsigned long int baud_rate) {
     IFS3bits.U1TXIF = 0;
     IPC28bits.U1TXIP = 6;
     IPC28bits.U1TXIS = 0; 
-    UART1_TX_INTERRUPT = 1;
-}
-
-void USART1_writeBuffer(char str) {
-    strcpy(tx_buffer, str);
-    for(tx_buffer_index = 0, tx_flag = 1; !U1STAbits.UTXBF && tx_buffer[tx_buffer_index] != '\0', tx_buffer_index++)
-        U1TXREG = tx_buffer[tx_buffer_index];
-    if(tx_buffer[tx_buffer_index] == '\0')
-        tx_flag = 0;
-    //UART1_TX_INTERRUPT = 1;
+    UART1_TX_INTERRUPT = 0;
 }
 
 void USART1_send(unsigned char byte) {
@@ -77,7 +68,7 @@ void USART1_send_str(char str[]) {
     }
 }
 
-void USART1_write_int(int a, unsigned char precision) {
+void USART1_write_int(int a) {
     long int tens;
 
     if(a < 0) {
@@ -101,11 +92,15 @@ void USART1_write_float(double a, unsigned char right) {
         USART1_send('-');
     } 
     //else USART1_send('+');
-
-    for(tens = 1; tens < a; tens *= 10);
-    tens /= 10;
-    for(; tens > 0; tens /= 10)
-        USART1_send(((long int)(a / tens) % 10) + 48);
+    
+    if(a > 1.0) {
+        for(tens = 1; tens < a; tens *= 10);
+        tens /= 10;
+        for(; tens > 0; tens /= 10)
+            USART1_send(((long int)(a / tens) % 10) + 48);
+    } else {
+        USART1_send('0');
+    }
 
     USART1_send('.');
     for(i = 0, tens = 10; i < right; i++, tens *= 10)

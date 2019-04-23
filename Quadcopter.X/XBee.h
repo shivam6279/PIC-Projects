@@ -30,4 +30,6 @@ extern rx ReadXBee();
 extern void SendCalibrationData();
 extern void SendFlightData(PID, PID, PID, PID, char);
 
+extern void XBee_writeBuffer();
+
 #endif

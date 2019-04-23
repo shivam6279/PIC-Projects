@@ -1,3 +1,4 @@
+#include <xc.h>
 #include "XBee.h"
 #include "pic32.h"
 #include "10DOF.h"
@@ -52,21 +53,21 @@ void SendCalibrationData() {
         if(compass.z < compass_min.z) compass_min.z = compass.z;
         
         tx_buffer[0] = 'D';
-        StrWriteInt(compass.x, 6, tx_buffer, 1);
-        StrWriteInt(compass.y, 6, tx_buffer, 8);
-        StrWriteInt(compass.z, 6, tx_buffer, 15);
-        StrWriteInt(compass_min.x, 6, tx_buffer, 22);
-        StrWriteInt(compass_min.y, 6, tx_buffer, 29);
-        StrWriteInt(compass_min.z, 6, tx_buffer, 36);
-        StrWriteInt(compass_max.x, 6, tx_buffer, 43);
-        StrWriteInt(compass_max.y, 6, tx_buffer, 50);
-        StrWriteInt(compass_max.z, 6, tx_buffer, 57);
-        StrWriteInt(gyro.x, 6, tx_buffer, 64);
-        StrWriteInt(gyro.y, 6, tx_buffer, 71);
-        StrWriteInt(gyro.z, 6, tx_buffer, 78);
-        StrWriteInt(acc.x, 6, tx_buffer, 85);
-        StrWriteInt(acc.y, 6, tx_buffer, 92);
-        StrWriteInt(acc.z, 6, tx_buffer, 99);
+        StrWriteInt(compass.x, tx_buffer, 1);
+        StrWriteInt(compass.y, tx_buffer, 8);
+        StrWriteInt(compass.z, tx_buffer, 15);
+        StrWriteInt(compass_min.x, tx_buffer, 22);
+        StrWriteInt(compass_min.y, tx_buffer, 29);
+        StrWriteInt(compass_min.z, tx_buffer, 36);
+        StrWriteInt(compass_max.x, tx_buffer, 43);
+        StrWriteInt(compass_max.y, tx_buffer, 50);
+        StrWriteInt(compass_max.z, tx_buffer, 57);
+        StrWriteInt(gyro.x, tx_buffer, 64);
+        StrWriteInt(gyro.y, tx_buffer, 71);
+        StrWriteInt(gyro.z, tx_buffer, 78);
+        StrWriteInt(acc.x, tx_buffer, 85);
+        StrWriteInt(acc.y, tx_buffer, 92);
+        StrWriteInt(acc.z, tx_buffer, 99);
         tx_buffer[106] = '\r';
         tx_buffer[107] = '\0';
     
@@ -83,13 +84,22 @@ void SendCalibrationData() {
 
 void SendFlightData(PID roll, PID pitch, PID yaw, PID altitude, char loop_mode) { 
     tx_buffer[0] = 'C';
-    StrWriteFloat(roll.error, 3, 2, tx_buffer, 1);
-    StrWriteFloat(pitch.error, 3, 2, tx_buffer, 8);
-    StrWriteFloat(yaw.error, 3, 2, tx_buffer, 15);
-    StrWriteFloat(altitude.error, 3, 2, tx_buffer, 22);
-    StrWriteFloat(altitude.output, 3, 8, tx_buffer, 29);
-    StrWriteFloat(yaw.output, 3, 8, tx_buffer, 42);
+    StrWriteFloat(roll.error, 2, tx_buffer, 1);
+    StrWriteFloat(pitch.error, 2, tx_buffer, 8);
+    StrWriteFloat(yaw.error, 2, tx_buffer, 15);
+    StrWriteFloat(altitude.error, 2, tx_buffer, 22);
+    StrWriteFloat(altitude.output, 8, tx_buffer, 29);
+    StrWriteFloat(yaw.output, 8, tx_buffer, 42);
     tx_buffer[55] = loop_mode;
     tx_buffer[56] = '\r';
     tx_buffer[57] = '\0';     
+}
+
+void XBee_writeBuffer() {
+    for(tx_buffer_index = 0, tx_flag = 1; !U1STAbits.UTXBF && tx_buffer[tx_buffer_index] != '\0'; tx_buffer_index++)
+        U1TXREG = tx_buffer[tx_buffer_index];
+    if(tx_buffer[tx_buffer_index] == '\0')
+        tx_flag = 0;
+    else
+        UART1_TX_INTERRUPT = 1;
 }

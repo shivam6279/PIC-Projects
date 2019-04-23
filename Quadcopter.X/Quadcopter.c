@@ -1,6 +1,7 @@
 #include <xc.h>
 #include "pragma.h"
 #include <math.h>
+#include <string.h>
 #include <stdbool.h>
 #include <sys/attribs.h>
 
@@ -112,9 +113,9 @@ void main() {
         delay_ms(100);
         
         DELAY_TIMER_ON = 1;
-        TX_TIMER_ON = 1;
+        //TX_TIMER_ON = 1;
         tx_buffer_index = 0;
-             
+        
         for(i = 0, VectorReset(&acc_avg), VectorReset(&gyro_avg); i < 1000; i++) {
             delay_counter = 0;
             GetAcc();
@@ -132,7 +133,7 @@ void main() {
             tx_buffer[3] = (i % 10) + 48;
             tx_buffer[4] = '\r';
             tx_buffer[5] = '\0';
-            tx_flag = 1;
+            XBee_writeBuffer();
             
             while(delay_counter < 3);
         }
@@ -168,8 +169,8 @@ void main() {
         altitude_setpoint = 0;
         
         LOOP_TIMER_ON = 1;
-        TX_TIMER_ON = 1;
-        
+        //TX_TIMER_ON = 1;
+        WriteRGBLed(0, 4095, 0);
         while(XBee.rs == 0) {
             while(tx_flag)
                 delay_ms(1);
@@ -191,7 +192,7 @@ void main() {
             tx_buffer[55] = loop_mode;
             tx_buffer[56] = '\r';
             tx_buffer[57] = '\0'; 
-            USART1_writeBuffer(tx_buffer);
+            XBee_writeBuffer();
         }
         
         XBee_rx = ReadXBee();
@@ -385,12 +386,12 @@ void main() {
                 //SendFlightData(roll, pitch, yaw, altitude, loop_mode);
 
                 tx_buffer[0] = 'C';
-                StrWriteFloat(compass.x * 10.0, 3, 2, tx_buffer, 1);
-                StrWriteFloat(compass.y * 10.0, 3, 2, tx_buffer, 8);
-                StrWriteFloat(compass.z * 10.0, 3, 2, tx_buffer, 15);
-                StrWriteFloat(altitude.offset - altitude.error, 3, 2, tx_buffer, 22);
-                StrWriteFloat(altitude.derivative, 3, 8, tx_buffer, 29);
-                StrWriteFloat(altitude.output - altitude_setpoint, 3, 8, tx_buffer, 42);
+                StrWriteFloat(compass.x * 10.0, 2, tx_buffer, 1);
+                StrWriteFloat(compass.y * 10.0, 2, tx_buffer, 8);
+                StrWriteFloat(compass.z * 10.0, 2, tx_buffer, 15);
+                StrWriteFloat(altitude.offset - altitude.error, 2, tx_buffer, 22);
+                StrWriteFloat(altitude.derivative, 8, tx_buffer, 29);
+                StrWriteFloat(altitude.output - altitude_setpoint, 8, tx_buffer, 42);
                 tx_buffer[55] = loop_mode;
                 tx_buffer[56] = '\r';
                 tx_buffer[57] = '\0';     

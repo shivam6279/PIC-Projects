@@ -84,39 +84,57 @@ void PIDOutputAngle(PID *a) {
     a->output = a->p * LimitAngle(a->error - a->offset) + a->i * a->sum + a->d * a->derivative;
 }
 
-void StrWriteInt(int a, unsigned char precision, volatile char str[], unsigned char n) {
+void StrWriteInt(int a, volatile char str[], unsigned char n) {
+    long int tens;
+    
     if(a < 0) { 
         a *= (-1); 
         str[n++] = '-'; 
     }
     //else str[n++] = '+';
+    
+    for(tens = 1; tens < a; tens *= 10);
+    tens /= 10;
 
-    for(; precision > 0; precision--)
-        str[n++] = ((a / (int)pow(10, (precision - 1))) % 10) + 48;
+    for(; tens > 0; tens /= 10)
+        str[n++] = ((long int)(a / tens) % 10) + 48;
 }
 
-void StrWriteFloat(double a, unsigned char left, unsigned char right, volatile char str[], unsigned char n) {
+void StrWriteFloat(double a, unsigned char right, volatile char str[], unsigned char n) {
     unsigned char i;
-    long int tens = 10;
+    long int tens;
+    
     if(a < 0) { 
         a *= (-1.0); 
         str[n++] = '-'; 
     }
     //else str[n++] = '+';
+    
+    if(a > 1.0) {
+        for(tens = 1; tens < a; tens *= 10);
+        tens /= 10;
 
-    for(; left > 0; left--)
-        str[n++] = ((int)(a / pow(10, (left - 1))) % 10) + 48;
+        for(; tens > 0; tens /= 10)
+            str[n++] = ((long int)(a / tens) % 10) + 48;
+    } else {
+        str[n++] = '0';
+    }
 
     str[n++] = '.';
-    for(i = 0; i < right; i++, tens *= 10, n++)
+    for(i = 0, tens = 10; i < right; i++, tens *= 10, n++)
         str[n] = ((long int)(a * tens) % 10) + 48;
 }
 
 void WriteRGBLed(unsigned int r, unsigned int g, unsigned int b) {
 #if board_version == 4
-    r = (unsigned int)((float)r * (float)PWM_MAX / 4095.0);
-    g = (unsigned int)((float)g * (float)PWM_MAX / 4095.0);
-    b = (unsigned int)((float)b * (float)PWM_MAX / 4095.0);
+    float rr, gg, bb;
+    rr = (float)r * (float)PWM_MAX / 4095.0;
+    gg = (float)g * (float)PWM_MAX / 4095.0;
+    bb = (float)b * (float)PWM_MAX / 4095.0;
+    
+    r = rr;
+    g = gg;
+    b = bb;
 #endif
     write_pwm(RGBLED_RED_PIN, r); 
     write_pwm(RGBLED_GREEN_PIN, g); 
