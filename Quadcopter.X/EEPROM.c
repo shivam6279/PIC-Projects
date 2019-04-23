@@ -3,15 +3,13 @@
 #include "PID.h"
 #include "pic32.h"
 #include "10DOF.h"
+#include "AHRS.h"
 #include <stdbool.h>
 
 #define EEPROM_ADDRESS  0xA0
 
 #define EEPROM_INITIAL_ADDR 0x00
 #define EEPROM_INITIAL_KEY  0x4A
-
-#define EEPROM_CALIB_FLAG_ADDR  0x01
-#define EEPROM_CALIB_FLAG       0x1E
 
 #define ROLL_ADDR       16
 #define PITCH_ADDR      32
@@ -30,6 +28,10 @@
 #define GYRO_X_OFFSET_ADDR  128
 #define GYRO_Y_OFFSET_ADDR  132
 #define GYRO_Z_OFFSET_ADDR  136
+
+#define ROLL_OFFSET_ADDR    144
+#define PITCH_OFFSET_ADDR   148
+#define HEADING_OFFSET_ADDR 152
 
 bool eeprom_writeByte(unsigned char addr, unsigned char byte) {    
     I2C_WriteRegisters(EEPROM_ADDRESS, (unsigned char[2]){addr, byte}, 2);
@@ -134,14 +136,16 @@ void eeprom_writePID(PID *roll, PID *pitch, PID *yaw, PID *alt, PID *gps) {
     eeprom_writeBytes(GPS_ADDR, str, 12);
     delay_ms(6);
     
-    eeprom_writeByte(EEPROM_INITIAL_ADDR, EEPROM_INITIAL_KEY);
-    delay_ms(6);
+    if(eeprom_readByte(EEPROM_INITIAL_ADDR) != EEPROM_INITIAL_KEY) {
+        eeprom_writeByte(EEPROM_INITIAL_ADDR, EEPROM_INITIAL_KEY);
+        delay_ms(6);
+    }
 }
 
 void eeprom_readCalibration() {
     unsigned char str[12];
     
-    if(eeprom_readByte(EEPROM_CALIB_FLAG_ADDR) == EEPROM_CALIB_FLAG) {
+    if(eeprom_readByte(EEPROM_INITIAL_ADDR) == EEPROM_INITIAL_KEY) {
         //Read previously saved data
         eeprom_readBytes(COMPASS_X_OFFSET_ADDR, str, 12);
         compass_offset.x = *(float*)(unsigned char[4]){str[0], str[1], str[2], str[3]};
@@ -170,6 +174,35 @@ void eeprom_writeCalibration() {
     eeprom_writeBytes(COMPASS_X_GAIN_ADDR, str, 12);
     delay_ms(6);
     
-    eeprom_writeByte(EEPROM_CALIB_FLAG_ADDR, EEPROM_CALIB_FLAG);
+    if(eeprom_readByte(EEPROM_INITIAL_ADDR) != EEPROM_INITIAL_KEY) {
+        eeprom_writeByte(EEPROM_INITIAL_ADDR, EEPROM_INITIAL_KEY);
+        delay_ms(6);
+    }
+}
+
+void eeprom_readOffsets() {
+    unsigned char str[12];
+    
+    if(eeprom_readByte(EEPROM_INITIAL_ADDR) == EEPROM_INITIAL_KEY) {
+        //Read previously saved data
+        eeprom_readBytes(ANGLE_OFFSET_ADDR, str, 12);
+        roll_offset = *(float*)(unsigned char[4]){str[0], str[1], str[2], str[3]};
+        pitch_offset = *(float*)(unsigned char[4]){str[4], str[5], str[6], str[7]};
+        heading_offset = *(float*)(unsigned char[4]){str[8], str[9], str[10], str[11]};
+    } 
+}
+
+void eeprom_writeOffsets() {
+    unsigned char str[12];
+    
+    *(float*)(str) = roll_offset;
+    *(float*)(str + 4) = pitch_offset;
+    *(float*)(str + 8) = heading_offset;
+    eeprom_writeBytes(ANGLE_OFFSET_ADDR, str, 12);
     delay_ms(6);
+    
+    if(eeprom_readByte(EEPROM_INITIAL_ADDR) != EEPROM_INITIAL_KEY) {
+        eeprom_writeByte(EEPROM_INITIAL_ADDR, EEPROM_INITIAL_KEY);
+        delay_ms(6);
+    }
 }

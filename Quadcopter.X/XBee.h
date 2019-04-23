@@ -7,6 +7,8 @@
 #define XBEE_START_BYTE 0x40
 #define XBEE_END_BYTE	0x80
 
+#define XBEE_TX_BUFFER_LEN 256
+
 typedef struct {
 	int x1, y1, x2, y2;
 	unsigned char d1, d2;
@@ -16,14 +18,14 @@ typedef struct {
 } rx;
 
 extern volatile rx XBee, XBee_temp;
-extern volatile unsigned int tx_buffer_index;
+extern volatile int tx_buffer_index;
 extern volatile int safety_counter;
 
 extern volatile unsigned int tx_buffer_timer;
 extern volatile bool tx_flag;
 extern volatile bool XBee_signal_temp;
 
-extern volatile char tx_buffer[200];
+extern volatile char tx_buffer[XBEE_TX_BUFFER_LEN];
 
 extern void XBeeReset();
 extern rx ReadXBee();
@@ -31,5 +33,13 @@ extern void SendCalibrationData();
 extern void SendFlightData(PID, PID, PID, PID, char);
 
 extern void XBee_writeBuffer();
+extern void XBeeFillBuffer();
+extern void XBeeClearBuffer();
+extern void XBeeWriteInt(int);
+extern void XBeeWriteFloat(float, int);
+extern void XBeeWriteChar(char);
+extern void XBeeWriteStr(char[]);
+extern void XBeeWriteRawInt(int);
+extern void XBeeWriteRawFloat(float);
 
 #endif

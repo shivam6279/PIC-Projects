@@ -18,7 +18,6 @@
 #define PITCHOFFSET -2.1f			//degrees -1.8
 #define HEADINGOFFSET -87.0f       	//degrees
 
-//-------------------------Pinouts----------------------------
 #if board_version == 1
 	#define RGBLED_RED_PIN 0
 	#define RGBLED_GREEN_PIN 1
@@ -32,6 +31,11 @@
 	#define SCL_TRIS TRISFbits.TRISF5
 	#define SDA PORTFbits.RF4  
 	#define SDA_TRIS TRISFbits.TRISF4
+
+	#define ESC_FREQ 470.0f			//Hz
+	#define MOTOR_OFF_TIME 1000.0f	//us
+	#define MOTOR_MAX_TIME 2000.0f	//us
+
 #elif board_version == 2
 	#define RGBLED_RED_PIN 1
 	#define RGBLED_GREEN_PIN 0
@@ -45,6 +49,11 @@
 	#define SCL_TRIS TRISFbits.TRISF5
 	#define SDA PORTFbits.RF4  
 	#define SDA_TRIS TRISFbits.TRISF4
+
+	#define ESC_FREQ 470.0f			//Hz
+	#define MOTOR_OFF_TIME 1000.0f	//us
+	#define MOTOR_MAX_TIME 2000.0f	//us
+
 #elif board_version == 3
 	#define RGBLED_RED_PIN 8
 	#define RGBLED_GREEN_PIN 9
@@ -58,6 +67,11 @@
 	#define SCL_TRIS TRISFbits.TRISF5
 	#define SDA PORTFbits.RF4  
 	#define SDA_TRIS TRISFbits.TRISF4
+
+	#define ESC_FREQ 470.0f			//Hz
+	#define MOTOR_OFF_TIME 1000.0f	//us
+	#define MOTOR_MAX_TIME 2000.0f	//us
+
 #elif board_version == 4
 	#define RGBLED_RED_PIN 9		//RB14 - OC9
 	#define RGBLED_GREEN_PIN 5		//RB15 - OC5
@@ -71,18 +85,12 @@
 	#define SCL_TRIS TRISDbits.TRISD9
 	#define SDA PORTFbits.RF4  
 	#define SDA_TRIS TRISFbits.TRISF4
-#endif
 
-//------------------------ESC timings--------------------------
-#if board_version == 1 || board_version == 2 || board_version == 3
-    #define ESC_FREQ 470.0f			//Hz
-	#define MOTOR_OFF_TIME 1000.0f	//us
-	#define MOTOR_MAX_TIME 2000.0f	//us
-#elif board_version == 4
 	#define ESC_FREQ 10000.0f		//Hz
 	#define MOTOR_OFF_TIME 42.0f	//us
 	#define MOTOR_MAX_TIME 84.0f	//us
 #endif
+
 #define ESC_TIME_us 1000000.0 / ESC_FREQ	//ESC update period in us
 
 //Motor spin correction: +1 for top right motor CCW, -1 for top right motor CW
@@ -99,7 +107,6 @@
 //IMU
 #define QMC5883	//HMC5883 or QMC5883
 #define MS5611	//BMP180 or MS5611
-#define IMU_BUFFER_SIZE 10
 
 #define PI 3.14159265
 #define RAD_TO_DEGREES 57.29577951

@@ -13,6 +13,8 @@ void Menu(PID *x, PID *y, PID *z, PID *a){
     unsigned int r, g, b;
     unsigned int led_counter = 0, arming_counter = 0;
     rx XBee;
+
+    XBeeClearBuffer();
     
     while(arming_counter < 20) {
         
@@ -116,8 +118,9 @@ void Menu(PID *x, PID *y, PID *z, PID *a){
             arming_counter = 0;
         
         delay_counter = 0; 
-        T2CONbits.TON = 1;
-        GetGyro();
+        DELAY_TIMER_ON = 1;
+
+        /*
         USART1_send('A');
         USART1_send((cursor % 10) + 48);
         USART1_send(',');
@@ -149,7 +152,41 @@ void Menu(PID *x, PID *y, PID *z, PID *a){
         USART1_send(((arming_counter / 10) % 10) + 48); 
         USART1_send((arming_counter % 10) + 48);
         USART1_send('\r');
+        */
+
+        XBeeWriteChar('A');
+
+        XBeeWriteInt(cursor);
+        XBeeWriteChar(',');
+
+        XBeeWriteFloat(x->p, 2);
+        XBeeWriteChar(',');
+
+        XBeeWriteFloat(x->i, 2);
+        XBeeWriteChar(',');
+
+        XBeewriteFloat(x->d, 2);
+        XBeeWriteChar(',');
+
+        XBeeWriteFloat(a->p, 1);
+        XBeeWriteChar(',');
+
+        XBeewrite_float(a->i, 2);
+        XBeeWriteChar(',');
+
+        XBeeWriteFloat(a->d, 1);
+        XBeeWriteChar(',');
+
+        XBeeWriteInt(GPS_signal);
+        XBeeWriteChar(',');
+
+        XBeeWriteInt(GPS_connected);
+        XBeeWriteChar(',');
+        
+        XBeeWriteInt(arming_counter); 
+        XBeeWriteChar('\r');
+
         while(delay_counter < 25); 
-        T2CONbits.TON = 0;
+        DELAY_TIMER_ON = 0;
     }
 }

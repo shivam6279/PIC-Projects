@@ -67,8 +67,6 @@ void main() {
     char loop_mode, p_loop_mode;                                                    //Stabilize/alt-hold/pos-hold
     bool kill, p_kill;
     
-    //unsigned char tx_buffer_timer = 0;
-    
     Init();
     
     WriteRGBLed(4095, 0, 0);                            //Red

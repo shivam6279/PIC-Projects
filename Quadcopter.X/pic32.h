@@ -10,6 +10,8 @@
 #define TX_TIMER_ON T6CONbits.ON
 
 extern void PICInit();
+extern void StartDelayCounter();
+extern void StopDelayCounter();
 extern void delay_ms(unsigned int);
 extern void timer2_init(float);
 extern void timer3_init(float);

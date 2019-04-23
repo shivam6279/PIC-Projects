@@ -58,6 +58,7 @@ void __ISR_AT_VECTOR(_UART1_RX_VECTOR, IPL6SRS) XBee_rx(void) {
 //XBee transmitter
 void __ISR_AT_VECTOR(_UART1_TX_VECTOR, IPL6SRS) XBee_tx(void) {
     IFS3bits.U1TXIF = 0; 
+    /*
     if(tx_flag) {
         U1TXREG = tx_buffer[tx_buffer_index++];
         if(tx_buffer[tx_buffer_index] == '\0') {
@@ -65,8 +66,20 @@ void __ISR_AT_VECTOR(_UART1_TX_VECTOR, IPL6SRS) XBee_tx(void) {
             tx_flag = 0;
             UART1_TX_INTERRUPT = 0;
         }
+    }*/
+    static int i;
+
+    if(tx_buffer_index) {
+        U1TXREG = tx_buffer[0];
+        if(tx_buffer_index == 1) {
+            tx_buffer_index = 0;
+            UART1_TX_INTERRUPT = 0;
+        } else {
+            for(i = 0; i < tx_buffer_index; i--)
+                tx_buffer[i] = tx_buffer[i + 1];
+            tx_buffer_index--;
+        }
     }
-    IFS3bits.U1TXIF = 0; 
 }
 
 /*

@@ -35,11 +35,19 @@ void PICInit(){
     __asm__("ei");//Enable interrupts
 }
 
-void delay_ms(unsigned int x){
+void StartDelayCounter() {
     delay_counter = 0;
     DELAY_TIMER_ON = 1;
-    while(delay_counter < x);
+}
+
+void StopDelayCounter() {
     DELAY_TIMER_ON = 0;
+}
+
+void delay_ms(unsigned int x){
+    StartDelayCounter();
+    while(delay_counter < x);
+    StopDelayCounter()
 }
 
 void timer2_init(float frequency) {

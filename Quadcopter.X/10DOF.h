@@ -4,6 +4,8 @@
 #include "settings.h"
 #include <stdbool.h>
 
+#define IMU_BUFFER_SIZE 10
+
 #define GYRO_X_OFFSET 125
 #define GYRO_Y_OFFSET -250
 #define GYRO_Z_OFFSET -75

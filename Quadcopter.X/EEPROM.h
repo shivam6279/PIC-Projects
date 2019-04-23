@@ -12,5 +12,7 @@ void eeprom_readPID(PID*, PID*, PID*, PID*, PID*);
 void eeprom_writePID(PID*, PID*, PID*, PID*, PID*);
 void eeprom_readCalibration();
 void eeprom_writeCalibration();
+void eeprom_readOffsets();
+void eeprom_writeOffsets();
 
 #endif
