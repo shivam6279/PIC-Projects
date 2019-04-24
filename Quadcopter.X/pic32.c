@@ -47,7 +47,7 @@ void StopDelayCounter() {
 void delay_ms(unsigned int x){
     StartDelayCounter();
     while(delay_counter < x);
-    StopDelayCounter()
+    StopDelayCounter();
 }
 
 void timer2_init(float frequency) {

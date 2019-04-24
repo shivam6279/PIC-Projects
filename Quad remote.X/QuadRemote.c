@@ -70,9 +70,10 @@ void main() {
     FillRect(270, 0, 50, (float)(31 - analog2_y) * 240.0/31.0,0xFFFF);
     
     while(1) {
-        DecodeString(rx_buffer, data);
-        
-        mode = rx_buffer[0];
+        if(rx_signal) {
+            DecodeString(rx_buffer, data);
+            mode = rx_buffer[0];
+        }
                 
         if(mode == 0 && rx_signal_flag == 1) {
             FillRect(0, 8, 250, 9 * 8, 0xFFFF);

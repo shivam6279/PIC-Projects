@@ -22,7 +22,6 @@ extern volatile int tx_buffer_index;
 extern volatile int safety_counter;
 
 extern volatile unsigned int tx_buffer_timer;
-extern volatile bool tx_flag;
 extern volatile bool XBee_signal_temp;
 
 extern volatile char tx_buffer[XBEE_TX_BUFFER_LEN];
@@ -36,9 +35,9 @@ extern void XBee_writeBuffer();
 extern void XBeeFillBuffer();
 extern void XBeeClearBuffer();
 extern void XBeeWriteInt(int);
-extern void XBeeWriteFloat(float, int);
+extern void XBeeWriteFloat(float, unsigned char);
 extern void XBeeWriteChar(char);
-extern void XBeeWriteStr(char[]);
+extern void XBeeWriteStr(const char[]);
 extern void XBeeWriteRawInt(int);
 extern void XBeeWriteRawFloat(float);
 

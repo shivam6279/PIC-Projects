@@ -185,7 +185,7 @@ void eeprom_readOffsets() {
     
     if(eeprom_readByte(EEPROM_INITIAL_ADDR) == EEPROM_INITIAL_KEY) {
         //Read previously saved data
-        eeprom_readBytes(ANGLE_OFFSET_ADDR, str, 12);
+        eeprom_readBytes(ROLL_OFFSET_ADDR, str, 12);
         roll_offset = *(float*)(unsigned char[4]){str[0], str[1], str[2], str[3]};
         pitch_offset = *(float*)(unsigned char[4]){str[4], str[5], str[6], str[7]};
         heading_offset = *(float*)(unsigned char[4]){str[8], str[9], str[10], str[11]};
@@ -198,7 +198,7 @@ void eeprom_writeOffsets() {
     *(float*)(str) = roll_offset;
     *(float*)(str + 4) = pitch_offset;
     *(float*)(str + 8) = heading_offset;
-    eeprom_writeBytes(ANGLE_OFFSET_ADDR, str, 12);
+    eeprom_writeBytes(ROLL_OFFSET_ADDR, str, 12);
     delay_ms(6);
     
     if(eeprom_readByte(EEPROM_INITIAL_ADDR) != EEPROM_INITIAL_KEY) {

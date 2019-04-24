@@ -120,73 +120,30 @@ void Menu(PID *x, PID *y, PID *z, PID *a){
         delay_counter = 0; 
         DELAY_TIMER_ON = 1;
 
-        /*
-        USART1_send('A');
-        USART1_send((cursor % 10) + 48);
-        USART1_send(',');
-
-        USART1_write_float(x->p, 2);
-        USART1_send(',');
-
-        USART1_write_float(x->i, 2);
-        USART1_send(',');
-
-        USART1_write_float(x->d, 2);
-        USART1_send(',');
-
-        USART1_write_float(a->p, 1);
-        USART1_send(',');
-
-        USART1_write_float(a->i, 2);
-        USART1_send(',');
-
-        USART1_write_float(a->d, 1);
-        USART1_send(',');
-
-        USART1_send((GPS_signal % 10) + 48);
-        USART1_send(',');
-
-        USART1_send((GPS_connected % 10) + 48);
-        USART1_send(',');
-        
-        USART1_send(((arming_counter / 10) % 10) + 48); 
-        USART1_send((arming_counter % 10) + 48);
-        USART1_send('\r');
-        */
-
         XBeeWriteChar('A');
-
         XBeeWriteInt(cursor);
         XBeeWriteChar(',');
-
         XBeeWriteFloat(x->p, 2);
         XBeeWriteChar(',');
-
         XBeeWriteFloat(x->i, 2);
         XBeeWriteChar(',');
-
-        XBeewriteFloat(x->d, 2);
+        XBeeWriteFloat(x->d, 2);
         XBeeWriteChar(',');
-
         XBeeWriteFloat(a->p, 1);
         XBeeWriteChar(',');
-
-        XBeewrite_float(a->i, 2);
+        XBeeWriteFloat(a->i, 2);
         XBeeWriteChar(',');
-
         XBeeWriteFloat(a->d, 1);
         XBeeWriteChar(',');
-
         XBeeWriteInt(GPS_signal);
         XBeeWriteChar(',');
-
         XBeeWriteInt(GPS_connected);
-        XBeeWriteChar(',');
-        
+        XBeeWriteChar(',');        
         XBeeWriteInt(arming_counter); 
-        XBeeWriteChar('\r');
-
-        while(delay_counter < 25); 
+        XBeeWriteChar('\r');        
+        //XBeeWriteChar('\n');
+        
+        while(delay_counter < 25);  
         DELAY_TIMER_ON = 0;
     }
 }

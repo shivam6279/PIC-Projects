@@ -125,13 +125,9 @@ void main() {
             
             MadgwickQuaternionUpdate(q, acc, (XYZ){0.0, 0.0, 0.0}, compass, 0.050);
             
-            tx_buffer[0] = 'B';
-            tx_buffer[1] = (i / 100 % 10) + 48;
-            tx_buffer[2] = (i / 10 % 10) + 48;
-            tx_buffer[3] = (i % 10) + 48;
-            tx_buffer[4] = '\r';
-            tx_buffer[5] = '\0';
-            XBee_writeBuffer();
+            XBeeWriteChar('B');
+            XBeeWriteInt(i);
+            XBeeWriteChar('\r');
             
             while(delay_counter < 3);
         }
@@ -170,27 +166,27 @@ void main() {
         //TX_TIMER_ON = 1;
         WriteRGBLed(0, 4095, 0);
         while(XBee.rs == 0) {
-            while(tx_flag)
+            while(tx_buffer_index)
                 delay_ms(1);
+            delay_ms(5);
             
             GetCompass(); 
             
-            tx_buffer[0] = 'C';
-            StrWriteFloat(compass_offset.x / 100.0, 2, tx_buffer, 1);
-            tx_buffer[8] = ',';
-            StrWriteFloat(compass_offset.y / 100.0, 2, tx_buffer, 8);
-            tx_buffer[8] = ',';
-            StrWriteFloat(compass_offset.z / 100.0, 2, tx_buffer, 15);
-            tx_buffer[8] = ',';
-            StrWriteFloat(compass.x * 100.0, 2, tx_buffer, 22);
-            tx_buffer[8] = ',';
-            StrWriteFloat(compass.y * 100.0, 8, tx_buffer, 29);
-            tx_buffer[8] = ',';
-            StrWriteFloat(compass.z * 100.0, 8, tx_buffer, 42);
-            tx_buffer[55] = loop_mode;
-            tx_buffer[56] = '\r';
-            tx_buffer[57] = '\0'; 
-            XBee_writeBuffer();
+            XBeeWriteChar('C');
+            XBeeWriteFloat(compass_offset.x, 4);
+            XBeeWriteChar(',');
+            XBeeWriteFloat(compass_offset.y, 4);
+            XBeeWriteChar(',');
+            XBeeWriteFloat(compass_offset.z, 4);
+            XBeeWriteChar(',');
+            XBeeWriteFloat(compass.x, 4);
+            XBeeWriteChar(',');
+            XBeeWriteFloat(compass.y, 4);
+            XBeeWriteChar(',');
+            XBeeWriteFloat(compass.z, 4);
+            XBeeWriteChar(',');
+            XBeeWriteInt(loop_mode);
+            XBeeWriteChar('\r');
         }
         
         XBee_rx = ReadXBee();
@@ -395,7 +391,7 @@ void main() {
                 tx_buffer[57] = '\0';     
 
                 tx_buffer_timer = 0;
-                tx_flag = 1;
+                //tx_flag = 1;
             }
         }
         LOOP_TIMER_ON = 0;

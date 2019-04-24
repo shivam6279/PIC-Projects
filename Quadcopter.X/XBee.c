@@ -12,7 +12,6 @@ volatile rx XBee, XBee_temp;
 volatile int safety_counter = 0;
 volatile int tx_buffer_index = 0;
 volatile unsigned int tx_buffer_timer = 0;
-volatile bool tx_flag = 0;
 volatile bool XBee_signal_temp = 0;
 
 volatile char tx_buffer[XBEE_TX_BUFFER_LEN];
@@ -81,7 +80,7 @@ void SendCalibrationData() {
         tx_buffer[106] = '\r';
         tx_buffer[107] = '\0';
     
-        tx_flag = 1;
+        //tx_flag = 1;
         delay_ms(35);
     }
 
@@ -105,25 +104,18 @@ void SendFlightData(PID roll, PID pitch, PID yaw, PID altitude, char loop_mode) 
     tx_buffer[57] = '\0';     
 }
 
-void XBee_writeBuffer() {
-    for(tx_buffer_index = 0, tx_flag = 1; !U1STAbits.UTXBF && tx_buffer[tx_buffer_index] != '\0'; tx_buffer_index++)
-        U1TXREG = tx_buffer[tx_buffer_index];
-    if(tx_buffer[tx_buffer_index] == '\0')
-        tx_flag = 0;
-    else
-        UART1_TX_INTERRUPT = 1;
-}
-
 void XBeeFillBuffer() {
     int i;
     while(!U1STAbits.UTXBF && tx_buffer_index > 0) {
         U1TXREG = tx_buffer[0];
-        for(i = 0; i < tx_buffer_index; i--)
+        for(i = 0; i < tx_buffer_index; i++)
             tx_buffer[i] = tx_buffer[i + 1];
         tx_buffer_index--;
     }
-    if(tx_buffer_index)
+    if(tx_buffer_index) {
+        IFS3bits.U1TXIF = 0;
         UART1_TX_INTERRUPT = 1;
+    }
 }
 
 void XBeeClearBuffer() {
@@ -138,12 +130,16 @@ void XBeeWriteInt(int a) {
     UART1_TX_INTERRUPT = 0;
     
     if(a < 0) { 
-        a = -a; 
-        str[tx_buffer_index++] = '-'; 
+        a *= -1; 
+        tx_buffer[tx_buffer_index++] = '-'; 
     }
     
-    for(tens = 1; tens < a; tens *= 10);
-    tens /= 10;
+    if(a > 1) {
+        for(tens = 1; tens < a; tens *= 10);
+        tens /= 10;
+    } else {
+        tens = 1;
+    }
 
     for(; tens > 0; tens /= 10)
         tx_buffer[tx_buffer_index++] = ((long int)(a / tens) % 10) + 48;
@@ -153,14 +149,14 @@ void XBeeWriteInt(int a) {
     XBeeFillBuffer();
 }
 
-void XBeeWriteFloat(double a, unsigned char precision) {
+void XBeeWriteFloat(float a, unsigned char precision) {
     unsigned char i;
     long int tens;
 
     UART1_TX_INTERRUPT = 0;
     
     if(a < 0) { 
-        a = -a; 
+        a *= -1; 
         tx_buffer[tx_buffer_index++] = '-'; 
     }
     
@@ -219,7 +215,7 @@ void XBeeWriteRawInt(int a) {
 }
 
 void XBeeWriteRawFloat(float a) {
-    char str[4]
+    char str[4];
 
     UART1_TX_INTERRUPT = 0;
 

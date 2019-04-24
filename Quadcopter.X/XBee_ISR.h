@@ -69,13 +69,13 @@ void __ISR_AT_VECTOR(_UART1_TX_VECTOR, IPL6SRS) XBee_tx(void) {
     }*/
     static int i;
 
-    if(tx_buffer_index) {
+    if(tx_buffer_index && !U1STAbits.UTXBF) {
         U1TXREG = tx_buffer[0];
         if(tx_buffer_index == 1) {
             tx_buffer_index = 0;
             UART1_TX_INTERRUPT = 0;
         } else {
-            for(i = 0; i < tx_buffer_index; i--)
+            for(i = 0; i < tx_buffer_index; i++)
                 tx_buffer[i] = tx_buffer[i + 1];
             tx_buffer_index--;
         }
