@@ -4,17 +4,6 @@ void LimitAngle(float *a){
     while(*a < (-180) || *a > 180){ if(*a < (-180)) *a += 360; else if(*a > 180) *a -= 360; }
 }
 
-void LimitSpeed(Motors *x){
-    if(x->up < 0) x->up = 0;
-    else if(x->up > (MOTOR_MAX - MOTOR_OFF)) x->up = (MOTOR_MAX - MOTOR_OFF);
-    if(x->down < 0) x->down = 0;
-    else if(x->down > (MOTOR_MAX - MOTOR_OFF)) x->down = (MOTOR_MAX - MOTOR_OFF);
-    if(x->right < 0) x->right = 0;
-    else if(x->right > (MOTOR_MAX - MOTOR_OFF)) x->right = (MOTOR_MAX - MOTOR_OFF);
-    if(x->left < 0) x->left = 0;
-    else if(x->left > (MOTOR_MAX - MOTOR_OFF)) x->left = (MOTOR_MAX - MOTOR_OFF);
-}
-
 void PIDReset(PID *x, float kp, float ki, float kd){
     x->p = kp; 
     x->i = ki; 

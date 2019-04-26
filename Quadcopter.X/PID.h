@@ -16,6 +16,7 @@ extern volatile unsigned int ToF_counter;
 
 extern void SetPIDGain(PID*, PID*, PID*, PID*, PID*);
 extern float LimitAngle(float);
+extern float LimitValue(float, float, float)
 extern void WriteRGBLed(unsigned int, unsigned int, unsigned int);
 extern void PIDSet(PID*, float, float, float);
 extern void PIDIntegrate(PID*, float);

@@ -11,7 +11,6 @@ volatile rx XBee, XBee_temp;
 
 volatile int safety_counter = 0;
 volatile int tx_buffer_index = 0;
-volatile unsigned int tx_buffer_timer = 0;
 volatile bool XBee_signal_temp = 0;
 
 volatile char tx_buffer[XBEE_TX_BUFFER_LEN];
@@ -89,19 +88,6 @@ void SendCalibrationData() {
 #if board_version == 4
     eeprom_writeCalibration();
 #endif
-}
-
-void SendFlightData(PID roll, PID pitch, PID yaw, PID altitude, char loop_mode) { 
-    tx_buffer[0] = 'C';
-    StrWriteFloat(roll.error, 2, tx_buffer, 1);
-    StrWriteFloat(pitch.error, 2, tx_buffer, 8);
-    StrWriteFloat(yaw.error, 2, tx_buffer, 15);
-    StrWriteFloat(altitude.error, 2, tx_buffer, 22);
-    StrWriteFloat(altitude.output, 8, tx_buffer, 29);
-    StrWriteFloat(yaw.output, 8, tx_buffer, 42);
-    tx_buffer[55] = loop_mode;
-    tx_buffer[56] = '\r';
-    tx_buffer[57] = '\0';     
 }
 
 void XBeeFillBuffer() {

@@ -21,7 +21,6 @@ extern volatile rx XBee, XBee_temp;
 extern volatile int tx_buffer_index;
 extern volatile int safety_counter;
 
-extern volatile unsigned int tx_buffer_timer;
 extern volatile bool XBee_signal_temp;
 
 extern volatile char tx_buffer[XBEE_TX_BUFFER_LEN];
@@ -29,7 +28,6 @@ extern volatile char tx_buffer[XBEE_TX_BUFFER_LEN];
 extern void XBeeReset();
 extern rx ReadXBee();
 extern void SendCalibrationData();
-extern void SendFlightData(PID, PID, PID, PID, char);
 
 extern void XBee_writeBuffer();
 extern void XBeeFillBuffer();

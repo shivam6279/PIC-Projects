@@ -46,6 +46,14 @@ float LimitAngle(float a) {
     return a;
 }
 
+float LimitValue(float a, float min, float max) {
+    if(a < min)
+        return min;
+    if(a > max)
+        return max;
+    return a;
+}
+
 void PIDSet(PID *x, float kp, float ki, float kd) {
     x->p = kp; 
     x->i = ki; 
@@ -91,7 +99,6 @@ void StrWriteInt(int a, volatile char str[], unsigned char n) {
         a *= (-1); 
         str[n++] = '-'; 
     }
-    //else str[n++] = '+';
     
     for(tens = 1; tens < a; tens *= 10);
     tens /= 10;
@@ -108,7 +115,6 @@ void StrWriteFloat(double a, unsigned char right, volatile char str[], unsigned 
         a *= (-1.0); 
         str[n++] = '-'; 
     }
-    //else str[n++] = '+';
     
     if(a > 1.0) {
         for(tens = 1; tens < a; tens *= 10);
@@ -127,14 +133,19 @@ void StrWriteFloat(double a, unsigned char right, volatile char str[], unsigned 
 
 void WriteRGBLed(unsigned int r, unsigned int g, unsigned int b) {
 #if board_version == 4
+    /*
     float rr, gg, bb;
-    rr = (float)r * (float)PWM_MAX / 4095.0;
-    gg = (float)g * (float)PWM_MAX / 4095.0;
-    bb = (float)b * (float)PWM_MAX / 4095.0;
+    rr = (float)r * (float)PWM_MAX / 4095.0f;
+    gg = (float)g * (float)PWM_MAX / 4095.0f;
+    bb = (float)b * (float)PWM_MAX / 4095.0f;
     
     r = rr;
     g = gg;
     b = bb;
+    */
+    r = (float)r * (float)PWM_MAX / 4095.0f;
+    g = (float)g * (float)PWM_MAX / 4095.0f;
+    b = (float)b * (float)PWM_MAX / 4095.0f;
 #endif
     write_pwm(RGBLED_RED_PIN, r); 
     write_pwm(RGBLED_GREEN_PIN, g); 
