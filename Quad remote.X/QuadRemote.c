@@ -23,10 +23,10 @@ void adc_init();
 void get_adc_values();
 void get_touchscreen();
 
-volatile char serial_monitor[30][54];
+char serial_monitor[30][54];
 
 unsigned char receive1;
-char rx_buffer[200];
+char rx_buffer[1024];
 int buffer_counter = 0;
 
 unsigned char mode = 0;
@@ -35,11 +35,9 @@ bool rx_signal = 0;
 
 void main() {
     bool rx_signal_flag = 1;
-    int i, j;
+    int i, j, c;
     unsigned char pre_cursor = 100, pre_mode = 0;
     float data[10];
-    
-    char monitor[30][54], pre_monitor[30][54];
     
     init();
     adc_init();
@@ -171,16 +169,16 @@ void main() {
             }
 
             if(mode == 'C') {
-                if((int)data[0] == 'S') WriteStr("RC      ", 7 * 6, 1 * 8, 0xF80F);
-                else if((int)data[0] == 'A') WriteStr("Alt-hold", 7 * 6, 1 * 8, 0xF80F);
-                else if((int)data[0] == 'P') WriteStr("Pos-hold", 7 * 6, 1 * 8, 0xF80F);
-                else if((int)data[0] == 'K') WriteStr("Killed  ", 7 * 6, 1 * 8, 0xF80F);
-                WriteFloat(data[1], 3, 2, 8 * 6, 2 * 8, 0x0000);
-                WriteFloat(data[2], 3, 2, 7 * 6, 3 * 8, 0x0000);
-                WriteFloat(data[3], 3, 2, 6 * 6, 4 * 8, 0x0000);
-                WriteFloat(data[4], 3, 2, 11 * 6, 5 * 8, 0x0000);
-                WriteFloat(data[5], 3, 6, 11 * 6, 6 * 8, 0x0000);
-                WriteFloat(data[6], 3, 6, 12 * 6, 7 * 8, 0x0000);
+                if((int)data[6] == 1)       WriteStr("RC      ", 7 * 6, 1 * 8, 0xF80F);
+                else if((int)data[6] == 2)  WriteStr("Alt-hold", 7 * 6, 1 * 8, 0xF80F);
+                else if((int)data[6] == 3)  WriteStr("Pos-hold", 7 * 6, 1 * 8, 0xF80F);
+                else if((int)data[6] == 0)  WriteStr("Killed  ", 7 * 6, 1 * 8, 0xF80F);
+                WriteFloat(data[0], 3, 2, 8 * 6, 2 * 8, 0x0000);
+                WriteFloat(data[1], 3, 2, 7 * 6, 3 * 8, 0x0000);
+                WriteFloat(data[2], 3, 2, 6 * 6, 4 * 8, 0x0000);
+                WriteFloat(data[3], 3, 2, 11 * 6, 5 * 8, 0x0000);
+                WriteFloat(data[4], 3, 6, 11 * 6, 6 * 8, 0x0000);
+                WriteFloat(data[5], 3, 6, 12 * 6, 7 * 8, 0x0000);
             }
 
             if(mode == 'D') {
@@ -201,30 +199,35 @@ void main() {
                 WriteInt(data[14 ], 6, 15*6, 15*8, 0x0000);
             }
             
-            ShowInputData();
+            //ShowInputData();
         }
 
         //------------------------------------------------------Serial Monitor mode-------------------------------------------------
-
+        
         else {
-            if(pre_mode != mode) FillRect(0, 0, 320, 250, 0xFFFF);
+            if(pre_mode != mode) {
+                FillRect(0, 0, 320, 250, 0xFFFF);
+                WriteStr("Serial Monitor", 0, 0, 0xF80F);
+            }
             pre_mode = mode;
             
-            for(j = 0; j < 30; j++) {
-                for(i = 0; serial_monitor[j][i] != '\0'; i++) {
-                    monitor[j][i] = serial_monitor[j][i];
+            for(i = 0, j = 0, c = 1; rx_buffer[c] != '\0'; c++) {
+                if(rx_buffer[c] == '\n') {
+                    serial_monitor[j][i] = '\0';
+                    i = 0;
+                    j++;
+                } else {
+                    serial_monitor[j][i++] = rx_buffer[c];
                 }
-                monitor[j][i] = '\0';
             }
+            serial_monitor[j][i] = '\0';
             
-            for(i = 0; i < 30; i++) {
-                if(monitor[i][0] != '\0' && strcmp(monitor[i], pre_monitor[i])) WriteStr(monitor[i], 0, i * 8, 0x0000);
-            }
-            
-            for(i = 0; i < 30; i++) {
-                strcpy(monitor[i], pre_monitor[i]);
+            for(i = 0; i <= j; i++) {
+                WriteStr(serial_monitor[i], 0, (i + 1) * 8, 0x0000);
             }
         }    
+        
+        ShowInputData();
     }
 }
 

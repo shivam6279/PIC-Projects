@@ -7,7 +7,7 @@
 #define XBEE_START_BYTE 0x40
 #define XBEE_END_BYTE	0x80
 
-#define XBEE_TX_BUFFER_LEN 256
+#define XBEE_TX_BUFFER_LEN 1024
 
 typedef struct {
 	int x1, y1, x2, y2;
@@ -19,11 +19,8 @@ typedef struct {
 
 extern volatile rx XBee, XBee_temp;
 extern volatile int tx_buffer_index;
+extern volatile int tx_buffer_timer;
 extern volatile int safety_counter;
-
-extern volatile bool XBee_signal_temp;
-
-extern volatile char tx_buffer[XBEE_TX_BUFFER_LEN];
 
 extern void XBeeReset();
 extern rx ReadXBee();

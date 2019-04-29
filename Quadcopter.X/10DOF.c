@@ -272,7 +272,7 @@ void GetRawCompass() {
     
     if(QMC5883DataRdy()) {
         I2C_ReadRegisters(QMC5883L_ADDR, QMC5883L_X_LSB, temp, 6);
-        compass.y = (signed short)(temp[0] | temp[1] << 8);
+        compass.y = -(signed short)(temp[0] | temp[1] << 8);
         compass.x = (signed short)(temp[2] | temp[3] << 8);
         compass.z = (signed short)(temp[4] | temp[5] << 8);
     }

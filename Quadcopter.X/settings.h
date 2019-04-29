@@ -2,7 +2,7 @@
 #define _settings_H_
 
 //-----------------------------PCB----------------------------
-#define micro		//micro / mini / big
+#define mini		//micro / mini / big
 #define board_version 4
 //------------------------------------------------------------
 
@@ -14,8 +14,8 @@
 #define MAX_YAW_RATE 180.0f         // degrees/sec
 #define MAX_ALTITUDE_RATE 0.7f      // meters/sec
 
-#define ROLLOFFSET 2.6f				//degrees -0.4
-#define PITCHOFFSET -2.1f			//degrees -1.8
+#define ROLLOFFSET 0.6f				//degrees
+#define PITCHOFFSET 0.4f			//degrees
 #define HEADINGOFFSET -87.0f       	//degrees
 
 #if board_version == 1

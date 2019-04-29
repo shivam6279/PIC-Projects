@@ -102,7 +102,6 @@ void DecodeString(char str[], float arr[]) {
         if(str[c] == '\0')
             break;
     }
-    
 }
 
 float StrToFloat(char str[]) {

@@ -4,10 +4,10 @@
 #include "PID.h"
 
 void LimitSpeed(Motors *x){
-    x->upRight   = LimitValue(x->upRight,   0, MAX_SPEED);
-    x->downRight = LimitValue(x->downRight, 0, MAX_SPEED);
-    x->upLeft    = LimitValue(x->upLeft,    0, MAX_SPEED);
-    x->downLeft  = LimitValue(x->downLeft,  0, MAX_SPEED);
+    x->upRight   = LimitValue(x->upRight,   0.0f, MAX_SPEED);
+    x->downRight = LimitValue(x->downRight, 0.0f, MAX_SPEED);
+    x->upLeft    = LimitValue(x->upLeft,    0.0f, MAX_SPEED);
+    x->downLeft  = LimitValue(x->downLeft,  0.0f, MAX_SPEED);
 }
 
 void MotorsReset(Motors *x) {

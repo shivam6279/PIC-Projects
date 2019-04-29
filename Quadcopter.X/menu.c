@@ -65,37 +65,31 @@ void Menu(PID *x, PID *y, PID *z, PID *a){
             case 0:
                 if(XBee.x1 > 12) {
                     x->p += 0.01; 
-                    y->p += 0.01; 
-                    z->p += 0.01;
+                    y->p += 0.01;
                 }
                 else if(XBee.x1 < (-12)) {
                     x->p -= 0.01; 
-                    y->p -= 0.01; 
-                    z->p -= 0.01;
+                    y->p -= 0.01;
                 }
                 break;
             case 1:
                 if(XBee.x1 > 12) { 
                     x->i += 0.01; 
-                    y->i += 0.01; 
-                    z->i += 0.01;
+                    y->i += 0.01;
                 }
                 else if(XBee.x1 < (-12)) { 
                     x->i -= 0.01; 
-                    y->i -= 0.01; 
-                    z->i -= 0.01;
+                    y->i -= 0.01;
                 }
                 break;
             case 2:
                 if(XBee.x1 > 12) { 
-                    x->d += 0.01; 
-                    y->d += 0.01; 
-                    z->d += 0.01;
+                    x->d += 0.001; 
+                    y->d += 0.001;
                 }
                 else if(XBee.x1 < (-12)) { 
-                    x->d -= 0.01; 
-                    y->d -= 0.01; 
-                    z->d -= 0.01;
+                    x->d -= 0.001; 
+                    y->d -= 0.001;
                 }
                 break;
             case 3:
@@ -121,29 +115,22 @@ void Menu(PID *x, PID *y, PID *z, PID *a){
         DELAY_TIMER_ON = 1;
 
         XBeeWriteChar('A');
-        XBeeWriteInt(cursor);
-        XBeeWriteChar(',');
-        XBeeWriteFloat(x->p, 2);
-        XBeeWriteChar(',');
-        XBeeWriteFloat(x->i, 2);
-        XBeeWriteChar(',');
-        XBeeWriteFloat(x->d, 2);
-        XBeeWriteChar(',');
-        XBeeWriteFloat(a->p, 1);
-        XBeeWriteChar(',');
-        XBeeWriteFloat(a->i, 2);
-        XBeeWriteChar(',');
-        XBeeWriteFloat(a->d, 1);
-        XBeeWriteChar(',');
-        XBeeWriteInt(GPS_signal);
-        XBeeWriteChar(',');
-        XBeeWriteInt(GPS_connected);
-        XBeeWriteChar(',');        
+        XBeeWriteInt(cursor); XBeeWriteChar(',');
+        XBeeWriteFloat(x->p, 3); XBeeWriteChar(',');
+        XBeeWriteFloat(x->i, 3); XBeeWriteChar(',');
+        XBeeWriteFloat(x->d, 3); XBeeWriteChar(',');
+        XBeeWriteFloat(a->p, 2); XBeeWriteChar(',');
+        XBeeWriteFloat(a->i, 2); XBeeWriteChar(',');
+        XBeeWriteFloat(a->d, 2); XBeeWriteChar(',');
+        XBeeWriteInt(GPS_signal); XBeeWriteChar(',');
+        XBeeWriteInt(GPS_connected); XBeeWriteChar(',');        
         XBeeWriteInt(arming_counter); 
-        XBeeWriteChar('\r');        
-        //XBeeWriteChar('\n');
+        XBeeWriteChar('\r');
         
         while(delay_counter < 25);  
         DELAY_TIMER_ON = 0;
     }
+    z->p = x->p;
+    z->i = x->i;
+    z->d = x->d;
 }

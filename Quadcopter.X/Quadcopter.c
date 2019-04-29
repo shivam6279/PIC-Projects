@@ -45,6 +45,11 @@
 #warning "---------------------------------Building for board_v4!---------------------------------"
 #endif
 
+#define MODE_KILL 0
+#define MODE_STABILIZE 1
+#define MODE_ALT_HOLD 2
+#define MODE_POS_HOLD 3
+
 void main() {    
     Motors speed;
     PID pitch, roll, yaw, altitude, GPS;
@@ -153,46 +158,20 @@ void main() {
         kill = 0;
         esc_counter = 0;
         data_aq_counter = 0;
+        tx_buffer_timer++;
         ToF_counter = 0;
         altitude_setpoint = 0;        
         LOOP_TIMER_ON = 1;
-
-        WriteRGBLed(0, 4095, 0);
-
-        while(XBee.rs == 0) {
-            while(tx_buffer_index)
-                delay_ms(1);
-
-            delay_ms(5);
             
-            GetCompass(); 
-            
-            XBeeWriteChar('C');
-            XBeeWriteFloat(compass_offset.x, 4);
-            XBeeWriteChar(',');
-            XBeeWriteFloat(compass_offset.y, 4);
-            XBeeWriteChar(',');
-            XBeeWriteFloat(compass_offset.z, 4);
-            XBeeWriteChar(',');
-            XBeeWriteFloat(compass.x, 4);
-            XBeeWriteChar(',');
-            XBeeWriteFloat(compass.y, 4);
-            XBeeWriteChar(',');
-            XBeeWriteFloat(compass.z, 4);
-            XBeeWriteChar(',');
-            XBeeWriteInt(loop_mode);
-            XBeeWriteChar('\r');
-        }
-
         XBee_rx = ReadXBee();
         
         //Main Loop
         while(XBee_rx.rs == 0){
             
             //------------------------------------------------------------IMU data acquisition---------------------------------------------------------------------------
-            if(data_aq_counter >= 50) {
+            if(data_aq_counter >= 200) {
                 IMU_loop_time = (float)data_aq_counter / 1000000.0f;   // Loop time in seconds: 
-                data_aq_counter = data_aq_counter - 50;                
+                data_aq_counter = 0;                
 
                 GetAcc();
                 GetGyro();
@@ -207,28 +186,27 @@ void main() {
                 #endif
 
                 //Update quaternion
-                MadgwickQuaternionUpdate(q, acc, gyro, compass, loop_time);
+                MadgwickQuaternionUpdate(q, acc, gyro, compass, IMU_loop_time);
                 
                 //Update altitude kalman filter
                 GetCompensatedAcc(q, gravity_mag, &acc_pure, &acc_comp);
                 altitude_KF_propagate(acc_comp.z, IMU_loop_time);         
 
                 if(XBee_rx.y2 > 1 && !kill) {
-                    PIDIntegrateAngle(&roll, IMU_loop_time);
+                    PIDIntegrateAngle(&roll,  IMU_loop_time);
                     PIDIntegrateAngle(&pitch, IMU_loop_time);
-                    PIDIntegrateAngle(&yaw, IMU_loop_time);
+                    PIDIntegrateAngle(&yaw,   IMU_loop_time);
                 }
 
-                if(loop_mode == 'A') {
+                if(loop_mode == MODE_ALT_HOLD) {
                     if(XBee_rx.y2 > 10 && XBee_rx.y2 < 20)  //Throttle stick in the mid position
                         altitude.sum += (altitude.offset - altitude.error) * IMU_loop_time;
                 }
             }
-
             
             if(XBee.data_ready) {
                 XBee_rx = ReadXBee();
-                XBee_data_ready = 0;
+                XBee.data_ready = 0;
 
                 p_kill = kill;
                 p_loop_mode = loop_mode;
@@ -240,53 +218,52 @@ void main() {
 
                 //Set loop mode - Stabilize, Alt-hold, Pos-hold
                 if(XBee_rx.d1 == 0 || (XBee_rx.d1 == 2 && !GPS_signal)) 
-                    loop_mode = 'S';
+                    loop_mode = MODE_STABILIZE;
                 else if(XBee_rx.d1 == 1) 
-                    loop_mode = 'A';
+                    loop_mode = MODE_ALT_HOLD;
                 else if(XBee_rx.d1 == 2 && GPS_signal) 
-                    loop_mode = 'P';
+                    loop_mode = MODE_POS_HOLD;
 
                 if(p_loop_mode != loop_mode || p_kill != kill) {
                     if(kill) 
                         WriteRGBLed(4095, 4095, 4095);  //White
-                    else if(loop_mode == 'S') 
+                    else if(loop_mode == MODE_STABILIZE) 
                         WriteRGBLed(0, 4095, 0);        //Green
-                    else if(loop_mode == 'A') 
+                    else if(loop_mode == MODE_ALT_HOLD) 
                         WriteRGBLed(0, 4095, 4095);     //Cyan
-                    else if(loop_mode == 'P') 
+                    else if(loop_mode == MODE_POS_HOLD) 
                         WriteRGBLed(4095, 0, 4095);     //Magenta
 
-                    if(loop_mode == 'A') {
+                    if(loop_mode == MODE_ALT_HOLD) {
                         altitude_setpoint = (float)XBee_rx.y2 / THROTTLE_MAX * MAX_SPEED;
                         altitude.sum = 0;
                         altitude.offset = altitude.error;
                     }
-                    else if(loop_mode == 'P') {
+                    else if(loop_mode == MODE_POS_HOLD) {
                         latitude_offset = latitude;
                         longitude_offset = longitude;
                     }
                     yaw.offset = yaw.error;
-                }      
-                
+                }
             }
 
             //--------------------------------------------------------Send Data to remote-----------------------------------------------------------------------------
-            if(!tx_buffer_index) {
+            if(!tx_buffer_index && tx_buffer_timer > 50) {
+                tx_buffer_timer = 0;
                 XBeeWriteChar('C');
-                XBeeWriteFloat(roll.error, 2);
-                XBeeWriteFloat(pitch.error, 2);
-                XBeeWriteFloat(yaw.error, 2);
-                XBeeWriteFloat(altitude.offset - altitude.error, 2);
-                XBeeWriteFloat(altitude.derivative, 8);
-                XBeeWriteFloat(altitude.output - altitude_setpoint, 8, tx_buffer, 42);
-                XBeeWriteChar(loop_mode);
+                XBeeWriteFloat(roll.error, 2); XBeeWriteChar(',');
+                XBeeWriteFloat(pitch.error, 2); XBeeWriteChar(',');
+                XBeeWriteFloat(yaw.error, 2); XBeeWriteChar(',');
+                XBeeWriteFloat(altitude.offset - altitude.error, 2); XBeeWriteChar(',');
+                XBeeWriteFloat(altitude.derivative, 8); XBeeWriteChar(',');
+                XBeeWriteFloat(altitude.output - altitude_setpoint, 8); XBeeWriteChar(',');
+                XBeeWriteInt(loop_mode);
                 XBeeWriteChar('\r');
-                XBeeWriteChar('\0');
             }
             
             //--------------------------------------------------------PID Output to motors----------------------------------------------------------------------------
             if(esc_counter >= ESC_TIME_us) {
-                esc_counter = esc_counter - ESC_TIME_us;
+                esc_counter = 0;
                
                 //Altitude
                 
@@ -302,7 +279,7 @@ void main() {
 
                 //Converting Remote data to a 2-D vector
 
-                if(loop_mode != 'P') {// If not in GPS mode
+                if(loop_mode != MODE_POS_HOLD) {// If not in GPS mode
                     remote_magnitude = sqrt((float)XBee_rx.x1 * (float)XBee_rx.x1 + (float)XBee_rx.y1 * (float)XBee_rx.y1); //Magnitude of Remote's roll and pitch
                     if(XBee_rx.x1 == 0 && XBee_rx.y1 == 0) 
                         remote_angle = 0;
@@ -315,12 +292,12 @@ void main() {
                 }
 
                 //--Stabilize--
-                if(loop_mode == 'S') {
+                if(loop_mode == MODE_STABILIZE) {
                     altitude.output = (float)XBee_rx.y2 / THROTTLE_MAX * MAX_SPEED;
                 }
 
                 //--Alt-hold---
-                else if(loop_mode == 'A') {
+                else if(loop_mode == MODE_ALT_HOLD) {
                     if(XBee_rx.y2 > 10 && XBee_rx.y2 < 20) {  //Throttle stick in the mid position
                         altitude.output = (altitude.p * (altitude.offset - altitude.error) + altitude.i * altitude.sum + altitude.d * altitude.derivative) + altitude_setpoint;
                     } else {
@@ -336,7 +313,7 @@ void main() {
                 }
 
                 //--Pos-hold---
-                else if(loop_mode == 'P') {
+                else if(loop_mode == MODE_POS_HOLD) {
                     altitude.output = (float)XBee_rx.y2 / THROTTLE_MAX * MAX_SPEED;
 
                     GPS.error = DifferenceLatLon(take_off_latitude, take_off_longitude, latitude, longitude);
@@ -358,7 +335,6 @@ void main() {
 
                 PIDOutputAngle(&roll);
                 PIDOutputAngle(&pitch);
-                
                     
                 if(XBee_rx.x2 < 3 && XBee_rx.x2 > (-3)) {
                     PIDOutputAngle(&yaw);

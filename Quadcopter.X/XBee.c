@@ -6,14 +6,84 @@
 #include "GPS.h"
 #include "USART.h"
 #include "EEPROM.h"
+#include <sys/attribs.h>
 
 volatile rx XBee, XBee_temp;
 
 volatile int safety_counter = 0;
 volatile int tx_buffer_index = 0;
-volatile bool XBee_signal_temp = 0;
+volatile int tx_buffer_timer = 0;
+static volatile bool XBee_signal_temp = 0;
 
-volatile char tx_buffer[XBEE_TX_BUFFER_LEN];
+static volatile char tx_buffer[XBEE_TX_BUFFER_LEN];
+
+void __ISR_AT_VECTOR(_UART1_RX_VECTOR, IPL6SRS) XBee_rx(void) {
+    IFS3bits.U1RXIF = 0; 
+
+    static unsigned char XBee_rx_byte, XBee_address;
+
+    do {
+        XBee_rx_byte = U1RXREG & 0xFF;
+        XBee_address = XBee_rx_byte >> 5;
+
+        switch(XBee_address) {
+            case 0:
+                XBee_temp.x1 = (XBee_rx_byte & 0x1F) - 15;
+                XBee_signal_temp = 1;
+                break;
+
+            case 1:
+                XBee_temp.y1 = (XBee_rx_byte & 0x1F) - 15;
+                break;
+
+            case 2:
+                XBee_temp.x2 = (XBee_rx_byte & 0x1F) - 15;
+                break;
+
+            case 3:
+                XBee_temp.y2 = (XBee_rx_byte & 0x1F);
+                break;
+
+            case 4:
+                XBee_temp.ls = (XBee_rx_byte >> 1) & 1; 
+                XBee_temp.rs = XBee_rx_byte & 1;
+                break;
+
+            case 5: 
+                XBee_temp.d2 = (XBee_rx_byte & 0b00001100) << 2;
+                XBee_temp.d1 = (XBee_rx_byte & 0b00000011);
+                safety_counter = 0;
+                if(XBee_signal_temp) {
+                    XBee_signal_temp = 0;
+                    XBee_temp.signal = 1;
+                    XBee_temp.data_ready = 1;
+
+                    XBee = XBee_temp;
+                }
+                break;
+        }
+    }while(U1STAbits.URXDA);
+    
+    IFS3bits.U1RXIF = 0; 
+}
+
+void __ISR_AT_VECTOR(_UART1_TX_VECTOR, IPL6SRS) XBee_tx(void) {
+    static int i;
+
+    IFS3bits.U1TXIF = 0;
+
+    if(tx_buffer_index && !U1STAbits.UTXBF) {
+        U1TXREG = tx_buffer[0];
+        if(tx_buffer_index == 1) {
+            tx_buffer_index = 0;
+            UART1_TX_INTERRUPT = 0;
+        } else {
+            for(i = 0; i < tx_buffer_index; i++)
+                tx_buffer[i] = tx_buffer[i + 1];
+            tx_buffer_index--;
+        }
+    }
+}
 
 void XBeeReset() {
     XBee.x1 = 0;
@@ -43,7 +113,6 @@ void SendCalibrationData() {
     compass_min = compass; 
     compass_avg = compass;
     
-    TX_TIMER_ON = 1;
     tx_buffer_index = 0;
     while(XBee.rs == 0) {
         GetRawIMU();
@@ -60,26 +129,24 @@ void SendCalibrationData() {
         if(compass_avg.y < compass_min.y) compass_min.y = compass_avg.y;
         if(compass_avg.z < compass_min.z) compass_min.z = compass_avg.z;
         
-        tx_buffer[0] = 'D';
-        StrWriteInt(compass.x, tx_buffer, 1);
-        StrWriteInt(compass.y, tx_buffer, 8);
-        StrWriteInt(compass.z, tx_buffer, 15);
-        StrWriteInt(compass_min.x, tx_buffer, 22);
-        StrWriteInt(compass_min.y, tx_buffer, 29);
-        StrWriteInt(compass_min.z, tx_buffer, 36);
-        StrWriteInt(compass_max.x, tx_buffer, 43);
-        StrWriteInt(compass_max.y, tx_buffer, 50);
-        StrWriteInt(compass_max.z, tx_buffer, 57);
-        StrWriteInt(gyro.x, tx_buffer, 64);
-        StrWriteInt(gyro.y, tx_buffer, 71);
-        StrWriteInt(gyro.z, tx_buffer, 78);
-        StrWriteInt(acc.x, tx_buffer, 85);
-        StrWriteInt(acc.y, tx_buffer, 92);
-        StrWriteInt(acc.z, tx_buffer, 99);
-        tx_buffer[106] = '\r';
-        tx_buffer[107] = '\0';
+        XBeeWriteChar('D');
+        XBeeWriteInt(compass.x); XBeeWriteChar(',');
+        XBeeWriteInt(compass.y); XBeeWriteChar(',');
+        XBeeWriteInt(compass.z); XBeeWriteChar(',');
+        XBeeWriteInt(compass_min.x); XBeeWriteChar(',');
+        XBeeWriteInt(compass_min.y); XBeeWriteChar(',');
+        XBeeWriteInt(compass_min.z); XBeeWriteChar(',');
+        XBeeWriteInt(compass_max.x); XBeeWriteChar(',');
+        XBeeWriteInt(compass_max.y); XBeeWriteChar(',');
+        XBeeWriteInt(compass_max.z); XBeeWriteChar(',');
+        XBeeWriteInt(gyro.x); XBeeWriteChar(',');
+        XBeeWriteInt(gyro.y); XBeeWriteChar(',');
+        XBeeWriteInt(gyro.z); XBeeWriteChar(',');
+        XBeeWriteInt(acc.x); XBeeWriteChar(',');
+        XBeeWriteInt(acc.y); XBeeWriteChar(',');
+        XBeeWriteInt(acc.z);
+        XBeeWriteChar('\r');
     
-        //tx_flag = 1;
         delay_ms(35);
     }
 

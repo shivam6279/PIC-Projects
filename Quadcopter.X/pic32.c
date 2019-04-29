@@ -1,7 +1,13 @@
 #include "pic32.h"
+#include <sys/attribs.h>
 #include <xc.h>
 
 volatile unsigned long int delay_counter = 0;
+
+void __ISR_AT_VECTOR(_TIMER_2_VECTOR, IPL4SRS) delay_timer(void){
+    IFS0bits.T2IF = 0;
+    delay_counter++;
+}
 
 void PICInit(){
     TRISB = 0; 
