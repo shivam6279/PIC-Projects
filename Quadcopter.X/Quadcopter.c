@@ -22,7 +22,6 @@
 #include "ToF.h"
 #include "EEPROM.h"   
 
-#include "GPS_ISR.h"
 #include "XBee_ISR.h"
 #include "timer_ISR.h"
 
@@ -130,7 +129,7 @@ void main() {
             XBeeWriteInt(i);
             XBeeWriteChar('\r');
             
-            while(delay_counter < 3);
+            while(ms_counter() < 3);
         }
         StopDelayCounter();
         
@@ -248,7 +247,7 @@ void main() {
             }
 
             //--------------------------------------------------------Send Data to remote-----------------------------------------------------------------------------
-            if(!tx_buffer_index && tx_buffer_timer > 50) {
+            if(TxBufferEmpty() && tx_buffer_timer > 50) {
                 tx_buffer_timer = 0;
                 XBeeWriteChar('C');
                 XBeeWriteFloat(roll.error, 2); XBeeWriteChar(',');

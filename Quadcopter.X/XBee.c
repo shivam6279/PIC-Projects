@@ -8,11 +8,12 @@
 #include "EEPROM.h"
 #include <sys/attribs.h>
 
-volatile rx XBee, XBee_temp;
+volatile rx XBee;
 
 volatile int safety_counter = 0;
-volatile int tx_buffer_index = 0;
 volatile int tx_buffer_timer = 0;
+
+static volatile int tx_buffer_index = 0;
 static volatile bool XBee_signal_temp = 0;
 
 static volatile char tx_buffer[XBEE_TX_BUFFER_LEN];
@@ -21,6 +22,7 @@ void __ISR_AT_VECTOR(_UART1_RX_VECTOR, IPL6SRS) XBee_rx(void) {
     IFS3bits.U1RXIF = 0; 
 
     static unsigned char XBee_rx_byte, XBee_address;
+    static rx XBee_temp;
 
     do {
         XBee_rx_byte = U1RXREG & 0xFF;
@@ -175,6 +177,12 @@ void XBeeClearBuffer() {
     UART1_TX_INTERRUPT = 0;
     tx_buffer[0] = '\0';
     tx_buffer_index = 0;
+}
+
+bool TxBufferEmpty() {
+    if(tx_buffer_index)
+        return 0;
+    return 1;
 }
 
 void XBeeWriteInt(int a) {

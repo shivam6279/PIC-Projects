@@ -18,7 +18,6 @@ typedef struct {
 } rx;
 
 extern volatile rx XBee, XBee_temp;
-extern volatile int tx_buffer_index;
 extern volatile int tx_buffer_timer;
 extern volatile int safety_counter;
 
@@ -26,9 +25,9 @@ extern void XBeeReset();
 extern rx ReadXBee();
 extern void SendCalibrationData();
 
-extern void XBee_writeBuffer();
 extern void XBeeFillBuffer();
 extern void XBeeClearBuffer();
+extern bool TxBufferEmpty();
 extern void XBeeWriteInt(int);
 extern void XBeeWriteFloat(float, unsigned char);
 extern void XBeeWriteChar(char);

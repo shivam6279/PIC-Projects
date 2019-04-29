@@ -2,7 +2,7 @@
 #include <sys/attribs.h>
 #include <xc.h>
 
-volatile unsigned long int delay_counter = 0;
+static volatile unsigned long int delay_counter = 0;
 
 void __ISR_AT_VECTOR(_TIMER_2_VECTOR, IPL4SRS) delay_timer(void){
     IFS0bits.T2IF = 0;
@@ -48,6 +48,10 @@ void StartDelayCounter() {
 
 void StopDelayCounter() {
     DELAY_TIMER_ON = 0;
+}
+
+unsigned long int ms_counter() {
+    return delay_counter;
 }
 
 void delay_ms(unsigned int x){

@@ -111,8 +111,7 @@ void Menu(PID *x, PID *y, PID *z, PID *a){
         else 
             arming_counter = 0;
         
-        delay_counter = 0; 
-        DELAY_TIMER_ON = 1;
+        StartDelayCounter();
 
         XBeeWriteChar('A');
         XBeeWriteInt(cursor); XBeeWriteChar(',');
@@ -127,8 +126,8 @@ void Menu(PID *x, PID *y, PID *z, PID *a){
         XBeeWriteInt(arming_counter); 
         XBeeWriteChar('\r');
         
-        while(delay_counter < 25);  
-        DELAY_TIMER_ON = 0;
+        while(ms_counter() < 25);  
+        StopDelayCounter();
     }
     z->p = x->p;
     z->i = x->i;
