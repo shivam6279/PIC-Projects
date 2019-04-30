@@ -3,7 +3,6 @@
 #include <math.h>
 #include <string.h>
 #include <stdbool.h>
-#include <sys/attribs.h>
 
 #include "settings.h"
 #include "pic32.h"
@@ -110,8 +109,6 @@ void main() {
         WriteRGBLed(4095, 2500, 0); //Yellow
         
         delay_ms(100);
-        
-        tx_buffer_index = 0;
         
         for(i = 0, VectorReset(&gravity), VectorReset(&gyro_avg); i < 1000; i++) {
             StartDelayCounter();

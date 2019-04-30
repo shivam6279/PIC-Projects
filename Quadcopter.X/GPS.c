@@ -1,6 +1,8 @@
 #include "GPS.h"
 #include "settings.h"
 #include <math.h>
+#include <xc.h>
+#include <sys/attribs.h>
 
 volatile double latitude = 0.0, longitude = 0.0;
 volatile float GPS_altitude = 0.0;

@@ -1,6 +1,7 @@
 #ifndef _Xbee_ISR_H_
 #define _Xbee_ISR_H_
 
+#include <sys/attribs.h>
 #include "Xbee.h"
 
 void __ISR_AT_VECTOR(_TIMER_7_VECTOR, IPL4SRS) general_purpose_1KHz(void) {

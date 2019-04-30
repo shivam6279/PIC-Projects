@@ -1,6 +1,7 @@
 #ifndef _timer_ISR_H_
 #define _timer_ISR_H_
 
+#include <sys/attribs.h>
 #include "PID.h"
 #include "pic32.h"
 
