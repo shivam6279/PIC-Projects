@@ -11,7 +11,6 @@
 volatile rx XBee;
 
 volatile int safety_counter = 0;
-volatile int tx_buffer_timer = 0;
 
 static volatile int tx_buffer_index = 0;
 static volatile bool XBee_signal_temp = 0;

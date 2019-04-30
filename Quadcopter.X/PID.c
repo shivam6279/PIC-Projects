@@ -3,14 +3,47 @@
 #include "PWM.h"
 #include "pic32.h"
 #include <math.h>
+#include <XBee.h>
+#include <sys/attribs.h>
 
 volatile unsigned long int esc_counter = 0;
-volatile unsigned long int data_aq_counter;
+volatile unsigned long int data_aq_counter = 0;
 volatile unsigned char altitude_timer = 0;
 volatile unsigned int ToF_counter = 0;
+volatile unsigned int tx_buffer_timer = 0;
 
 float max_pitch_roll_tilt = MAX_PITCH_ROLL_TILT;
 float max_yaw_rate = MAX_YAW_RATE;
+
+void __ISR_AT_VECTOR(_TIMER_4_VECTOR, IPL7SRS) pid_loop_timer(void){
+    IFS0bits.T4IF = 0;
+    esc_counter++;
+    data_aq_counter++;
+}
+
+void __ISR_AT_VECTOR(_TIMER_7_VECTOR, IPL4SRS) general_purpose_1KHz(void) {
+    IFS1bits.T7IF = 0;
+    altitude_timer++;
+    ToF_counter++;
+    tx_buffer_timer++;
+    if(safety_counter < 500) {
+        safety_counter++;
+    } 
+    else if(safety_counter == 500) {
+        XBeeReset();
+        safety_counter = 501;
+    }
+}
+
+void ResetCounters() {
+    esc_counter = 0;
+    data_aq_counter = 0;
+
+    altitude_timer = 0;
+    ToF_counter = 0;
+    tx_buffer_timer = 0;
+}
+
 
 void SetPIDGain(PID *roll, PID* pitch, PID *yaw, PID *altitude, PID *GPS) {
 #ifdef micro

@@ -19,10 +19,7 @@
 #include "init.h"
 #include "menu.h"
 #include "ToF.h"
-#include "EEPROM.h"   
-
-#include "XBee_ISR.h"
-#include "timer_ISR.h"
+#include "EEPROM.h"
 
 #ifdef micro
 #warning "--------------------------------Building for Micro quad!--------------------------------"
@@ -152,11 +149,8 @@ void main() {
         
         loop_mode = 0;
         kill = 0;
-        esc_counter = 0;
-        data_aq_counter = 0;
-        tx_buffer_timer++;
-        ToF_counter = 0;
-        altitude_setpoint = 0;        
+        altitude_setpoint = 0;
+        ResetCounters();        
         LOOP_TIMER_ON = 1;
             
         XBee_rx = ReadXBee();

@@ -18,7 +18,6 @@ typedef struct {
 } rx;
 
 extern volatile rx XBee, XBee_temp;
-extern volatile int tx_buffer_timer;
 extern volatile int safety_counter;
 
 extern void XBeeReset();

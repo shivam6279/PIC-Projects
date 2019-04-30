@@ -13,7 +13,9 @@ extern volatile unsigned long int esc_counter;
 extern volatile unsigned long int data_aq_counter;
 extern volatile unsigned char altitude_timer;
 extern volatile unsigned int ToF_counter;
+extern volatile unsigned int tx_buffer_timer;
 
+extern void ResetCounters();
 extern void SetPIDGain(PID*, PID*, PID*, PID*, PID*);
 extern float LimitAngle(float);
 extern float LimitValue(float, float, float);
