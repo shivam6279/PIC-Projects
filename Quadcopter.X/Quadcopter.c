@@ -159,7 +159,7 @@ void main() {
         while(XBee_rx.rs == 0){
             
             //------------------------------------------------------------IMU data acquisition---------------------------------------------------------------------------
-            if(data_aq_counter >= 200) {
+            if(data_aq_counter >= 500) {
                 IMU_loop_time = (float)data_aq_counter / 1000000.0f;   // Loop time in seconds: 
                 data_aq_counter = 0;                
 
@@ -177,6 +177,9 @@ void main() {
 
                 //Update quaternion
                 MadgwickQuaternionUpdate(q, acc, gyro, compass, IMU_loop_time);
+
+                QuaternionToEuler(q, &roll.error, &pitch.error, &heading);
+                yaw.error = LimitAngle(heading - take_off_heading);
                 
                 //Update altitude kalman filter
                 GetCompensatedAcc(q, gravity_mag, &acc_pure, &acc_comp);
@@ -235,6 +238,20 @@ void main() {
                     }
                     yaw.offset = yaw.error;
                 }
+
+                //Converting Remote data to a 2-D vector
+
+                if(loop_mode != MODE_POS_HOLD) {// If not in GPS mode
+                    remote_magnitude = sqrt((float)XBee_rx.x1 * (float)XBee_rx.x1 + (float)XBee_rx.y1 * (float)XBee_rx.y1); //Magnitude of Remote's roll and pitch
+                    if(XBee_rx.x1 == 0 && XBee_rx.y1 == 0) 
+                        remote_angle = 0;
+                    else 
+                        remote_angle = -atan2((float)XBee_rx.x1, (float)XBee_rx.y1) * RAD_TO_DEGREES;                       //Angle with respect to pilot/starting position
+                    remote_angle_difference = LimitAngle(yaw.error - remote_angle);                                         //Remote's angle with respect to quad's current direction
+
+                    pitch.offset = max_pitch_roll_tilt * remote_magnitude / REMOTE_MAX * -cos(remote_angle_difference / RAD_TO_DEGREES);
+                    roll.offset  = max_pitch_roll_tilt * remote_magnitude / REMOTE_MAX *  sin(remote_angle_difference / RAD_TO_DEGREES);
+                }
             }
 
             //--------------------------------------------------------Send Data to remote-----------------------------------------------------------------------------
@@ -257,29 +274,12 @@ void main() {
                
                 //Altitude
                 
-                QuaternionToEuler(q, &roll.error, &pitch.error, &heading);
-                
-                yaw.error = LimitAngle(heading - take_off_heading);
-                
                 if(LoopAltitude(&altitude.error, &temperature)) {
                     altitude_KF_update(altitude.error);
                 }
                 altitude.error = altitude_KF_getAltitude() - take_off_altitude;
                 altitude.derivative = -1.0 * altitude_KF_getVelocity();
-
-                //Converting Remote data to a 2-D vector
-
-                if(loop_mode != MODE_POS_HOLD) {// If not in GPS mode
-                    remote_magnitude = sqrt((float)XBee_rx.x1 * (float)XBee_rx.x1 + (float)XBee_rx.y1 * (float)XBee_rx.y1); //Magnitude of Remote's roll and pitch
-                    if(XBee_rx.x1 == 0 && XBee_rx.y1 == 0) 
-                        remote_angle = 0;
-                    else 
-                        remote_angle = -atan2((float)XBee_rx.x1, (float)XBee_rx.y1) * RAD_TO_DEGREES;                       //Angle with respect to pilot/starting position
-                    remote_angle_difference = LimitAngle(yaw.error - remote_angle);                                         //Remote's angle with respect to quad's current direction
-
-                    pitch.offset = max_pitch_roll_tilt * remote_magnitude / REMOTE_MAX * -cos(remote_angle_difference / RAD_TO_DEGREES);
-                    roll.offset  = max_pitch_roll_tilt * remote_magnitude / REMOTE_MAX *  sin(remote_angle_difference / RAD_TO_DEGREES);
-                }
+                
 
                 //--Stabilize--
                 if(loop_mode == MODE_STABILIZE) {
