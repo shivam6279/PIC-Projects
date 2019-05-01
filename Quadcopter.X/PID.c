@@ -3,7 +3,7 @@
 #include "PWM.h"
 #include "pic32.h"
 #include <math.h>
-#include <XBee.h>
+#include "XBee.h"
 #include <sys/attribs.h>
 
 volatile unsigned long int esc_counter = 0;

@@ -194,7 +194,7 @@ void main() {
                 }
             }
             
-            if(XBee.data_ready) {
+            if(XBee.data_ready || !XBee.signal) {
                 XBee_rx = ReadXBee();
                 XBee.data_ready = 0;
 
