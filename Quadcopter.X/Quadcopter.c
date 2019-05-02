@@ -196,7 +196,16 @@ void main() {
                         altitude.sum += (altitude.offset - altitude.error) * IMU_loop_time;
                 }
             }
+
+            //-------------------------------------------------------------Altitude acquisition--------------------------------------------------------------------------
+            if(LoopAltitude(&altitude.error, &temperature)) {
+                altitude_KF_update(altitude.error);
+                
+                altitude.error = altitude_KF_getAltitude() - take_off_altitude;
+                altitude.derivative = -1.0 * altitude_KF_getVelocity();
+            }
             
+            //-------------------------------------------------------------------RC input--------------------------------------------------------------------------------
             if(XBee.data_ready || !XBee.signal) {
                 XBee_rx = ReadXBee();
                 XBee.data_ready = 0;
@@ -270,16 +279,7 @@ void main() {
             
             //--------------------------------------------------------PID Output to motors----------------------------------------------------------------------------
             if(esc_counter >= ESC_TIME_us) {
-                esc_counter = 0;
-               
-                //Altitude
-                
-                if(LoopAltitude(&altitude.error, &temperature)) {
-                    altitude_KF_update(altitude.error);
-                }
-                altitude.error = altitude_KF_getAltitude() - take_off_altitude;
-                altitude.derivative = -1.0 * altitude_KF_getVelocity();
-                
+                esc_counter = 0;                
 
                 //--Stabilize--
                 if(loop_mode == MODE_STABILIZE) {

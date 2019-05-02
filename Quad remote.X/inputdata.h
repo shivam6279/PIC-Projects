@@ -6,7 +6,8 @@
 extern void ShowInputData();
 extern void DrawDisplayBounds();
 
-extern void DecodeString(char[], float[]);
+extern unsigned char DecodeString(char[], float[]);
+extern unsigned char DecodeStringF(char[], char[][], float[]);
 extern float StrToFloat(char[]);
 
 extern int analog1_x, analog2_x, analog1_y, analog2_y;

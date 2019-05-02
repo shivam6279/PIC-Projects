@@ -22,12 +22,12 @@ bool LoopAltitude(float *altitude, float *temperature) {
     //static unsigned char altitude_stage;
     
     #ifdef BMP180
-        if(*altitude_stage == 0) {
+        if(altitude_stage == 0) {
             StartTemperatureRead();//Initiate temperature read
             altitude_timer = 0;
             *altitude_stage = 1;
         }
-        else if(*altitude_stage == 1 && altitude_timer > 5) {
+        else if(altitude_stage == 1 && altitude_timer > 5) {
             ReadRawTemperature();//After 5ms read temperature
             *temperature = ComputeTemperature();
             StartPressureRead();

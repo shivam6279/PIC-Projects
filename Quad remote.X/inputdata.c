@@ -91,9 +91,10 @@ void DrawDisplayBounds() {
     FillRect(225, 145, 3, 20, 0x0000);  //?
 }
 
-void DecodeString(char str[], float arr[]) {
+unsigned char DecodeString(char str[], float arr[]) {
     int c, temp_c, index;
     static char temp[20];
+
     for(c = 1, index = 0; str[c] != '\0'; c++) {
         for(temp_c = 0; str[c] != ',' && str[c] != '\0'; c++, temp_c++)
             temp[temp_c] = str[c];
@@ -102,6 +103,32 @@ void DecodeString(char str[], float arr[]) {
         if(str[c] == '\0')
             break;
     }
+
+    return index;
+}
+
+unsigned char DecodeStringF(char str[], char str_arr[][], float arr[]) {
+    int c, temp_c, index;
+    static char temp[20];
+
+    for(c = 1, index = 0; str[c] != '\0'; c++) {
+
+        for(temp_c = 0; str[c] != ',' && str[c] != '\0'; c++, temp_c++)
+            str_arr[index][temp_c] = str[c];
+        str_arr[index][temp_c] = '\0';
+
+        c++;
+
+        for(temp_c = 0; str[c] != ',' && str[c] != '\0'; c++, temp_c++)
+            temp[temp_c] = str[c];
+        temp[temp_c] = '\0';
+
+        arr[index++] = StrToFloat(temp);
+        if(str[c] == '\0')
+            break;
+    }
+
+    return index;
 }
 
 float StrToFloat(char str[]) {
