@@ -190,11 +190,6 @@ void main() {
                     PIDIntegrateAngle(&pitch, IMU_loop_time);
                     PIDIntegrateAngle(&yaw,   IMU_loop_time);
                 }
-
-                if(loop_mode == MODE_ALT_HOLD) {
-                    if(XBee_rx.y2 > 10 && XBee_rx.y2 < 20)  //Throttle stick in the mid position
-                        altitude.sum += (altitude.offset - altitude.error) * IMU_loop_time;
-                }
             }
 
             //-------------------------------------------------------------Altitude acquisition--------------------------------------------------------------------------
@@ -203,6 +198,11 @@ void main() {
                 
                 altitude.error = altitude_KF_getAltitude() - take_off_altitude;
                 altitude.derivative = -1.0 * altitude_KF_getVelocity();
+                
+                if(loop_mode == MODE_ALT_HOLD) {
+                    if(XBee_rx.y2 > 10 && XBee_rx.y2 < 20)  //Throttle stick in the mid position
+                        altitude.sum += (altitude.offset - altitude.error) * 0.002 * oversampling_delay;
+                }
             }
             
             //-------------------------------------------------------------------RC input--------------------------------------------------------------------------------
