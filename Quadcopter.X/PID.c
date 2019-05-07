@@ -166,16 +166,6 @@ void StrWriteFloat(double a, unsigned char right, volatile char str[], unsigned 
 
 void WriteRGBLed(unsigned int r, unsigned int g, unsigned int b) {
 #if board_version == 4
-    /*
-    float rr, gg, bb;
-    rr = (float)r * (float)PWM_MAX / 4095.0f;
-    gg = (float)g * (float)PWM_MAX / 4095.0f;
-    bb = (float)b * (float)PWM_MAX / 4095.0f;
-    
-    r = rr;
-    g = gg;
-    b = bb;
-    */
     r = (float)r * (float)PWM_MAX / 4095.0f;
     g = (float)g * (float)PWM_MAX / 4095.0f;
     b = (float)b * (float)PWM_MAX / 4095.0f;

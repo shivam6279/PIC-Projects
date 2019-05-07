@@ -34,15 +34,12 @@ void CalibrateESC() {
 }
 
 void WriteMotors(Motors x) {
-    float ur = x.upRight   / MAX_SPEED * (MOTOR_MAX - MOTOR_OFF);
-    float dl = x.downLeft  / MAX_SPEED * (MOTOR_MAX - MOTOR_OFF);
-    float ul = x.upLeft    / MAX_SPEED * (MOTOR_MAX - MOTOR_OFF);
-    float dr = x.downRight / MAX_SPEED * (MOTOR_MAX - MOTOR_OFF);
+    static const float f = (MOTOR_MAX - MOTOR_OFF) / MAX_SPEED;
 
-    write_pwm(MOTOR_UPRIGHT_PIN, MOTOR_OFF   + (int)ur);
-    write_pwm(MOTOR_DOWNLEFT_PIN, MOTOR_OFF  + (int)dl);
-    write_pwm(MOTOR_UPLEFT_PIN, MOTOR_OFF    + (int)ul);
-    write_pwm(MOTOR_DOWNRIGHT_PIN, MOTOR_OFF + (int)dr); 
+    write_pwm(MOTOR_UPRIGHT_PIN,   MOTOR_OFF + (int)(x.upRight   * f));
+    write_pwm(MOTOR_DOWNLEFT_PIN,  MOTOR_OFF + (int)(x.downLeft  * f));
+    write_pwm(MOTOR_UPLEFT_PIN,    MOTOR_OFF + (int)(x.upLeft    * f));
+    write_pwm(MOTOR_DOWNRIGHT_PIN, MOTOR_OFF + (int)(x.downRight * f));
 }
 
 void TurnMotorsOff() {
