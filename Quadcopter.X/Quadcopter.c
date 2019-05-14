@@ -156,7 +156,7 @@ void main() {
         XBee_rx = ReadXBee();
         
         //Main Loop
-        while(XBee_rx.rs == 0){
+        while(XBee_rx.rs == 0) {
             
             //------------------------------------------------------------IMU data acquisition---------------------------------------------------------------------------
             if(data_aq_counter >= 500) {
@@ -167,13 +167,13 @@ void main() {
                 GetGyro();
                 GetCompass(); 
 
-                #if board_version == 4
+#if board_version == 4
                 if(ToF_counter >= 10) {
                     ToF_distance = ToF_readRange();
                     if(ToF_valueGood() != 0)
                         ToF_distance = -1;
                 }
-                #endif
+#endif
 
                 //Update quaternion
                 MadgwickQuaternionUpdate(q, acc, gyro, compass, IMU_loop_time);
