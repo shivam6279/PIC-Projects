@@ -66,3 +66,4 @@ Makefile
 *.sym
 funclist
 *.xml~
+*.i

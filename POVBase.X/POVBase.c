@@ -59,7 +59,7 @@ void timer1_init(){
     TMR1IE = 1; 
 }
 
-void interrupt ISR(){
+void __interrupt () ISR(){
     if(TMR0IF){
         TMR0IF = 0;
         RC2 = !RC2;
