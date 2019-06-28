@@ -88,8 +88,10 @@ void __ISR_AT_VECTOR(_TIMER_3_VECTOR, IPL4SRS) speed_timer(void){
 }
 
 long int mag(long int a){
-    if(a < 0) return -a;
-    else return a;
+    if(a < 0) 
+        return -a;
+    else 
+        return a;
 }
 
 void main(){
