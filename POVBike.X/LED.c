@@ -29,6 +29,22 @@ void end_frame(){
     SPI_write(255);
 }
 
+void start_frame4(){
+    SPI4_write(0);
+    SPI4_write(0);
+    SPI4_write(0);
+    SPI4_write(0);
+}
+
+void end_frame4(){
+    SPI4_write(255);
+    SPI4_write(255);
+    SPI4_write(255);
+    SPI4_write(255);
+    SPI4_write(255);
+    SPI4_write(255);
+}
+
 void LED_frame(unsigned char red, unsigned char green, unsigned char blue){
     float r = (float)red * brightness;
     float g = (float)green * brightness;
@@ -42,17 +58,77 @@ void LED_frame(unsigned char red, unsigned char green, unsigned char blue){
     SPI_write((unsigned char)r);
 }
 
-void writeLEDs(struct led *buffer) {
+void LED_frame4(unsigned char red, unsigned char green, unsigned char blue){
+    float r = (float)red * brightness;
+    float g = (float)green * brightness;
+    float b = (float)blue * brightness;
+    if(r > 255.0) r = 255.0;
+    if(g > 255.0) g = 255.0;
+    if(b > 255.0) b = 255.0;
+    SPI4_write(255);
+    SPI4_write((unsigned char)b);
+    SPI4_write((unsigned char)g);
+    SPI4_write((unsigned char)r);
+}
+
+void start_frame_double(){
+    SPI_write_double(0);
+    SPI_write_double(0);
+    SPI_write_double(0);
+    SPI_write_double(0);
+}
+
+void end_frame_double(){
+    SPI_write_double(255);
+    SPI_write_double(255);
+    SPI_write_double(255);
+    SPI_write_double(255);
+    SPI_write_double(255);
+    SPI_write_double(255);
+}
+
+void LED_frame_double(struct led a, struct led b) {
+    static float ra, ga, ba, rb, gb, bb;
+    ra = (float)a.red * brightness;
+    ga = (float)a.green * brightness;
+    ba = (float)a.blue * brightness;
+    
+    rb = (float)b.red * brightness;
+    gb = (float)b.green * brightness;
+    bb = (float)b.blue * brightness;
+    
+    if(ra > 255.0) ra = 255.0;
+    if(ga > 255.0) ga = 255.0;
+    if(ba > 255.0) ba = 255.0;
+    
+    if(rb > 255.0) rb = 255.0;
+    if(gb > 255.0) gb = 255.0;
+    if(bb > 255.0) bb = 255.0;
+    
+    SPI_write_double(255);
+    SPI_write_double((unsigned char)ba, (unsigned char)bb);
+    SPI_write_double((unsigned char)ga, (unsigned char)gb);
+    SPI_write_double((unsigned char)ra, (unsigned char)rb);
+}
+
+void writeLEDs(struct led buffer[2][LED_LENGTH + RADIUS_OFFSET]) {
     int i;
     
+//    start_frame_double();
+//    for(i = RADIUS_OFFSET; i < (LED_LENGTH + RADIUS_OFFSET); i++){
+//        LED_frame_double(buffer[0][i], buffer[1][i]);
+//    }
+//    end_frame_double();
+    
     start_frame();
-    for(i = 0; i < LED_LENGTH; i++){
-        LED_frame(buffer[i].red, buffer[i].green, buffer[i].blue);
+    for(i = RADIUS_OFFSET; i < (LED_LENGTH + RADIUS_OFFSET); i++){
+        LED_frame((unsigned char)buffer[0][i].red, (unsigned char)buffer[0][i].green, (unsigned char)buffer[0][i].blue);
     }
     end_frame();
 }
 
-void writeLEDs_hue(struct led *buffer, float hue) {
+/*
+void writeLEDs_hue(struct led buffer[2][LED_LENGTH + RADIUS_OFFSET], float hue) {
     int i;
     
     limit_angle(&hue);
@@ -86,3 +162,4 @@ void writeLEDs_hue(struct led *buffer, float hue) {
     }
     end_frame();
 }
+*/

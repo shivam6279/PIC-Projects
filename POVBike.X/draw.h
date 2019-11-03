@@ -3,10 +3,10 @@
 
 #include "LED.h"
 
-#define OPP_ANGLE_CORRECTION 3.0
+#define OPP_ANGLE_CORRECTION -22.0f
 
 extern void limit_angle(double*);
-extern void pie(struct led *buffer, struct led *pie_colors, int n, double angle);
+extern void pie(struct led buffer[][LED_LENGTH + RADIUS_OFFSET], struct led *pie_colors, int n, double angle);
 extern void polar(struct led *, int (*f)(double), struct led, double);
 extern void polar_neg(struct led *, int (*f)(double), struct led, double);
 extern void polar_neg_d(struct led *,int (*f)(double), double (*g)(double), struct led, double);

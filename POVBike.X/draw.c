@@ -2,23 +2,22 @@
 #include "draw.h"
 #include <math.h>
 
-void pie(struct led *buffer, struct led *pie_colors, int n, double angle) {
+void pie(struct led buffer[2][LED_LENGTH + RADIUS_OFFSET], struct led *pie_colors, int n, double angle) {
     int i;
     limit_angle(&angle);
     int idx1 = angle / (360.0 / (double)n);
     
-    for (i = 0; i < LED_LENGTH / 2; i++) {
-        buffer[i] = pie_colors[idx1];
+    for (i = 0; i < (LED_LENGTH + RADIUS_OFFSET); i++) {
+        buffer[0][i] = pie_colors[idx1];
     }
     
     angle = angle + OPP_ANGLE_CORRECTION + 180.0;
     limit_angle(&angle);
     int idx2 = angle / (360.0 / (double)n);
     
-    for (i = LED_LENGTH / 2 + 1; i < LED_LENGTH; i++) {
-        buffer[i] = pie_colors[idx2];
+    for (i = 0; i < (LED_LENGTH + RADIUS_OFFSET); i++) {
+        buffer[1][i] = pie_colors[idx2];
     }
-    buffer[LED_LENGTH / 2] = color_black;
 }
 
 void polar(struct led *buffer, int (*f)(double), struct led color, double angle) {
@@ -160,6 +159,8 @@ int line(double angle) {
 }
 
 void limit_angle(double *angle){
-    while(*angle > 360.0) *angle -= 360.0;
-    while(*angle < 0.0) *angle += 360.0;
+    while(*angle > 360.0) 
+        *angle -= 360.0;
+    while(*angle < 0.0) 
+        *angle += 360.0;
 }

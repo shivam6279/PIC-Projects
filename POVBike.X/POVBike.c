@@ -41,6 +41,7 @@ void init();
 void delay_ms(unsigned int x);
 void timer2_init();
 void timer3_init(float frequency);
+void timer4_init(float frequency);
 void fabulous();
 void morph();
 
@@ -48,17 +49,22 @@ void morph();
 
 unsigned long int delay_counter = 0;
 
-struct led buffer[LED_LENGTH];
-struct led p_buffer[LED_LENGTH];
+struct led buffer[2][LED_LENGTH + RADIUS_OFFSET];
+struct led p_buffer[2][LED_LENGTH + RADIUS_OFFSET];
 
-#define speed_history_size 10
-
-unsigned long int speed_history[speed_history_size];
-unsigned int speed_history_i = 0;
-volatile unsigned long int magnet_counter = 0, speed_counter = 0, omega = 0, raw_omega = 0;
+volatile unsigned long int magnet_counter = 0, omega = 0;
 unsigned char magnet_flag = 1;
 
+volatile unsigned long int loop_counter = 0;
+
 volatile double time = 0.0;
+
+#define ANGLE_CORRECTION 35.0
+
+void __ISR_AT_VECTOR(_TIMER_4_VECTOR, IPL7SRS) loop_timer(void){
+    IFS0bits.T4IF = 0;
+    loop_counter++;
+}
 
 void __ISR_AT_VECTOR(_TIMER_2_VECTOR, IPL4SRS) delay_timer(void){
     IFS0bits.T2IF = 0;
@@ -66,27 +72,16 @@ void __ISR_AT_VECTOR(_TIMER_2_VECTOR, IPL4SRS) delay_timer(void){
 }
 
 void __ISR_AT_VECTOR(_TIMER_3_VECTOR, IPL4SRS) speed_timer(void){
-    int i;
     IFS0bits.T3IF = 0;
     magnet_counter++;
-    speed_counter++;
-    if(PORTDbits.RD2 == 0 && magnet_flag == 1){
-        speed_history[speed_history_i] = magnet_counter;
-        raw_omega = magnet_counter;
-        for(i = 0, omega = 0; i < speed_history_size; i++){
-            omega += speed_history[i];
-        }
-        omega /= speed_history_size;
-        speed_history_i = (speed_history_i + 1) % speed_history_size;
+    if(PORTGbits.RG7 == 0 && magnet_flag == 1){
+        omega = magnet_counter;
         
         magnet_counter = 0;
         magnet_flag = 0;
     }
-    else if(PORTDbits.RD2 == 1){
+    else if(PORTGbits.RG7 == 1){
         magnet_flag = 1;
-    }
-    if(speed_counter >= omega){
-        speed_counter = 0;
     }
     
     time += 0.00003;
@@ -101,69 +96,73 @@ long int mag(long int a){
 
 void main(){
     int i, j, k;
-    double angle, angle_offset = 0.0;
+    double angle;
+    
+    struct led color[6] = {color_red, color_blue, color_green, color_cyan, color_magenta, color_yellow};
+    
     init();
     
-    TRISDbits.TRISD2 = 1;
-    for(i = 0; i < speed_history_size; i++){
-        speed_history[i] = 0;
-    }
+    ANSELGbits.ANSG7 = 0;
+    TRISGbits.TRISG7 = 1;
+
     timer2_init(); 
     timer3_init(50000);
+    timer4_init(1000000.0);
     
     delay_ms(200);
     USART3_init(115200);
     SPI_init();
+    SPI4_init();
     SPI2BRG = 3;
+    SPI4BRG = 3;
+    
+    /*
+    USART3_send_str("Start\n");
     
     MPU6050Init();
-    delay_ms(200);
     
-    for(i = 0; i < LED_LENGTH; i++){
-        buffer[i] = color_magenta;
-    }
-    USART3_send_str("\n\nStarting\n\n");
-    unsigned char temp[2];
-    I2C_ReadRegisters(0xD0, 0x75, temp, 1);
-    USART3_write_float((float)temp[0], 2);
-    USART3_send_str("\n");
-    delay_ms(1000);
+    double a = 0.0, dt;
     
-    
-    float pitch, roll;
+    loop_counter = 0;
+    T4CONbits.ON = 1;
     while(1) {
         GetAcc();
         GetGyro();
         
-        pitch = atan2(acc.y, acc.z) * 180.0 / M_PI;
-        roll = atan2(acc.x, acc.z) * 180.0 / M_PI;
+        dt = (float)loop_counter / 1000000.0f;
+        loop_counter = 0;
         
-        USART3_write_float(pitch, 2);
-        USART3_send_str(", ");
-        USART3_write_float(roll, 2);
-        USART3_send_str(", ");
-        USART3_write_float(gyro.z, 2);
+        a = 1*(a + gyro.z * dt);// + 0.2 * 57.29 * (atan2(-acc.y, -acc.x) + 3.1416);
+        limit_angle(&a);
+        
+        USART3_write_float(a, 2);
         USART3_send_str("\n");
         
-        /*start_frame();
-        LED_frame(0, 0, 0);
-        LED_frame(0, 0, 0);
-        LED_frame(0, 0, 0);
-        for(i = 0; i < (int)(fabs(gyro.z / 20.0)) && i < (LED_LENGTH - 3); i++)       
-            LED_frame(255, 0, 255);
-        for(; i < (LED_LENGTH - 3); i++)      
-            LED_frame(0, 0, 0);
-        end_frame();
-        delay_ms(50);*/
+        delay_ms(50);
+    }*/
+    
+    if(PORTGbits.RG7) {
+        for(i = 0; i < LED_LENGTH; i++){
+            buffer[0][i] = color_magenta;
+            buffer[1][i] = color_magenta;
+        }
+    } else {
+        for(i = 0; i < LED_LENGTH; i++){
+            buffer[0][i] = color_yellow;
+            buffer[1][i] = color_yellow;
+        }
     }
     
-    while(raw_omega < 1024.0){
+    writeLEDs(buffer);
+    
+    delay_ms(1000);
+    
+    while(omega < 800.0){
         writeLEDs(buffer);
         delay_ms(50);
     }
     
-    struct led color[6] = {color_red, color_blue, color_green, color_cyan, color_magenta, color_yellow};
-    
+    /*
     struct led cart_image[144][144];
     for(i = 0; i < 144; i++){
         for(j = 0; j < 144; j++){
@@ -178,28 +177,48 @@ void main(){
             }
         }
     }
-    
+    */
     while(1){        
-        for(i = 0; i < LED_LENGTH; i++){
-            p_buffer[i] = buffer[i];
+        for(i = 0; i < (LED_LENGTH + RADIUS_OFFSET); i++){
+            p_buffer[0][i] = buffer[0][i];
+            p_buffer[1][i] = buffer[1][i];
         }
-        for(i = 0; i < LED_LENGTH; i++){
-            buffer[i] = color_black;
+        for(i = 0; i < (LED_LENGTH + RADIUS_OFFSET); i++){
+            buffer[0][i] = color_black;
+            buffer[1][i] = color_black;
         }
         
-        angle = 360.0 * ((double)magnet_counter)/((double)omega);
+        angle = 360.0 * ((double)magnet_counter)/((double)omega);// + ANGLE_CORRECTION;
+        limit_angle(&angle);
+        
         if(time > 360.0) time = 0.0;
-        polar_image(buffer, cart_image, angle);
         
-        //polar_image(buffer, cart_image, angle - time * 300);
-        //polar_neg_d(buffer, cosn, d_cosn, color[4], (angle + time * 25));
-        for(i = 0; i < LED_LENGTH; i++){
-            if(buffer[i].red != p_buffer[i].red || buffer[i].green != p_buffer[i].green || buffer[i].blue != p_buffer[i].blue) {
-                //writeLEDs(buffer);
-                writeLEDs_hue(buffer, 100);
-                break;
+        if(angle < 15) {
+            for(i = 0; i < LED_LENGTH; i++){
+                buffer[0][i] = color_magenta;
+                buffer[1][i] = color_magenta;
+            }
+        } else {
+            for(i = 0; i < LED_LENGTH; i++){
+                buffer[0][i] = color_black;
+                buffer[1][i] = color_black;
             }
         }
+        
+        writeLEDs(buffer);
+        
+        //polar_image(buffer, cart_image, angle);
+//        
+//        pie(buffer, (struct led[15]){color_cyan, color_black, color_black, color_black, color_black, color_black, color_black, color_black, color_black, color_black, color_black, color_black, color_black, color_black, color_black}, 15, angle);
+//        
+//        for(i = 0; i < (LED_LENGTH + RADIUS_OFFSET); i++){
+//            if(buffer[0][i].red != p_buffer[0][i].red || buffer[0][i].green != p_buffer[0][i].green ||buffer[0][i].blue != p_buffer[0][i].blue ||
+//            buffer[1][i].red != p_buffer[1][i].red || buffer[1][i].green != p_buffer[1][i].green ||buffer[1][i].blue != p_buffer[1][i].blue) {
+//                writeLEDs(buffer);
+//                //writeLEDs_hue(buffer, 100);
+//                break;
+//            }
+//        }
     }
 }
 
@@ -269,4 +288,37 @@ void timer3_init(float frequency){
     IFS0bits.T3IF = 0;
     IEC0bits.T3IE = 1;
     T3CONbits.ON = 1;
+}
+
+void timer4_init(float frequency){
+    float f = CLOCK_FREQ / 2.0 / frequency; 
+    unsigned char pre = 0;
+    while(f > 65535.0) { 
+        f /= 2.0;
+        pre++; 
+    }
+    unsigned int t = (unsigned int)f;
+    while(t % 2 == 0 && pre < 8) { 
+        t /= 2; 
+        pre++; 
+    }
+    if(pre == 7) {
+        if(t > 32767) {
+            t /= 2;
+            pre++;
+        } else {
+            t *= 2; 
+            pre--;
+        }
+    }
+    if(pre == 8) pre = 7;
+    T4CONbits.ON = 0;
+    T4CONbits.T32 = 0;
+    T4CONbits.TCKPS = pre & 0b111;
+    PR4 = t;
+    TMR4 = 0;
+    
+    IPC4bits.T4IP = 7;
+    IFS0bits.T4IF = 0;
+    IEC0bits.T4IE = 1;
 }

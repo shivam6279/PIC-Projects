@@ -7,9 +7,9 @@
 
 #define HMC5883
 
-#define GYRO_X_OFFSET 285
-#define GYRO_Y_OFFSET -950 
-#define GYRO_Z_OFFSET -225
+#define GYRO_X_OFFSET -30
+#define GYRO_Y_OFFSET -280 
+#define GYRO_Z_OFFSET 28
 
 #define GYRO_X_GAIN 98
 #define GYRO_Y_GAIN -98
