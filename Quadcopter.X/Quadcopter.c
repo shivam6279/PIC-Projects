@@ -92,14 +92,14 @@ void main() {
         ResetQuaternion(q);                             //Reset quaternion
         MotorsReset(&speed);                            //Clear motor speeds       
         
-#if board_version == 4
+#if board_version == 4 || board_version == 5
         eeprom_readPID(&roll, &pitch, &yaw, &altitude, &GPS);
         eeprom_readCalibration();
 #endif
         
         Menu(&roll, &pitch, &yaw, &altitude);
         
-#if board_version == 4
+#if board_version == 4 || board_version == 5
         eeprom_writePID(&roll, &pitch, &yaw, &altitude, &GPS);
 #endif
         

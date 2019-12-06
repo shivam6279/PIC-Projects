@@ -12,7 +12,7 @@ void __ISR_AT_VECTOR(_TIMER_3_VECTOR, IPL4SRS) pwm(void){
     IFS0bits.T3IF = 0;
 }
 
-#if board_version == 4
+#if board_version == 4 || board_version == 5
     void pwm_init(float freq) {
         float f = 100000000.0 / freq; 
         unsigned char pre = 0;

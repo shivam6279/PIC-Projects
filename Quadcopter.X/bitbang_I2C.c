@@ -42,12 +42,12 @@ void I2C_ReadRegisters(unsigned char address, unsigned char start_adr, unsigned 
 
 void I2C_Send(unsigned char byte) {
     unsigned char count;
-    SDA = 0;
-    SCL = 0;
+    SDA_LAT = 0;
+    SCL_LAT = 0;
     I2C_DelayFull();    
     for(count = 8; count > 0; count--) {
         if((byte & 0x80) == 0) {      
-            SDA = 0;                
+            SDA_LAT = 0;                
             SDA_TRIS = 0;            
         } else {
             SDA_TRIS = 1;          
@@ -60,8 +60,8 @@ void I2C_Send(unsigned char byte) {
 
 unsigned char I2C_Read() {
     unsigned char count, byte = 0;
-    SDA = 0;
-    SCL = 0;
+    SDA_LAT = 0;
+    SCL_LAT = 0;
     I2C_DelayFull();
     for(count = 8; count > 0; count--) {
         byte = byte << 1;
@@ -76,11 +76,11 @@ unsigned char I2C_Read() {
 void I2C_Start() {
     SDA_TRIS = 1;
     SCL_TRIS = 1;
-    SCL = 0;
-    SDA = 0;
+    SCL_LAT = 0;
+    SDA_LAT = 0;
     I2C_DelayHalf();  
     SDA_TRIS = 0;
-    SDA = 0;
+    SDA_LAT = 0;
     I2C_DelayHalf();  
     SCL_TRIS = 0;
     I2C_DelayFull();    
@@ -106,7 +106,7 @@ unsigned char I2C_ReadBit() {
     I2C_DelaySettle(); 
     SCL_TRIS = 1;
     I2C_DelayHalf();
-    if(SDA != 0) data = 1;  
+    if(SDA_PORT != 0) data = 1;  
     I2C_DelayHalf();  
     SCL_TRIS = 0;
     I2C_DelayFull();
@@ -114,8 +114,8 @@ unsigned char I2C_ReadBit() {
 }
 
 bool I2C_GetAck() {
-    SDA = 0;
-    SCL = 0;
+    SDA_LAT = 0;
+    SCL_LAT = 0;
     SCL_TRIS = 0;                 
     SDA_TRIS = 1;  
     SCL_TRIS = 1; 
@@ -131,7 +131,7 @@ bool I2C_GetAck() {
 }
 
 void I2C_SendAck() {
-    SDA = 0;
+    SDA_LAT = 0;
     SDA_TRIS = 0; 
     I2C_DelaySettle();   
     I2C_Clock();       

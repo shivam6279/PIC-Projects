@@ -12,7 +12,7 @@ void USART1_init(unsigned long int baud_rate) {
         U1RXRbits.U1RXR = 8;
         RPB3Rbits.RPB3R = 1;
         CFGCONbits.IOLOCK = 1;
-    #elif board_version == 4
+    #elif board_version == 4 || board_version == 5
         TRISDbits.TRISD10 = 1;
         TRISDbits.TRISD11 = 0;
         U1MODEbits.ON = 0;
@@ -115,7 +115,7 @@ void USART5_init(unsigned long int baud_rate) {
     U5RXRbits.U5RXR = 0b0011;   //U5RX at RD10
     //U5TX select
     CFGCONbits.IOLOCK = 1;
-#elif board_version == 4
+#elif board_version == 4 || board_version == 5
     TRISCbits.TRISC14 = 1;
     TRISCbits.TRISC13 = 0;
     U5MODEbits.ON = 0;

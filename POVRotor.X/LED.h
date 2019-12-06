@@ -7,14 +7,14 @@ struct led {
     unsigned char red, green, blue;
 };
 
-struct led color_white = {255, 255, 255};
-struct led color_black = {0, 0, 0};
-struct led color_red = {255, 0, 0};
-struct led color_green = {0, 255, 0};
-struct led color_blue = {0, 0, 255};
-struct led color_cyan = {0, 255, 255};
-struct led color_magenta = {255, 0, 255};
-struct led color_yellow = {255, 255, 0};
+extern struct led color_white;
+extern struct led color_black;
+extern struct led color_red;
+extern struct led color_green;
+extern struct led color_blue;
+extern struct led color_cyan;
+extern struct led color_magenta;
+extern struct led color_yellow;
 
 extern void writeLEDs(struct led*);
 extern void writeLEDs_hue(struct led*, float);

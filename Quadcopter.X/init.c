@@ -24,7 +24,7 @@ void Init() {
     
     USART5_init(9600);      // GPS
     
-    #if board_version == 4
+    #if board_version == 4 || board_version == 5
         VL6180_init();        
     #endif
     

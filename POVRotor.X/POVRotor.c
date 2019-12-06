@@ -65,7 +65,7 @@ void __ISR_AT_VECTOR(_TIMER_3_VECTOR, IPL4SRS) speed_timer(void){
     IFS0bits.T3IF = 0;
     magnet_counter++;
     speed_counter++;
-    if(PORTDbits.RD2 == 0 && magnet_flag == 1){
+    if(PORTBbits.RB15 == 0 && magnet_flag == 1){
         speed_history[speed_history_i] = magnet_counter;
         raw_omega = magnet_counter;
         for(i = 0, omega = 0; i < speed_history_size; i++){
@@ -77,7 +77,7 @@ void __ISR_AT_VECTOR(_TIMER_3_VECTOR, IPL4SRS) speed_timer(void){
         magnet_counter = 0;
         magnet_flag = 0;
     }
-    else if(PORTDbits.RD2 == 1){
+    else if(PORTBbits.RB15 == 1){
         magnet_flag = 1;
     }
     if(speed_counter >= omega){
@@ -99,7 +99,8 @@ void main(){
     double angle, angle_offset = 0.0;
     init();
     
-    TRISDbits.TRISD2 = 1;
+    ANSELBbits.ANSB15 = 0;
+    TRISBbits.TRISB15 = 1;
     for(i = 0; i < speed_history_size; i++){
         speed_history[i] = 0;
     }
@@ -108,11 +109,43 @@ void main(){
     
     delay_ms(200);
     SPI_init();
-    SPI2BRG = 2;
+    SPI1BRG = 5;
     delay_ms(200);
+    
+//    TRISCbits.TRISC14 = 0;
+//    TRISDbits.TRISD1 = 0;
+//    while(1) {
+//        LATCbits.LATC14 = 0;
+//        LATDbits.LATD1 = 0;
+//        delay_ms(1000);
+//        
+//        LATCbits.LATC14 = 1;
+//        LATDbits.LATD1 = 1;
+//        delay_ms(1000);
+//    }
     
     for(i = 0; i < LED_LENGTH; i++){
         buffer[i] = color_white;
+    }
+    
+    while(1) {
+        for(i = 0; i < LED_LENGTH; i++){
+            buffer[i] = color_red;
+        }   
+        writeLEDs(buffer);
+        delay_ms(500);    
+        
+        for(i = 0; i < LED_LENGTH; i++){
+            buffer[i] = color_green;
+        }   
+        writeLEDs(buffer);
+        delay_ms(500);    
+        
+        for(i = 0; i < LED_LENGTH; i++){
+            buffer[i] = color_blue;
+        }   
+        writeLEDs(buffer);
+        delay_ms(500);            
     }
     
     while(raw_omega < 1024.0){
