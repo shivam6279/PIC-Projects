@@ -4,8 +4,8 @@
 #include <math.h>
 
 XYZ acc;
-XYZ gyro, gyro_avg;
-XYZ compass;
+XYZ gyro, gyro_offset;
+XYZ compass, compass_offset, compass_gain;;
 
 #if IMU_BUFFER_SIZE > 0
 XYZ acc_buffer[IMU_BUFFER_SIZE], gyro_buffer[IMU_BUFFER_SIZE], compass_buffer[IMU_BUFFER_SIZE];
@@ -76,9 +76,9 @@ void MPU6050Init() {
         gyro_buffer[i] = (XYZ){0.0, 0.0, 0.0};
     }
 #endif
-    gyro_avg.x = GYRO_X_OFFSET;
-    gyro_avg.y = GYRO_Y_OFFSET;
-    gyro_avg.z = GYRO_Z_OFFSET;
+    gyro_offset.x = GYRO_X_OFFSET;
+    gyro_offset.y = GYRO_Y_OFFSET;
+    gyro_offset.z = GYRO_Z_OFFSET;
 }
 
 void GetRawAcc() {
@@ -128,14 +128,12 @@ void GetGyro() {
 
     gyro = VectorScale(gyro, 1.0f / (float)IMU_BUFFER_SIZE);
 #endif
-    gyro.x = (gyro.x - gyro_avg.x) / GYRO_X_GAIN;
-    gyro.y = (gyro.y - gyro_avg.y) / GYRO_Y_GAIN;
-    gyro.z = (gyro.z - gyro_avg.z) / GYRO_Z_GAIN;
+    gyro.x = (gyro.x - gyro_offset.x) / GYRO_X_GAIN;
+    gyro.y = (gyro.y - gyro_offset.y) / GYRO_Y_GAIN;
+    gyro.z = (gyro.z - gyro_offset.z) / GYRO_Z_GAIN;
 }
 
 //-----------------------------------Magnetometer----------------------------------
-
-XYZ compass_offset, compass_gain;
 
 //--HMC5883--
 
@@ -287,14 +285,14 @@ void GetRawCompass() {
 
 //----------------------------------------------------------------------
 
-void ComputeCompassOffsetGain(XYZ compass_min, XYZ compass_max) {
-    compass_offset.x = (compass_max.x + compass_min.x) / 2.0f;
-    compass_offset.y = (compass_max.y + compass_min.y) / 2.0f;
-    compass_offset.z = (compass_max.z + compass_min.z) / 2.0f;
+void ComputeCompassOffsetGain(XYZ c_min, XYZ c_max) {
+    compass_offset.x = (c_max.x + c_min.x) / 2.0f;
+    compass_offset.y = (c_max.y + c_min.y) / 2.0f;
+    compass_offset.z = (c_max.z + c_min.z) / 2.0f;
 
-    compass_gain.x = 2.0f / (compass_max.x - compass_min.x);
-    compass_gain.y = 2.0f / (compass_max.y - compass_min.y);
-    compass_gain.z = 2.0f / (compass_max.z - compass_min.z);
+    compass_gain.x = 2.0f / (c_max.x - c_min.x);
+    compass_gain.y = 2.0f / (c_max.y - c_min.y);
+    compass_gain.z = 2.0f / (c_max.z - c_min.z);
 }
 
 void GetCompass() {

@@ -107,7 +107,7 @@ void main() {
         
         delay_ms(100);
         
-        for(i = 0, VectorReset(&gravity), VectorReset(&gyro_avg); i < 1000; i++) {
+        for(i = 0, VectorReset(&gravity), VectorReset(&gyro_offset); i < 1000; i++) {
             StartDelayCounter();
 
             GetAcc();
@@ -115,7 +115,7 @@ void main() {
             GetCompass();
             
             gravity = VectorAdd(gravity, acc);
-            gyro_avg = VectorAdd(gyro_avg, gyro);
+            gyro_offset = VectorAdd(gyro_offset, gyro);
             
             MadgwickQuaternionUpdate(q, acc, (XYZ){0.0, 0.0, 0.0}, compass, 0.050);
             
@@ -128,7 +128,7 @@ void main() {
         StopDelayCounter();
         
         gravity = VectorScale(gravity, 1 / 1000.0);
-        gyro_avg = VectorScale(gyro_avg, 1 / 1000.0);
+        gyro_offset = VectorScale(gyro_offset, 1 / 1000.0);
         
         gravity_mag = sqrt(gravity.x * gravity.x + gravity.y * gravity.y + gravity.z * gravity.z);
 

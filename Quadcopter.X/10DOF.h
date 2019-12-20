@@ -6,9 +6,9 @@
 
 #define IMU_BUFFER_SIZE 10
 
-#define GYRO_X_OFFSET 125
-#define GYRO_Y_OFFSET -250
-#define GYRO_Z_OFFSET -75
+#define GYRO_X_OFFSET -260
+#define GYRO_Y_OFFSET -470
+#define GYRO_Z_OFFSET 45
 
 #define GYRO_X_GAIN 98
 #define GYRO_Y_GAIN -98
@@ -52,7 +52,6 @@ extern void GetRawGyro();
 extern void GetGyro();
 
 //Magnetometer
-extern XYZ compass_offset, compass_gain;
 
 //HMC5883
 #ifdef HMC5883
@@ -99,8 +98,10 @@ extern double GetAltitude(unsigned long int);
 #endif
 
 extern XYZ acc;
-extern XYZ gyro, gyro_avg;
+extern XYZ gyro;
 extern XYZ compass;
+
+extern XYZ gyro_offset, compass_offset, compass_gain;
 
 #if IMU_BUFFER_SIZE > 0
 extern XYZ acc_buffer[IMU_BUFFER_SIZE], gyro_buffer[IMU_BUFFER_SIZE], compass_buffer[IMU_BUFFER_SIZE];

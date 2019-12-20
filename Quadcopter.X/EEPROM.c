@@ -11,27 +11,25 @@
 #define EEPROM_INITIAL_ADDR 0x00
 #define EEPROM_INITIAL_KEY  0x4A
 
-#define ROLL_ADDR       16
-#define PITCH_ADDR      32
-#define YAW_ADDR        48
-#define ALTITUDE_ADDR   64
-#define GPS_ADDR        80
+#define P_ADDR      16
+#define I_ADDR      32
+#define D_ADDR      48
+#define GPS_ADDR    64
 
 #define COMPASS_X_OFFSET_ADDR  96
-#define COMPASS_Y_OFFSET_ADDR  100
-#define COMPASS_z_OFFSET_ADDR  104
+#define COMPASS_Y_OFFSET_ADDR  98
+#define COMPASS_z_OFFSET_ADDR  100
+#define COMPASS_X_GAIN_ADDR  102
+#define COMPASS_Y_GAIN_ADDR  104
+#define COMPASS_z_GAIN_ADDR  106
 
-#define COMPASS_X_GAIN_ADDR  112
-#define COMPASS_Y_GAIN_ADDR  116
-#define COMPASS_z_GAIN_ADDR  120
+#define GYRO_X_OFFSET_ADDR  112
+#define GYRO_Y_OFFSET_ADDR  114
+#define GYRO_Z_OFFSET_ADDR  116
 
-#define GYRO_X_OFFSET_ADDR  128
-#define GYRO_Y_OFFSET_ADDR  132
-#define GYRO_Z_OFFSET_ADDR  136
-
-#define ROLL_OFFSET_ADDR    144
-#define PITCH_OFFSET_ADDR   148
-#define HEADING_OFFSET_ADDR 152
+#define ROLL_OFFSET_ADDR    128
+#define PITCH_OFFSET_ADDR   132
+#define HEADING_OFFSET_ADDR 136
 
 bool eeprom_writeByte(unsigned char addr, unsigned char byte) {    
     I2C_WriteRegisters(EEPROM_ADDRESS, (unsigned char[2]){addr, byte}, 2);
@@ -71,113 +69,88 @@ unsigned char eeprom_readBytes(unsigned char addr, unsigned char *bytes, unsigne
 }
 
 void eeprom_readPID(PID *roll, PID *pitch, PID *yaw, PID *alt, PID *gps) {
-    unsigned char str[12];
+    unsigned char str[16];
     
-    if(eeprom_readByte(EEPROM_INITIAL_ADDR) == EEPROM_INITIAL_KEY) {
-        //Read previously saved data
-        eeprom_readBytes(ROLL_ADDR, str, 12);
-        roll->p = *(float*)(unsigned char[4]){str[0], str[1], str[2], str[3]};
-        roll->i = *(float*)(unsigned char[4]){str[4], str[5], str[6], str[7]};
-        roll->d = *(float*)(unsigned char[4]){str[8], str[9], str[10], str[11]};
+    //Read previously saved data
+    eeprom_readBytes(P_ADDR, str, 16);
+    roll->p = *(float*)(unsigned char[4]){str[0], str[1], str[2], str[3]};
+    pitch->p = *(float*)(unsigned char[4]){str[4], str[5], str[6], str[7]};
+    yaw->p = *(float*)(unsigned char[4]){str[8], str[9], str[10], str[11]};
+    alt->p = *(float*)(unsigned char[4]){str[12], str[13], str[14], str[15]};
 
-        eeprom_readBytes(PITCH_ADDR, str, 12);
-        pitch->p = *(float*)(unsigned char[4]){str[0], str[1], str[2], str[3]};
-        pitch->i = *(float*)(unsigned char[4]){str[4], str[5], str[6], str[7]};
-        pitch->d = *(float*)(unsigned char[4]){str[8], str[9], str[10], str[11]};
+    eeprom_readBytes(I_ADDR, str, 16);
+    roll->i = *(float*)(unsigned char[4]){str[0], str[1], str[2], str[3]};
+    pitch->i = *(float*)(unsigned char[4]){str[4], str[5], str[6], str[7]};
+    yaw->i = *(float*)(unsigned char[4]){str[8], str[9], str[10], str[11]};
+    alt->i = *(float*)(unsigned char[4]){str[12], str[13], str[14], str[15]};
 
-        eeprom_readBytes(YAW_ADDR, str, 12);
-        yaw->p = *(float*)(unsigned char[4]){str[0], str[1], str[2], str[3]};
-        yaw->i = *(float*)(unsigned char[4]){str[4], str[5], str[6], str[7]};
-        yaw->d = *(float*)(unsigned char[4]){str[8], str[9], str[10], str[11]};
+    eeprom_readBytes(D_ADDR, str, 16);
+    roll->d = *(float*)(unsigned char[4]){str[0], str[1], str[2], str[3]};
+    pitch->d = *(float*)(unsigned char[4]){str[4], str[5], str[6], str[7]};
+    yaw->d = *(float*)(unsigned char[4]){str[8], str[9], str[10], str[11]};
+    alt->d = *(float*)(unsigned char[4]){str[12], str[13], str[14], str[15]};
 
-        eeprom_readBytes(ALTITUDE_ADDR, str, 12);
-        alt->p = *(float*)(unsigned char[4]){str[0], str[1], str[2], str[3]};
-        alt->i = *(float*)(unsigned char[4]){str[4], str[5], str[6], str[7]};
-        alt->d = *(float*)(unsigned char[4]){str[8], str[9], str[10], str[11]};
-
-        eeprom_readBytes(GPS_ADDR, str, 12);
-        gps->p = *(float*)(unsigned char[4]){str[0], str[1], str[2], str[3]};
-        gps->i = *(float*)(unsigned char[4]){str[4], str[5], str[6], str[7]};
-        gps->d = *(float*)(unsigned char[4]){str[8], str[9], str[10], str[11]};
-    } 
+    eeprom_readBytes(GPS_ADDR, str, 12);
+    gps->p = *(float*)(unsigned char[4]){str[0], str[1], str[2], str[3]};
+    gps->i = *(float*)(unsigned char[4]){str[4], str[5], str[6], str[7]};
+    gps->d = *(float*)(unsigned char[4]){str[8], str[9], str[10], str[11]};
 }
 
 void eeprom_writePID(PID *roll, PID *pitch, PID *yaw, PID *alt, PID *gps) {
-    unsigned char str[12];
+    unsigned char str[16];
     
     //Write data
     *(float*)(str) = roll->p;
-    *(float*)(str + 4) = roll->i;
-    *(float*)(str + 8) = roll->d;
-    eeprom_writeBytes(ROLL_ADDR, str, 12);
-    delay_ms(6);
-
-    *(float*)(str) = pitch->p;
-    *(float*)(str + 4) = pitch->i;
-    *(float*)(str + 8) = pitch->d;
-    eeprom_writeBytes(PITCH_ADDR, str, 12);
-    delay_ms(6);
-
-    *(float*)(str) = yaw->p;
-    *(float*)(str + 4) = yaw->i;
-    *(float*)(str + 8) = yaw->d;
-    eeprom_writeBytes(YAW_ADDR, str, 12);
-    delay_ms(6);
-
-    *(float*)(str) = alt->p;
-    *(float*)(str + 4) = alt->i;
-    *(float*)(str + 8) = alt->d;
-    eeprom_writeBytes(ALTITUDE_ADDR, str, 12);
+    *(float*)(str + 4) = pitch->p;
+    *(float*)(str + 8) = yaw->p;
+    *(float*)(str + 12) = alt->p;
+    eeprom_writeBytes(P_ADDR, str, 16);
     delay_ms(6);
     
+    *(float*)(str) = roll->i;
+    *(float*)(str + 4) = pitch->i;
+    *(float*)(str + 8) = yaw->i;
+    *(float*)(str + 12) = alt->i;
+    eeprom_writeBytes(I_ADDR, str, 16);
+    delay_ms(6);
+    
+    *(float*)(str) = roll->d;
+    *(float*)(str + 4) = pitch->d;
+    *(float*)(str + 8) = yaw->d;
+    *(float*)(str + 12) = alt->d;
+    eeprom_writeBytes(D_ADDR, str, 16);
+    delay_ms(6);
+
     *(float*)(str) = gps->p;
     *(float*)(str + 4) = gps->i;
     *(float*)(str + 8) = gps->d;
     eeprom_writeBytes(GPS_ADDR, str, 12);
-    delay_ms(6);
-    
-    if(eeprom_readByte(EEPROM_INITIAL_ADDR) != EEPROM_INITIAL_KEY) {
-        eeprom_writeByte(EEPROM_INITIAL_ADDR, EEPROM_INITIAL_KEY);
-        delay_ms(6);
-    }
+    delay_ms(6); 
 }
 
 void eeprom_readCalibration() {
     unsigned char str[12];
-    
-    if(eeprom_readByte(EEPROM_INITIAL_ADDR) == EEPROM_INITIAL_KEY) {
-        //Read previously saved data
-        eeprom_readBytes(COMPASS_X_OFFSET_ADDR, str, 12);
-        compass_offset.x = *(float*)(unsigned char[4]){str[0], str[1], str[2], str[3]};
-        compass_offset.y = *(float*)(unsigned char[4]){str[4], str[5], str[6], str[7]};
-        compass_offset.z = *(float*)(unsigned char[4]){str[8], str[9], str[10], str[11]};
-        
-        eeprom_readBytes(COMPASS_X_GAIN_ADDR, str, 12);
-        compass_gain.x = *(float*)(unsigned char[4]){str[0], str[1], str[2], str[3]};
-        compass_gain.y = *(float*)(unsigned char[4]){str[4], str[5], str[6], str[7]};
-        compass_gain.z = *(float*)(unsigned char[4]){str[8], str[9], str[10], str[11]};
-    } 
+    //Read previously saved data
+    eeprom_readBytes(COMPASS_X_OFFSET_ADDR, str, 12);
+    compass_offset.x = (float)*(signed short*)(unsigned char[2]){str[0], str[1]};
+    compass_offset.y = (float)*(signed short*)(unsigned char[2]){str[2], str[3]};
+    compass_offset.z = (float)*(signed short*)(unsigned char[2]){str[4], str[5]};
+    compass_gain.x = (float)*(signed short*)(unsigned char[2]){str[6], str[7]};
+    compass_gain.y = (float)*(signed short*)(unsigned char[2]){str[8], str[9]};
+    compass_gain.z = (float)*(signed short*)(unsigned char[2]){str[10], str[11]};
 }
 
 void eeprom_writeCalibration() {
     unsigned char str[12];
     
-    *(float*)(str) = compass_offset.x;
-    *(float*)(str + 4) = compass_offset.y;
-    *(float*)(str + 8) = compass_offset.z;
+    *(float*)(str) = (signed short)compass_offset.x;
+    *(float*)(str + 2) = (signed short)compass_offset.y;
+    *(float*)(str + 4) = (signed short)compass_offset.z;
+    *(float*)(str + 6) = (signed short)compass_gain.x;
+    *(float*)(str + 8) = (signed short)compass_gain.y;
+    *(float*)(str + 10) = (signed short)compass_gain.z;
     eeprom_writeBytes(COMPASS_X_OFFSET_ADDR, str, 12);
     delay_ms(6);
-    
-    *(float*)(str) = compass_gain.x;
-    *(float*)(str + 4) = compass_gain.y;
-    *(float*)(str + 8) = compass_gain.z;
-    eeprom_writeBytes(COMPASS_X_GAIN_ADDR, str, 12);
-    delay_ms(6);
-    
-    if(eeprom_readByte(EEPROM_INITIAL_ADDR) != EEPROM_INITIAL_KEY) {
-        eeprom_writeByte(EEPROM_INITIAL_ADDR, EEPROM_INITIAL_KEY);
-        delay_ms(6);
-    }
 }
 
 void eeprom_readOffsets() {

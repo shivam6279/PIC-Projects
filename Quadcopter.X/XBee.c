@@ -130,22 +130,22 @@ void SendCalibrationData() {
         if(compass_avg.y < compass_min.y) compass_min.y = compass_avg.y;
         if(compass_avg.z < compass_min.z) compass_min.z = compass_avg.z;
         
-        XBeeWriteChar('D');
+        XBeeWriteChar('D');        
+        XBeeWriteInt(acc.x); XBeeWriteChar(',');
+        XBeeWriteInt(acc.y); XBeeWriteChar(',');
+        XBeeWriteInt(acc.z); XBeeWriteChar(',');
+        XBeeWriteInt(gyro.x); XBeeWriteChar(',');
+        XBeeWriteInt(gyro.y); XBeeWriteChar(',');
+        XBeeWriteInt(gyro.z); XBeeWriteChar(',');        
         XBeeWriteInt(compass.x); XBeeWriteChar(',');
         XBeeWriteInt(compass.y); XBeeWriteChar(',');
         XBeeWriteInt(compass.z); XBeeWriteChar(',');
-        XBeeWriteInt(compass_min.x); XBeeWriteChar(',');
-        XBeeWriteInt(compass_min.y); XBeeWriteChar(',');
-        XBeeWriteInt(compass_min.z); XBeeWriteChar(',');
         XBeeWriteInt(compass_max.x); XBeeWriteChar(',');
         XBeeWriteInt(compass_max.y); XBeeWriteChar(',');
         XBeeWriteInt(compass_max.z); XBeeWriteChar(',');
-        XBeeWriteInt(gyro.x); XBeeWriteChar(',');
-        XBeeWriteInt(gyro.y); XBeeWriteChar(',');
-        XBeeWriteInt(gyro.z); XBeeWriteChar(',');
-        XBeeWriteInt(acc.x); XBeeWriteChar(',');
-        XBeeWriteInt(acc.y); XBeeWriteChar(',');
-        XBeeWriteInt(acc.z);
+        XBeeWriteInt(compass_min.x); XBeeWriteChar(',');
+        XBeeWriteInt(compass_min.y); XBeeWriteChar(',');
+        XBeeWriteInt(compass_min.z);
         XBeeWriteChar('\r');
     
         delay_ms(35);
@@ -153,7 +153,7 @@ void SendCalibrationData() {
 
     ComputeCompassOffsetGain(compass_min, compass_max);
 
-#if board_version == 4
+#if board_version == 4 || board_version == 5
     eeprom_writeCalibration();
 #endif
 }
