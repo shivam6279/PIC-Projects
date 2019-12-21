@@ -48,6 +48,7 @@
 void main() {    
     Motors speed;
     PID pitch, roll, yaw, altitude, GPS;
+    XYZ acc, gyro, compass;
     XYZ gravity, acc_comp, acc_pure;                                                //Tilt-compensated acceleration
     float gravity_mag;
     int i;                                                                          //General purpose loop counter
@@ -92,14 +93,16 @@ void main() {
         ResetQuaternion(q);                             //Reset quaternion
         MotorsReset(&speed);                            //Clear motor speeds       
         
-#if board_version == 4 || board_version == 5
-        eeprom_readPID(&roll, &pitch, &yaw, &altitude, &GPS);
+#if (board_version == 4 || board_version == 5) && USE_EEPROM == 1
+        if(!eeprom_readPID(&roll, &pitch, &yaw, &altitude, &GPS)) {
+            SetPIDGain(&roll, &pitch, &yaw, &altitude, &GPS);
+        }
         eeprom_readCalibration();
 #endif
         
         Menu(&roll, &pitch, &yaw, &altitude);
         
-#if board_version == 4 || board_version == 5
+#if (board_version == 4 || board_version == 5) && USE_EEPROM == 1
         eeprom_writePID(&roll, &pitch, &yaw, &altitude, &GPS);
 #endif
         
@@ -110,9 +113,9 @@ void main() {
         for(i = 0, VectorReset(&gravity), VectorReset(&gyro_offset); i < 1000; i++) {
             StartDelayCounter();
 
-            GetAcc();
-            GetRawGyro();
-            GetCompass();
+            acc = GetAcc();
+            gyro = GetRawGyro();
+            compass = GetCompass();
             
             gravity = VectorAdd(gravity, acc);
             gyro_offset = VectorAdd(gyro_offset, gyro);
@@ -162,10 +165,10 @@ void main() {
             if(data_aq_counter >= 500) {
                 IMU_loop_time = (float)data_aq_counter / 1000000.0f;   // Loop time in seconds: 
                 data_aq_counter = 0;                
-
-                GetAcc();
-                GetGyro();
-                GetCompass(); 
+                
+                compass = GetCompass(); 
+                acc = GetAcc();
+                gyro = GetGyro();
 
 #if board_version == 4
                 if(ToF_counter >= 10) {
@@ -182,7 +185,7 @@ void main() {
                 yaw.error = LimitAngle(heading - take_off_heading);
                 
                 //Update altitude kalman filter
-                GetCompensatedAcc(q, gravity_mag, &acc_pure, &acc_comp);
+                GetCompensatedAcc(q, gravity_mag, acc, &acc_pure, &acc_comp);
                 altitude_KF_propagate(acc_comp.z, IMU_loop_time);         
 
                 if(XBee_rx.y2 > 1 && !kill) {
@@ -266,13 +269,14 @@ void main() {
             //--------------------------------------------------------Send Data to remote-----------------------------------------------------------------------------
             if(TxBufferEmpty() && tx_buffer_timer > 50) {
                 tx_buffer_timer = 0;
+                //ccompass = GetCompass();
                 XBeeWriteChar('C');
-                XBeeWriteFloat(roll.error, 2); XBeeWriteChar(',');
                 XBeeWriteFloat(pitch.error, 2); XBeeWriteChar(',');
+                XBeeWriteFloat(roll.error, 2); XBeeWriteChar(',');
                 XBeeWriteFloat(yaw.error, 2); XBeeWriteChar(',');
-                XBeeWriteFloat(altitude.offset - altitude.error, 2); XBeeWriteChar(',');
-                XBeeWriteFloat(altitude.derivative, 8); XBeeWriteChar(',');
-                XBeeWriteFloat(altitude.output - altitude_setpoint, 8); XBeeWriteChar(',');
+                XBeeWriteFloat(altitude.error, 2); XBeeWriteChar(',');
+                XBeeWriteFloat(latitude, 8); XBeeWriteChar(',');
+                XBeeWriteFloat(longitude, 8); XBeeWriteChar(',');
                 XBeeWriteInt(loop_mode);
                 XBeeWriteChar('\r');
             }
@@ -319,9 +323,13 @@ void main() {
 
                 //Roll/Pitch/Yaw - PID                
                 
-                PIDDifferentiateAngle(&roll,  1.0f / ESC_FREQ);
-                PIDDifferentiateAngle(&pitch, 1.0f / ESC_FREQ);
-                PIDDifferentiateAngle(&yaw,   1.0f / ESC_FREQ);
+//                PIDDifferentiateAngle(&roll,  IMU_loop_time);
+//                PIDDifferentiateAngle(&pitch, IMU_loop_time);
+//                PIDDifferentiateAngle(&yaw,   IMU_loop_time);
+                
+                roll.derivative = gyro.y;
+                pitch.derivative = gyro.x;
+                yaw.derivative = gyro.z;
 
                 PIDOutputAngle(&roll);
                 PIDOutputAngle(&pitch);

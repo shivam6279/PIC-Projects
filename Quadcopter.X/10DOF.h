@@ -4,7 +4,7 @@
 #include "settings.h"
 #include <stdbool.h>
 
-#define IMU_BUFFER_SIZE 10
+#define IMU_BUFFER_SIZE 0
 
 #define GYRO_X_OFFSET -260
 #define GYRO_Y_OFFSET -470
@@ -14,14 +14,14 @@
 #define GYRO_Y_GAIN -98
 #define GYRO_Z_GAIN 106
 
-#define COMPASS_X_MIN -309.0f
-#define COMPASS_X_MAX 1093.0f
+#define COMPASS_X_MIN -4127.0f
+#define COMPASS_X_MAX 5292.0f
 
-#define COMPASS_Y_MIN -838.0f
-#define COMPASS_Y_MAX 181.0f
+#define COMPASS_Y_MIN -6046.0f
+#define COMPASS_Y_MAX 2360.0f
 
-#define COMPASS_Z_MIN -908.0f
-#define COMPASS_Z_MAX 129.0f
+#define COMPASS_Z_MIN -5420.0f
+#define COMPASS_Z_MAX 3117.0f
 
 #ifdef BMP180
 #define OVERSAMPLING 3  //0 - 3
@@ -46,10 +46,10 @@ extern XYZ VectorScale(XYZ, float);
 
 //MPU6050
 extern void MPU6050Init();
-extern void GetRawAcc();
-extern void GetAcc();
-extern void GetRawGyro();
-extern void GetGyro();
+extern XYZ GetRawAcc();
+extern XYZ GetAcc();
+extern XYZ GetRawGyro();
+extern XYZ GetGyro();
 
 //Magnetometer
 
@@ -65,10 +65,8 @@ bool QMC5883DataRdy();
 #endif
 
 extern void ComputeCompassOffsetGain(XYZ, XYZ);
-extern void GetRawCompass();
-extern void GetCompass();
-
-extern void GetRawIMU();
+extern XYZ GetRawCompass();
+extern XYZ GetCompass();
 
 //Pressure sensors
 
@@ -96,10 +94,6 @@ extern long int ComputePressure(unsigned long int, unsigned long int);
 extern double ComputeTemperature(unsigned long int);
 extern double GetAltitude(unsigned long int);
 #endif
-
-extern XYZ acc;
-extern XYZ gyro;
-extern XYZ compass;
 
 extern XYZ gyro_offset, compass_offset, compass_gain;
 

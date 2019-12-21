@@ -3,9 +3,8 @@
 #include "settings.h"
 #include <math.h>
 
-XYZ acc;
-XYZ gyro, gyro_offset;
-XYZ compass, compass_offset, compass_gain;;
+XYZ gyro_offset;
+XYZ compass_offset, compass_gain;
 
 #if IMU_BUFFER_SIZE > 0
 XYZ acc_buffer[IMU_BUFFER_SIZE], gyro_buffer[IMU_BUFFER_SIZE], compass_buffer[IMU_BUFFER_SIZE];
@@ -81,16 +80,19 @@ void MPU6050Init() {
     gyro_offset.z = GYRO_Z_OFFSET;
 }
 
-void GetRawAcc() {
+XYZ GetRawAcc() {
+    XYZ acc;
     unsigned char temp[6];
     I2C_ReadRegisters(0xD0, 0x3B, temp, 6);
     acc.y = (signed short)(temp[0] << 8 | temp[1]);
     acc.x = (signed short)(temp[2] << 8 | temp[3]) * (-1);
     acc.z = (signed short)(temp[4] << 8 | temp[5]) * (-1);
+    return acc;
 }
 
-void GetAcc() {    
-    GetRawAcc();
+XYZ GetAcc() { 
+    XYZ acc;
+    acc = GetRawAcc();
     
 #if IMU_BUFFER_SIZE > 0
     unsigned char i;    
@@ -103,18 +105,22 @@ void GetAcc() {
     
     acc = VectorScale(acc, 1.0f / (float)IMU_BUFFER_SIZE);
 #endif
+    return acc;
 }
 
-void GetRawGyro() {
+XYZ GetRawGyro() {
+    XYZ gyro;
     unsigned char temp[6];
     I2C_ReadRegisters(0xD0, 0x43, temp, 6);
     gyro.y = (signed short)(temp[0] << 8 | temp[1]);
     gyro.x = (signed short)(temp[2] << 8 | temp[3]);
     gyro.z = (signed short)(temp[4] << 8 | temp[5]);
+    return gyro;
 }
 
-void GetGyro() {    
-    GetRawGyro();
+XYZ GetGyro() { 
+    XYZ gyro;
+    gyro = GetRawGyro();
     
 #if IMU_BUFFER_SIZE > 0
     unsigned char i;
@@ -131,6 +137,7 @@ void GetGyro() {
     gyro.x = (gyro.x - gyro_offset.x) / GYRO_X_GAIN;
     gyro.y = (gyro.y - gyro_offset.y) / GYRO_Y_GAIN;
     gyro.z = (gyro.z - gyro_offset.z) / GYRO_Z_GAIN;
+    return gyro;
 }
 
 //-----------------------------------Magnetometer----------------------------------
@@ -256,11 +263,12 @@ bool QMC5883DataRdy() {
     unsigned char status;
     I2C_ReadRegisters(QMC5883L_ADDR, QMC5883L_STATUS, &status, 1);
     if(status & QMC5883L_STATUS_DRDY)
-        return 1;
-    return 0;
+        return true;
+    return false;
 }
 
-void GetRawCompass() {
+XYZ GetRawCompass() {
+    XYZ compass;
     unsigned char temp[6];
     
 #if board_version == 1 || board_version == 2 || board_version == 3
@@ -268,17 +276,18 @@ void GetRawCompass() {
     I2C_WriteRegisters(0xD0, (unsigned char[2]){0x37, 0x02}, 2);
 #endif
     
-    if(QMC5883DataRdy()) {
+    //if(QMC5883DataRdy()) {
         I2C_ReadRegisters(QMC5883L_ADDR, QMC5883L_X_LSB, temp, 6);
         compass.y = -(signed short)(temp[0] | temp[1] << 8);
         compass.x = (signed short)(temp[2] | temp[3] << 8);
         compass.z = (signed short)(temp[4] | temp[5] << 8);
-    }
+    //}
     
 #if board_version == 1 || board_version == 2 || board_version == 3
     I2C_WriteRegisters(0xD0, (unsigned char[2]){0x6A, 0x20}, 2);
     I2C_WriteRegisters(0xD0, (unsigned char[2]){0x37, 0x00}, 2);
 #endif
+    return compass;
 }
 
 #endif
@@ -295,8 +304,9 @@ void ComputeCompassOffsetGain(XYZ c_min, XYZ c_max) {
     compass_gain.z = 2.0f / (c_max.z - c_min.z);
 }
 
-void GetCompass() {
-    GetRawCompass();
+XYZ GetCompass() {
+    XYZ compass;
+    compass = GetRawCompass();
     
 #if IMU_BUFFER_SIZE > 0
     unsigned char i;
@@ -313,12 +323,7 @@ void GetCompass() {
     compass.x = (compass.x - compass_offset.x) * compass_gain.x;
     compass.y = (compass.y - compass_offset.y) * compass_gain.y;
     compass.z = (compass.z - compass_offset.z) * compass_gain.z;
-}
-
-void GetRawIMU() {
-    GetRawAcc();
-    GetRawGyro();
-    GetRawCompass();
+    return compass;
 }
 
 //------------------------------------Altimeter-----------------------------------

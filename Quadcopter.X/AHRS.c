@@ -172,7 +172,7 @@ float invSqrt(float x) {
     return y;
 }
 
-void GetCompensatedAcc(float q[4], float gravity_mag, XYZ *acc_pure, XYZ *acc_comp) {
+void GetCompensatedAcc(float q[4], float gravity_mag, XYZ acc, XYZ *acc_pure, XYZ *acc_comp) {
     float num1 = q[0] * 2.0;
     float num2 = q[1] * 2.0;
     float num3 = q[2] * 2.0;

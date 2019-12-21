@@ -104,11 +104,17 @@ rx ReadXBee() {
 
 void SendCalibrationData() {  
     const float avg_factor = 25;
+    
+    unsigned char i;
+    
+    XYZ acc, gyro, compass;
 
     XYZ compass_min, compass_max;
     XYZ compass_avg;
 
-    GetRawIMU();
+    acc = GetRawAcc();
+    gyro = GetRawGyro();
+    compass = GetRawCompass();
 
     compass_max = compass;    
     compass_min = compass; 
@@ -116,7 +122,9 @@ void SendCalibrationData() {
     
     tx_buffer_index = 0;
     while(XBee.rs == 0) {
-        GetRawIMU();
+        acc = GetRawAcc();
+        gyro = GetRawGyro();
+        compass = GetRawCompass();
 
         compass_avg.x = ((avg_factor - 1) * compass_avg.x + compass.x) / avg_factor;
         compass_avg.y = ((avg_factor - 1) * compass_avg.y + compass.y) / avg_factor;
@@ -151,10 +159,8 @@ void SendCalibrationData() {
         delay_ms(35);
     }
 
-    ComputeCompassOffsetGain(compass_min, compass_max);
-
-#if board_version == 4 || board_version == 5
-    eeprom_writeCalibration();
+#if (board_version == 4 || board_version == 5) && USE_EEPROM == 1
+    eeprom_writeCalibration(compass_min, compass_max);
 #endif
 }
 

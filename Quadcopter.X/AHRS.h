@@ -17,7 +17,7 @@ extern void QuaternionToEuler(float[], float*, float*, float*);
 extern void MadgwickQuaternionUpdate(float*, XYZ, XYZ, XYZ, float);
 extern float invSqrt(float);
 
-extern void GetCompensatedAcc(float q[4], float, XYZ*, XYZ*);
+extern void GetCompensatedAcc(float q[4], float, XYZ, XYZ*, XYZ*);
 
 extern void altitude_KF_reset();
 extern void altitude_KF_propagate(float, float);
