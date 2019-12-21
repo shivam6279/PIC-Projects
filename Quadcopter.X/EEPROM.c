@@ -9,7 +9,7 @@
 #define EEPROM_ADDRESS  0xA0
 
 #define EEPROM_INITIAL_ADDR 0x00
-#define EEPROM_INITIAL_KEY  0xB5
+#define EEPROM_INITIAL_KEY  0x25
 
 #define P_ADDR      16
 #define I_ADDR      32

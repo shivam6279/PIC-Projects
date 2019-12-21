@@ -129,7 +129,7 @@ void Menu(PID *x, PID *y, PID *z, PID *a){
         while(ms_counter() < 25);  
         StopDelayCounter();
     }
-    z->p = x->p;
-    z->i = x->i;
+//    z->p = x->p;
+//    z->i = x->i;
     z->d = x->d;
 }
