@@ -227,10 +227,10 @@ void main() {
 
             //-------------------------------------------------------------Altitude acquisition--------------------------------------------------------------------------
             if(LoopAltitude(&altitude.error, &temperature)) {
-                //altitude_KF_update(altitude.error);
-                
-                //altitude.error = altitude_KF_getAltitude() - take_off_altitude;
-                //altitude.derivative = -1.0 * altitude_KF_getVelocity();
+                altitude.error -= take_off_altitude;
+//                altitude_KF_update(altitude.error);                
+//                altitude.error = altitude_KF_getAltitude() - take_off_altitude;
+//                altitude.derivative = -1.0 * altitude_KF_getVelocity();
                 
                 if(loop_mode == MODE_ALT_HOLD) {
                     if(XBee_rx.y2 > 10 && XBee_rx.y2 < 20)  //Throttle stick in the mid position
