@@ -27,7 +27,7 @@ void __ISR_AT_VECTOR(_UART5_RX_VECTOR, IPL6SRS) GPS_(void){
             else GPS_stage = 0; 
         }
         else if(GPS_stage == 2) { 
-            if(GPS_rx_byte == 'P') GPS_stage++; 
+            if(GPS_rx_byte == 'P' || GPS_rx_byte == 'N') GPS_stage++; 
             else GPS_stage = 0; 
         }
         else if(GPS_stage == 3) { 

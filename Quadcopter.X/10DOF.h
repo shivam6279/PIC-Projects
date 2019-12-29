@@ -96,6 +96,7 @@ extern double GetAltitude(unsigned long int);
 #endif
 
 extern XYZ gyro_offset, compass_offset, compass_gain;
+extern unsigned int MS5611_fc[6];
 
 #if IMU_BUFFER_SIZE > 0
 extern XYZ acc_buffer[IMU_BUFFER_SIZE], gyro_buffer[IMU_BUFFER_SIZE], compass_buffer[IMU_BUFFER_SIZE];

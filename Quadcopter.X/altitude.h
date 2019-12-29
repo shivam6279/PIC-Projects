@@ -1,7 +1,7 @@
 #ifndef _altitude_H_
 #define _altitude_H_
 
-#define ALTITUDE_BUFFER_SIZE 3
+#define ALTITUDE_BUFFER_SIZE 5
 
 extern bool LoopAltitude(float*, float*);
 extern double GetTakeoffAltitude();

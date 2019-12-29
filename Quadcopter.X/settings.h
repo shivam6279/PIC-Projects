@@ -2,7 +2,7 @@
 #define _settings_H_
 
 //-----------------------------PCB----------------------------
-#define mini		//micro / mini / big
+#define micro		//micro / mini / big
 #define board_version 5
 //------------------------------------------------------------
 
@@ -18,7 +18,7 @@
 #define PITCHOFFSET -2.6f			//degrees
 #define HEADINGOFFSET -87.0f       	//degrees
 
-#define USE_EEPROM 1
+#define USE_EEPROM 0
 
 #if board_version == 1
 	#define RGBLED_RED_PIN 0
@@ -117,7 +117,7 @@
 
 //Motor spin correction: +1 for top right motor CCW, -1 for top right motor CW
 #ifdef micro
-    #define MOTOR_SPIN -1.0f
+    #define MOTOR_SPIN 1.0f
 #endif
 #ifdef mini
     #define MOTOR_SPIN 1.0f

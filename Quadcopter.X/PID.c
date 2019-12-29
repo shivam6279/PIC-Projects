@@ -47,9 +47,9 @@ void ResetCounters() {
 
 void SetPIDGain(PID *roll, PID* pitch, PID *yaw, PID *altitude, PID *GPS) {
 #ifdef micro
-    PIDSet(roll,     1.00, 1.00, 0.30);
-    PIDSet(pitch,    1.00, 1.00, 0.30);
-    PIDSet(yaw,      0.60, 1.80, 0.50);
+    PIDSet(roll,     1.30, 1.30, 0.50);
+    PIDSet(pitch,    1.30, 1.30, 0.50);
+    PIDSet(yaw,      1.30, 1.30, 0.50);
     PIDSet(altitude, 36.0, 5.00, 5.00);
     PIDSet(GPS,      1.50, 0.05, 0.00);
 #endif

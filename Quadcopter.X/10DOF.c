@@ -430,7 +430,7 @@ float GetAltitude() {
 
 #ifdef MS5611
 
-static unsigned int MS5611_fc[6];
+unsigned int MS5611_fc[6];
 
 void MS5611Init() {
     unsigned char temp[2];

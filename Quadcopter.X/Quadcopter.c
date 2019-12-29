@@ -83,6 +83,36 @@ void main() {
         SendCalibrationData();
     }
     
+//    long int pressure;
+//    double alt;
+//    double temp;
+//    while(XBee.rs == 0) {
+//        acc = GetAcc();
+//        gyro = GetGyro();
+//        compass = GetCompass();
+//        pressure = GetPressure();
+//        alt = GetAltitude(pressure);
+//        temp = GetTemperature();
+//        
+//        XBeeWriteChar('D');        
+//        XBeeWriteInt(acc.x); XBeeWriteChar(',');
+//        XBeeWriteInt(acc.y); XBeeWriteChar(',');
+//        XBeeWriteInt(acc.z); XBeeWriteChar(',');
+//        XBeeWriteInt(gyro.x); XBeeWriteChar(',');
+//        XBeeWriteInt(gyro.y); XBeeWriteChar(',');
+//        XBeeWriteInt(temp); XBeeWriteChar(',');        
+//        XBeeWriteInt(pressure/10); XBeeWriteChar(',');
+//        XBeeWriteInt(alt); XBeeWriteChar(',');
+//        XBeeWriteInt(MS5611_fc[0]); XBeeWriteChar(',');
+//        XBeeWriteInt(MS5611_fc[1]); XBeeWriteChar(',');
+//        XBeeWriteInt(MS5611_fc[2]); XBeeWriteChar(',');
+//        XBeeWriteInt(MS5611_fc[3]); XBeeWriteChar(',');
+//        XBeeWriteInt(MS5611_fc[4]); XBeeWriteChar(',');
+//        XBeeWriteInt(MS5611_fc[5]); XBeeWriteChar(',');
+//        XBeeWriteInt(0);
+//        XBeeWriteChar('\r');
+//    }
+    
     //Set PID gains
     SetPIDGain(&roll, &pitch, &yaw, &altitude, &GPS);
     
@@ -197,10 +227,10 @@ void main() {
 
             //-------------------------------------------------------------Altitude acquisition--------------------------------------------------------------------------
             if(LoopAltitude(&altitude.error, &temperature)) {
-                altitude_KF_update(altitude.error);
+                //altitude_KF_update(altitude.error);
                 
-                altitude.error = altitude_KF_getAltitude() - take_off_altitude;
-                altitude.derivative = -1.0 * altitude_KF_getVelocity();
+                //altitude.error = altitude_KF_getAltitude() - take_off_altitude;
+                //altitude.derivative = -1.0 * altitude_KF_getVelocity();
                 
                 if(loop_mode == MODE_ALT_HOLD) {
                     if(XBee_rx.y2 > 10 && XBee_rx.y2 < 20)  //Throttle stick in the mid position
