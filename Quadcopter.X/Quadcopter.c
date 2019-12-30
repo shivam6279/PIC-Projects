@@ -317,7 +317,7 @@ void main() {
 
                 //--Stabilize--
                 if(loop_mode == MODE_STABILIZE) {
-                    altitude.output = (float)XBee_rx.y2 / THROTTLE_MAX * MAX_SPEED;
+                    altitude.output = ((float)XBee_rx.y2 / THROTTLE_MAX * MAX_SPEED) / (cos(roll.offset / RAD_TO_DEGREES) * cos(pitch.offset / RAD_TO_DEGREES));
                 }
 
                 //--Alt-hold---
