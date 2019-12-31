@@ -227,7 +227,7 @@ void main() {
 
             //-------------------------------------------------------------Altitude acquisition--------------------------------------------------------------------------
             if(LoopAltitude(&altitude.error, &temperature)) {
-                altitude.error -= take_off_altitude;
+                altitude.error -= take_off_altitude ;
 //                altitude_KF_update(altitude.error);                
 //                altitude.error = altitude_KF_getAltitude() - take_off_altitude;
 //                altitude.derivative = -1.0 * altitude_KF_getVelocity();
@@ -305,7 +305,7 @@ void main() {
                 XBeeWriteFloat(roll.error, 2); XBeeWriteChar(',');
                 XBeeWriteFloat(yaw.error, 2); XBeeWriteChar(',');
                 XBeeWriteFloat(altitude.error, 2); XBeeWriteChar(',');
-                XBeeWriteFloat(latitude, 8); XBeeWriteChar(',');
+                XBeeWriteFloat(altitude.output, 8); XBeeWriteChar(',');                      
                 XBeeWriteFloat(longitude, 8); XBeeWriteChar(',');
                 XBeeWriteInt(loop_mode);
                 XBeeWriteChar('\r');
@@ -317,7 +317,7 @@ void main() {
 
                 //--Stabilize--
                 if(loop_mode == MODE_STABILIZE) {
-                    altitude.output = ((float)XBee_rx.y2 / THROTTLE_MAX * MAX_SPEED) / (cos(roll.offset / RAD_TO_DEGREES) * cos(pitch.offset / RAD_TO_DEGREES));
+                    altitude.output = ((float)XBee_rx.y2 / THROTTLE_MAX * MAX_SPEED);
                 }
 
                 //--Alt-hold---
@@ -371,6 +371,11 @@ void main() {
                     yaw.sum = 0;
                     yaw.offset = yaw.error;                
                 }
+                
+                if(roll.error < 45 && roll.error > -45)
+                    altitude.output /= cos(roll.error / RAD_TO_DEGREES);
+                if(pitch.error < 45 && pitch.error > -45)
+                    altitude.output /= cos(pitch.error / RAD_TO_DEGREES);
 
                 //Motor Output
 
