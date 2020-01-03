@@ -26,11 +26,11 @@ void get_touchscreen();
 char serial_monitor[30][54];
 
 unsigned char receive1;
-char rx_buffer[1024];
+volatile char rx_buffer[1024];
 int buffer_counter = 0;
 
 unsigned int rx_time_counter = 0;
-bool rx_signal = 0, rx_data_rdy = 0;
+volatile bool rx_signal = 0, rx_data_rdy = 0;
 
 void main() {
     bool rx_signal_flag = 1;
@@ -52,8 +52,8 @@ void main() {
     SPI_init();
     
     speaker_pin = 0;
-    LCD_backlight_pin = 0;
-    
+
+    LCD_backlight_pin = 0;    
     delay_ms(150);
     CS = 1;
     RST = 1;

@@ -5,6 +5,7 @@
 #include "XBee.h"
 #include "pic32.h"
 #include "GPS.h"
+#include "AHRS.h"
 #include <xc.h>
 
 void Menu(PID *x, PID *y, PID *z, PID *a){
@@ -132,4 +133,58 @@ void Menu(PID *x, PID *y, PID *z, PID *a){
 //    z->p = x->p;
 //    z->i = x->i;
     z->d = x->d;
+}
+
+void ArmingSequence(float q[], float *gravity_mag, float *to_heading, float *to_altitude, float *to_latitude, float *to_longitude) {         
+    int i;
+    XYZ acc, gyro, compass;
+    XYZ gravity;
+
+#if (board_version == 4 || board_version == 5) && USE_EEPROM == 1
+    eeprom_writePID(&roll, &pitch, &yaw, &altitude, &GPS);
+#endif
+    
+    WriteRGBLed(4095, 2500, 0); //Yellow
+    
+    delay_ms(100);
+    
+    for(i = 0, VectorReset(&gravity), VectorReset(&gyro_offset); i < 1000; i++) {
+        StartDelayCounter();
+
+        acc = GetAcc();
+        gyro = GetRawGyro();
+        compass = GetCompass();
+        
+        gravity = VectorAdd(gravity, acc);
+        gyro_offset = VectorAdd(gyro_offset, gyro);
+        
+        MadgwickQuaternionUpdate(q, acc, (XYZ){0.0, 0.0, 0.0}, compass, 0.050);
+        
+        XBeeWriteChar('B');
+        XBeeWriteInt(i);
+        XBeeWriteChar('\r');
+        
+        while(ms_counter() < 3);
+    }
+    StopDelayCounter();
+    
+    gravity = VectorScale(gravity, 1 / 1000.0);
+    gyro_offset = VectorScale(gyro_offset, 1 / 1000.0);
+    
+    *gravity_mag = sqrt(gravity.x * gravity.x + gravity.y * gravity.y + gravity.z * gravity.z);
+
+    //Read initial heading
+    *to_heading = LimitAngle(-atan2(2.0f * (q[1] * q[2] + q[0] * q[3]), q[0] * q[0] + q[1] * q[1] - q[2] * q[2] - q[3] * q[3]) * RAD_TO_DEGREES - heading_offset);
+
+    //Read take-off altitude
+    altitude_KF_reset();
+    *to_altitude = GetTakeoffAltitude();
+    
+    if(GPS_signal) { 
+        *to_latitude = latitude; 
+        *to_longitude = longitude; 
+    } else { 
+        *to_latitude = 0.0; 
+        *to_longitude = 0.0; 
+    }
 }

@@ -80,10 +80,11 @@ float LimitAngle(float a) {
 }
 
 float LimitValue(float a, float min, float max) {
-    if(a < min)
+    if(a < min) {
         return min;
-    if(a > max)
+    } else if(a > max) {
         return max;
+    }
     return a;
 }
 
@@ -170,7 +171,7 @@ void WriteRGBLed(unsigned int r, unsigned int g, unsigned int b) {
     g = (float)g * (float)PWM_MAX / 4095.0f;
     b = (float)b * (float)PWM_MAX / 4095.0f;
 #endif
-    write_pwm(RGBLED_RED_PIN, r); 
+    write_pwm(RGBLED_RED_PIN,   r); 
     write_pwm(RGBLED_GREEN_PIN, g); 
-    write_pwm(RGBLED_BLUE_PIN, b);
+    write_pwm(RGBLED_BLUE_PIN,  b);
 }

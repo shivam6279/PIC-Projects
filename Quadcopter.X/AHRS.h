@@ -3,7 +3,7 @@
 
 #include "10DOF.h"
 
-#define ACC_GRAVITY 9.8f //m/s^2
+#define ACC_GRAVITY 9.81f //m/s^2
 
 #define FUSION_BETA	1.0f
 

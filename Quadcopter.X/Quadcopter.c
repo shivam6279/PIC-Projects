@@ -49,9 +49,8 @@ void main() {
     Motors speed;
     PID pitch, roll, yaw, altitude, GPS;
     XYZ acc, gyro, compass;
-    XYZ gravity, acc_comp, acc_pure;                                                //Tilt-compensated acceleration
+    XYZ acc_comp, acc_pure;                                                         //Tilt-compensated acceleration
     float gravity_mag;
-    int i;                                                                          //General purpose loop counter
     rx XBee_rx;
     float q[4];                                                                     //Quaternion
     float take_off_altitude, temperature;                                           //Offsets
@@ -65,64 +64,30 @@ void main() {
     char loop_mode, p_loop_mode;                                                    //Stabilize/alt-hold/pos-hold
     bool kill, p_kill;
     
-    Init();
-    
+    //Startup initialization   
+    Init();    
     WriteRGBLed(4095, 0, 0);                            //Red
-    
     delay_ms(100);
-    Init_10DOF();
-    
-    if(XBee.y2 > 29 && XBee.x2 > 13)                    //Calibrate ESCs
+    Init_10DOF();    
+    //Calibrate ESC
+    if(XBee.y2 > 29 && XBee.x2 > 13) {
         CalibrateESC();
-    
+    }
     TurnMotorsOff();
-    
     delay_ms(100);
+    //Calibrate sensors
     if(XBee.y1 > 13 && XBee.x1 > 13) {                  //display sensor readings
         WriteRGBLed(4095, 0, 3800);                     //Magenta
         SendCalibrationData();
-    }
-    
-//    long int pressure;
-//    double alt;
-//    double temp;
-//    while(XBee.rs == 0) {
-//        acc = GetAcc();
-//        gyro = GetGyro();
-//        compass = GetCompass();
-//        pressure = GetPressure();
-//        alt = GetAltitude(pressure);
-//        temp = GetTemperature();
-//        
-//        XBeeWriteChar('D');        
-//        XBeeWriteInt(acc.x); XBeeWriteChar(',');
-//        XBeeWriteInt(acc.y); XBeeWriteChar(',');
-//        XBeeWriteInt(acc.z); XBeeWriteChar(',');
-//        XBeeWriteInt(gyro.x); XBeeWriteChar(',');
-//        XBeeWriteInt(gyro.y); XBeeWriteChar(',');
-//        XBeeWriteInt(temp); XBeeWriteChar(',');        
-//        XBeeWriteInt(pressure/10); XBeeWriteChar(',');
-//        XBeeWriteInt(alt); XBeeWriteChar(',');
-//        XBeeWriteInt(MS5611_fc[0]); XBeeWriteChar(',');
-//        XBeeWriteInt(MS5611_fc[1]); XBeeWriteChar(',');
-//        XBeeWriteInt(MS5611_fc[2]); XBeeWriteChar(',');
-//        XBeeWriteInt(MS5611_fc[3]); XBeeWriteChar(',');
-//        XBeeWriteInt(MS5611_fc[4]); XBeeWriteChar(',');
-//        XBeeWriteInt(MS5611_fc[5]); XBeeWriteChar(',');
-//        XBeeWriteInt(0);
-//        XBeeWriteChar('\r');
-//    }
-    
+    }    
     //Set PID gains
     SetPIDGain(&roll, &pitch, &yaw, &altitude, &GPS);
-    
     delay_ms(1500);
     
     while(1) {
         ResetPID(&roll, &pitch, &yaw, &altitude, &GPS); //Clear PID variables
         ResetQuaternion(q);                             //Reset quaternion
-        MotorsReset(&speed);                            //Clear motor speeds       
-        
+        MotorsReset(&speed);                            //Clear motor speeds   
 #if (board_version == 4 || board_version == 5) && USE_EEPROM == 1
         if(!eeprom_readPID(&roll, &pitch, &yaw, &altitude, &GPS)) {
             SetPIDGain(&roll, &pitch, &yaw, &altitude, &GPS);
@@ -130,57 +95,16 @@ void main() {
         eeprom_readCalibration();
 #endif
         
+        // Wait to be armed
         Menu(&roll, &pitch, &yaw, &altitude);
-        
-#if (board_version == 4 || board_version == 5) && USE_EEPROM == 1
-        eeprom_writePID(&roll, &pitch, &yaw, &altitude, &GPS);
-#endif
-        
-        WriteRGBLed(4095, 2500, 0); //Yellow
-        
-        delay_ms(100);
-        
-        for(i = 0, VectorReset(&gravity), VectorReset(&gyro_offset); i < 1000; i++) {
-            StartDelayCounter();
 
-            acc = GetAcc();
-            gyro = GetRawGyro();
-            compass = GetCompass();
-            
-            gravity = VectorAdd(gravity, acc);
-            gyro_offset = VectorAdd(gyro_offset, gyro);
-            
-            MadgwickQuaternionUpdate(q, acc, (XYZ){0.0, 0.0, 0.0}, compass, 0.050);
-            
-            XBeeWriteChar('B');
-            XBeeWriteInt(i);
-            XBeeWriteChar('\r');
-            
-            while(ms_counter() < 3);
-        }
-        StopDelayCounter();
+        // Arm motors
+        // Set up quarternion - save parameters at take off
+        // Heading, altitude, latitude, longitude
+        // Takes ~2 seconds
+        ArmingSequence(q, &gravity_mag, &take_off_heading, &take_off_altitude, &take_off_latitude, &take_off_longitude);
         
-        gravity = VectorScale(gravity, 1 / 1000.0);
-        gyro_offset = VectorScale(gyro_offset, 1 / 1000.0);
-        
-        gravity_mag = sqrt(gravity.x * gravity.x + gravity.y * gravity.y + gravity.z * gravity.z);
-
-        //Read initial heading
-        take_off_heading = LimitAngle(-atan2(2.0f * (q[1] * q[2] + q[0] * q[3]), q[0] * q[0] + q[1] * q[1] - q[2] * q[2] - q[3] * q[3]) * RAD_TO_DEGREES - heading_offset);
-
-        //Read take-off altitude
-        altitude_KF_reset();
-        take_off_altitude = GetTakeoffAltitude();
-        
-        if(GPS_signal) { 
-            take_off_latitude = latitude; 
-            take_off_longitude = longitude; 
-        } else { 
-            take_off_latitude = 0.0; 
-            take_off_longitude = 0.0; 
-        }
-        
-        loop_mode = 0;
+        loop_mode = MODE_KILL;
         kill = 0;
         altitude_setpoint = 0;
         ResetCounters();        
@@ -200,7 +124,7 @@ void main() {
                 acc = GetAcc();
                 gyro = GetGyro();
 
-#if board_version == 4
+#if board_version == 4 || board_version == 5
                 if(ToF_counter >= 10) {
                     ToF_distance = ToF_readRange();
                     if(ToF_valueGood() != 0)
@@ -227,7 +151,7 @@ void main() {
 
             //-------------------------------------------------------------Altitude acquisition--------------------------------------------------------------------------
             if(LoopAltitude(&altitude.error, &temperature)) {
-                altitude.error -= take_off_altitude ;
+                altitude.error -= take_off_altitude;
 //                altitude_KF_update(altitude.error);                
 //                altitude.error = altitude_KF_getAltitude() - take_off_altitude;
 //                altitude.derivative = -1.0 * altitude_KF_getVelocity();
@@ -282,7 +206,6 @@ void main() {
                 }
 
                 //Converting Remote data to a 2-D vector
-
                 if(loop_mode != MODE_POS_HOLD) {// If not in GPS mode
                     remote_magnitude = sqrt((float)XBee_rx.x1 * (float)XBee_rx.x1 + (float)XBee_rx.y1 * (float)XBee_rx.y1); //Magnitude of Remote's roll and pitch
                     if(XBee_rx.x1 == 0 && XBee_rx.y1 == 0) 
@@ -312,7 +235,7 @@ void main() {
             }
             
             //--------------------------------------------------------PID Output to motors----------------------------------------------------------------------------
-            if(esc_counter >= ESC_TIME_us) {
+            if(esc_counter >= (ESC_TIME_us - 5)) {
                 esc_counter = 0;                
 
                 //--Stabilize--
@@ -345,9 +268,9 @@ void main() {
                     GPS.output = (GPS.p * GPS.error); 
 
                     pitch.offset = -GPS.output * cos((GPS_bearing_difference / RAD_TO_DEGREES) + PI);
-                    roll.offset = GPS.output * sin((GPS_bearing_difference / RAD_TO_DEGREES) + PI);
+                    roll.offset  =  GPS.output * sin((GPS_bearing_difference / RAD_TO_DEGREES) + PI);
 
-                    roll.offset = LimitValue(roll.offset, -18, 18);
+                    roll.offset  = LimitValue(roll.offset, -18, 18);
                     pitch.offset = LimitValue(pitch.offset, -18, 18);
                 }
 
@@ -357,9 +280,9 @@ void main() {
 //                PIDDifferentiateAngle(&pitch, IMU_loop_time);
 //                PIDDifferentiateAngle(&yaw,   IMU_loop_time);
                 
-                roll.derivative = gyro.y;
+                roll.derivative  = gyro.y;
                 pitch.derivative = gyro.x;
-                yaw.derivative = gyro.z;
+                yaw.derivative   = gyro.z;
 
                 PIDOutputAngle(&roll);
                 PIDOutputAngle(&pitch);
@@ -372,9 +295,9 @@ void main() {
                     yaw.offset = yaw.error;                
                 }
                 
-                if(roll.error < 45 && roll.error > -45)
+                if(roll.error < 30 && roll.error > -30)
                     altitude.output /= cos(roll.error / RAD_TO_DEGREES);
-                if(pitch.error < 45 && pitch.error > -45)
+                if(pitch.error < 30 && pitch.error > -30)
                     altitude.output /= cos(pitch.error / RAD_TO_DEGREES);
 
                 //Motor Output
