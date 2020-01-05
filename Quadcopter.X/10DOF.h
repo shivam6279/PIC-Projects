@@ -14,14 +14,14 @@
 #define GYRO_Y_GAIN -98
 #define GYRO_Z_GAIN 106
 
-#define COMPASS_X_MIN -4127.0f
-#define COMPASS_X_MAX 5292.0f
+#define COMPASS_X_MIN -5696.0f
+#define COMPASS_X_MAX 3441.0f
 
-#define COMPASS_Y_MIN -6046.0f
-#define COMPASS_Y_MAX 2360.0f
+#define COMPASS_Y_MIN -4147.0f
+#define COMPASS_Y_MAX 5727.0f
 
-#define COMPASS_Z_MIN -5420.0f
-#define COMPASS_Z_MAX 3117.0f
+#define COMPASS_Z_MIN -7901.0f
+#define COMPASS_Z_MAX 1308.0f
 
 #ifdef BMP180
 #define OVERSAMPLING 3  //0 - 3

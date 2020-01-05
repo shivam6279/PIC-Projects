@@ -26,7 +26,7 @@ void get_touchscreen();
 char serial_monitor[30][54];
 
 unsigned char receive1;
-volatile char rx_buffer[1024];
+volatile char rx_buffer_global[1024];
 int buffer_counter = 0;
 
 unsigned int rx_time_counter = 0;
@@ -42,6 +42,8 @@ void main() {
     unsigned char data_len;
     float data[10];
     char data_names[20][40];
+    
+    char rx_buffer[1024];
     
     init();
     adc_init();
@@ -73,8 +75,11 @@ void main() {
     
     while(1) {
         if(rx_data_rdy && rx_signal) {
+            for(i = 0; i < 1024; i++) {
+                rx_buffer[i] = rx_buffer_global[i];
+            }
             mode = rx_buffer[0];
-            if(mode = 'F') {
+            if(mode == 'F') {
                 data_len = DecodeStringF(rx_buffer, data_names, data);
             } else {
                 DecodeString(rx_buffer, data);
@@ -185,7 +190,7 @@ void main() {
                         if(!strcasecmp(data_names[i], "loop mode"))
                             break;
                     }
-                    if(i >= data len)
+                    if(i >= data_len)
                         break;
 
                     if((int)data[i] == 1)       WriteStr("RC      ", 7 * 6, 1 * 8, 0xF80F);
@@ -267,10 +272,10 @@ void __ISR_AT_VECTOR(_UART1_RX_VECTOR, IPL6SRS) Xbee(void) {
             rx_data_rdy = 1;
             rx_time_counter = 0;
             
-            rx_buffer[buffer_counter] = '\0';
+            rx_buffer_global[buffer_counter] = '\0';
             buffer_counter = 0;
         } else {
-            rx_buffer[buffer_counter++] = receive1;
+            rx_buffer_global[buffer_counter++] = receive1;
         }
     }while(U1STAbits.URXDA);
     U1STAbits.OERR = 0;

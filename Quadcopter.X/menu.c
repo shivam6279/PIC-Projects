@@ -6,7 +6,9 @@
 #include "pic32.h"
 #include "GPS.h"
 #include "AHRS.h"
+#include "altitude.h"
 #include <xc.h>
+#include <math.h>
 
 void Menu(PID *x, PID *y, PID *z, PID *a){
     bool flag_menu = 1; 
@@ -122,8 +124,8 @@ void Menu(PID *x, PID *y, PID *z, PID *a){
         XBeeWriteFloat(a->p, 2); XBeeWriteChar(',');
         XBeeWriteFloat(a->i, 2); XBeeWriteChar(',');
         XBeeWriteFloat(a->d, 2); XBeeWriteChar(',');
-        XBeeWriteInt(GPS_signal); XBeeWriteChar(',');
-        XBeeWriteInt(GPS_connected); XBeeWriteChar(',');        
+        XBeeWriteInt(GPS_connected); XBeeWriteChar(',');
+        XBeeWriteInt(GPS_signal); XBeeWriteChar(',');        
         XBeeWriteInt(arming_counter); 
         XBeeWriteChar('\r');
         
@@ -139,10 +141,6 @@ void ArmingSequence(float q[], float *gravity_mag, float *to_heading, float *to_
     int i;
     XYZ acc, gyro, compass;
     XYZ gravity;
-
-#if (board_version == 4 || board_version == 5) && USE_EEPROM == 1
-    eeprom_writePID(&roll, &pitch, &yaw, &altitude, &GPS);
-#endif
     
     WriteRGBLed(4095, 2500, 0); //Yellow
     

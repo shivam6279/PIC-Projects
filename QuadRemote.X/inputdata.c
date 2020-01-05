@@ -107,7 +107,7 @@ unsigned char DecodeString(char str[], float arr[]) {
     return index;
 }
 
-unsigned char DecodeStringF(char str[], char str_arr[][], float arr[]) {
+unsigned char DecodeStringF(char str[], char str_arr[][40], float arr[]) {
     int c, temp_c, index;
     static char temp[20];
 

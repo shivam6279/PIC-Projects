@@ -97,6 +97,10 @@ void main() {
         
         // Wait to be armed
         Menu(&roll, &pitch, &yaw, &altitude);
+        
+#if (board_version == 4 || board_version == 5) && USE_EEPROM == 1
+        eeprom_writePID(&roll, &pitch, &yaw, &altitude, &GPS);
+#endif
 
         // Arm motors
         // Set up quarternion - save parameters at take off
