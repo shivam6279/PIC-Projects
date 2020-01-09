@@ -9,6 +9,7 @@
 #include "bitbang_I2C.h"
 #include "PWM.h"
 #include "10DOF.h"
+#include "3x3Matrix.h"
 #include "altitude.h"
 #include "USART.h"
 #include "XBee.h"
@@ -45,11 +46,32 @@
 #define MODE_ALT_HOLD 2
 #define MODE_POS_HOLD 3
 
+XYZ RotateVectorEuler(XYZ v, float roll, float pitch, float yaw) {
+    XYZ ret;
+    
+    roll  /= RAD_TO_DEGREES;
+    pitch /= RAD_TO_DEGREES;
+    yaw   /= RAD_TO_DEGREES;
+
+    float cr = cos(roll);
+    float sr = sin(roll);
+    float cp = cos(pitch);
+    float sp = sin(pitch);
+    float cy = cos(yaw);
+    float sy = sin(yaw);
+
+    ret.x = v.x * cp*cy + v.y * (sr*sp*cy - cr*sy) + v.z * (sr*sy + cr*sp*cy);
+    ret.y = v.x * cp*sy + v.y * (cr*cy - sr*sp*sy) + v.z * (cr*sp*sy - sr*cy);
+    ret.z = v.x * (-sp) + v.y * sr*cp              + v.z * cr*cp;
+
+    return ret;
+}
+
 void main() {    
     Motors speed;
     PID pitch, roll, yaw, altitude, GPS;
     XYZ acc, gyro, compass;
-    XYZ acc_comp, acc_pure;                                                         //Tilt-compensated acceleration
+    XYZ acc_comp;                                                         //Tilt-compensated acceleration
     float gravity_mag;
     rx XBee_rx;
     float q[4];                                                                     //Quaternion
@@ -63,6 +85,9 @@ void main() {
     float IMU_loop_time;             
     char loop_mode, p_loop_mode;                                                    //Stabilize/alt-hold/pos-hold
     bool kill, p_kill;
+    float acc_sum = 0;
+
+    float temp_pitch, temp_roll, temp_heading;
     
     //Startup initialization   
     Init();    
@@ -83,6 +108,10 @@ void main() {
     //Set PID gains
     SetPIDGain(&roll, &pitch, &yaw, &altitude, &GPS);
     delay_ms(1500);
+    
+    roll_offset = 0;
+    pitch_offset = 0;
+    heading_offset = 0;
     
     while(1) {
         ResetPID(&roll, &pitch, &yaw, &altitude, &GPS); //Clear PID variables
@@ -142,8 +171,15 @@ void main() {
                 QuaternionToEuler(q, &roll.error, &pitch.error, &heading);
                 yaw.error = LimitAngle(heading - take_off_heading);
                 
+                QuaternionToTait_Bryan(q, &temp_roll, &temp_pitch, &temp_heading);
+
                 //Update altitude kalman filter
-                GetCompensatedAcc(q, gravity_mag, acc, &acc_pure, &acc_comp);
+                //GetCompensatedAcc(q, gravity_mag, acc, &acc_comp);
+
+                //acc_comp = RotateVectorEuler(acc, pitch.error, roll.error, 0.0);
+                acc_comp = MultiplyVectorQuaternion(acc, q);
+                acc_sum += (acc.z + gravity_mag) * IMU_loop_time;
+
                 altitude_KF_propagate(acc_comp.z, IMU_loop_time);         
 
                 if(XBee_rx.y2 > 1 && !kill) {
@@ -226,16 +262,24 @@ void main() {
             //--------------------------------------------------------Send Data to remote-----------------------------------------------------------------------------
             if(TxBufferEmpty() && tx_buffer_timer > 50) {
                 tx_buffer_timer = 0;
-                //ccompass = GetCompass();
-                XBeeWriteChar('C');
-                XBeeWriteFloat(pitch.error, 2); XBeeWriteChar(',');
-                XBeeWriteFloat(roll.error, 2); XBeeWriteChar(',');
-                XBeeWriteFloat(yaw.error, 2); XBeeWriteChar(',');
-                XBeeWriteFloat(altitude.error, 2); XBeeWriteChar(',');
-                XBeeWriteFloat(altitude.output, 8); XBeeWriteChar(',');                      
-                XBeeWriteFloat(longitude, 8); XBeeWriteChar(',');
-                XBeeWriteInt(loop_mode);
-                XBeeWriteChar('\r');
+//                XBeeWriteChar('C');
+//                XBeeWriteFloat(acc_comp.x, 2); XBeeWriteChar(',');
+//                XBeeWriteFloat(acc_comp.y, 2); XBeeWriteChar(',');
+//                XBeeWriteFloat(acc_comp.z, 2); XBeeWriteChar(',');
+//                XBeeWriteFloat(gravity_mag, 2); XBeeWriteChar(',');
+//                XBeeWriteFloat(acc_sum, 8); XBeeWriteChar(',');                      
+//                XBeeWriteFloat(longitude, 8); XBeeWriteChar(',');
+//                XBeeWriteInt(loop_mode);
+//                XBeeWriteChar('\r');
+                
+                XBeeWriteChar('Z');
+                XBeeWriteFloat(pitch.error, 2); XBeeWriteChar('\n');
+                XBeeWriteFloat(roll.error, 2); XBeeWriteChar('\n');
+                XBeeWriteFloat(temp_pitch, 2); XBeeWriteChar('\n');
+                XBeeWriteFloat(temp_roll, 2); XBeeWriteChar('\n');
+                XBeeWriteFloat(heading, 8); XBeeWriteChar('\n');                      
+                XBeeWriteFloat(temp_heading, 8); XBeeWriteChar('\n');
+                XBeeWriteFloat(longitude, 8); XBeeWriteChar('\r');
             }
             
             //--------------------------------------------------------PID Output to motors----------------------------------------------------------------------------
@@ -274,8 +318,8 @@ void main() {
                     pitch.offset = -GPS.output * cos((GPS_bearing_difference / RAD_TO_DEGREES) + PI);
                     roll.offset  =  GPS.output * sin((GPS_bearing_difference / RAD_TO_DEGREES) + PI);
 
-                    roll.offset  = LimitValue(roll.offset, -18, 18);
-                    pitch.offset = LimitValue(pitch.offset, -18, 18);
+                    roll.offset  = LimitValue(roll.offset, -max_pitch_roll_tilt, max_pitch_roll_tilt);
+                    pitch.offset = LimitValue(pitch.offset, -max_pitch_roll_tilt, max_pitch_roll_tilt);
                 }
 
                 //Roll/Pitch/Yaw - PID                

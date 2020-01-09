@@ -6,12 +6,22 @@
 
 #define IMU_BUFFER_SIZE 0
 
+#define ACC_GRAVITY 9.81f //m/s^2
+
+#define ACC_X_OFFSET 0
+#define ACC_Y_OFFSET 0
+#define ACC_Z_OFFSET 0
+
+#define ACC_X_GAIN 1
+#define ACC_Y_GAIN 1
+#define ACC_Z_GAIN 1
+
 #define GYRO_X_OFFSET -260
 #define GYRO_Y_OFFSET -470
 #define GYRO_Z_OFFSET 45
 
 #define GYRO_X_GAIN 98
-#define GYRO_Y_GAIN -98
+#define GYRO_Y_GAIN 98
 #define GYRO_Z_GAIN 106
 
 #define COMPASS_X_MIN -5696.0f
@@ -95,7 +105,9 @@ extern double ComputeTemperature(unsigned long int);
 extern double GetAltitude(unsigned long int);
 #endif
 
-extern XYZ gyro_offset, compass_offset, compass_gain;
+extern XYZ acc_offset, acc_gain;
+extern XYZ gyro_offset;
+extern XYZ compass_offset, compass_gain;
 extern unsigned int MS5611_fc[6];
 
 #if IMU_BUFFER_SIZE > 0

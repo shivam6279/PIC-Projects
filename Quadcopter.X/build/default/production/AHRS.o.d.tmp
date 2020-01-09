@@ -1,7 +1,0 @@
-build/default/production/AHRS.o:  \
-AHRS.c  \
-AHRS.h  \
-10DOF.h  \
-settings.h  \
-GPS.h  \
- PID.h 

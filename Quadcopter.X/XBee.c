@@ -105,8 +105,6 @@ rx ReadXBee() {
 void SendCalibrationData() {  
     const float avg_factor = 25;
     
-    unsigned char i;
-    
     XYZ acc, gyro, compass;
 
     XYZ compass_min, compass_max;
@@ -158,7 +156,7 @@ void SendCalibrationData() {
     
         delay_ms(35);
     }
-
+    ComputeCompassOffsetGain(compass_min, compass_max);
 #if (board_version == 4 || board_version == 5) && USE_EEPROM == 1
     eeprom_writeCalibration(compass_min, compass_max);
 #endif

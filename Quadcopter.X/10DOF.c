@@ -3,6 +3,8 @@
 #include "settings.h"
 #include <math.h>
 
+
+XYZ acc_offset, acc_gain;
 XYZ gyro_offset;
 XYZ compass_offset, compass_gain;
 
@@ -75,6 +77,15 @@ void MPU6050Init() {
         gyro_buffer[i] = (XYZ){0.0, 0.0, 0.0};
     }
 #endif
+
+    acc_offset.x = ACC_X_OFFSET;
+    acc_offset.y = ACC_Y_OFFSET;
+    acc_offset.z = ACC_Z_OFFSET;
+
+    acc_gain.x = ACC_X_GAIN;
+    acc_gain.y = ACC_Y_GAIN;
+    acc_gain.z = ACC_Z_GAIN;
+
     gyro_offset.x = GYRO_X_OFFSET;
     gyro_offset.y = GYRO_Y_OFFSET;
     gyro_offset.z = GYRO_Z_OFFSET;
@@ -84,9 +95,12 @@ XYZ GetRawAcc() {
     XYZ acc;
     unsigned char temp[6];
     I2C_ReadRegisters(0xD0, 0x3B, temp, 6);
-    acc.y = (signed short)(temp[0] << 8 | temp[1]);
-    acc.x = (signed short)(temp[2] << 8 | temp[3]) * (-1);
-    acc.z = (signed short)(temp[4] << 8 | temp[5]) * (-1);
+
+    // Order: XH, XL, YH, YZ, ZH, ZL
+
+    acc.y = -(signed short)(temp[0] << 8 | temp[1]);
+    acc.x = (signed short)(temp[2] << 8 | temp[3]);
+    acc.z = (signed short)(temp[4] << 8 | temp[5]);
     return acc;
 }
 
@@ -105,6 +119,11 @@ XYZ GetAcc() {
     
     acc = VectorScale(acc, 1.0f / (float)IMU_BUFFER_SIZE);
 #endif
+
+    acc.x = (acc.x - acc_offset.x) * ACC_GRAVITY / 16384.0f * acc_gain.x;
+    acc.y = (acc.y - acc_offset.y) * ACC_GRAVITY / 16384.0f * acc_gain.y;
+    acc.z = (acc.z - acc_offset.z) * ACC_GRAVITY / 16384.0f * acc_gain.z;
+
     return acc;
 }
 
@@ -112,7 +131,10 @@ XYZ GetRawGyro() {
     XYZ gyro;
     unsigned char temp[6];
     I2C_ReadRegisters(0xD0, 0x43, temp, 6);
-    gyro.y = (signed short)(temp[0] << 8 | temp[1]);
+
+    // Order: XH, XL, YH, YZ, ZH, ZL
+
+    gyro.y = -(signed short)(temp[0] << 8 | temp[1]);
     gyro.x = (signed short)(temp[2] << 8 | temp[3]);
     gyro.z = (signed short)(temp[4] << 8 | temp[5]);
     return gyro;
@@ -183,6 +205,9 @@ void GetRawCompass() {
     I2C_WriteRegisters(0xD0, (unsigned char[2]){0x6A, 0x20}, 2);
     I2C_WriteRegisters(0xD0, (unsigned char[2]){0x37, 0x00}, 2);
 #endif
+
+    // Order: XH, XL, YH, YZ, ZH, ZL
+    
     compass.y = (signed short)(temp[0] << 8 | temp[1]);
     compass.z = (signed short)(temp[2] << 8 | temp[3]);
     compass.x = (signed short)(temp[4] << 8 | temp[5]);
@@ -275,6 +300,8 @@ XYZ GetRawCompass() {
     I2C_WriteRegisters(0xD0, (unsigned char[2]){0x6A, 0x00}, 2);
     I2C_WriteRegisters(0xD0, (unsigned char[2]){0x37, 0x02}, 2);
 #endif
+
+    // Order: XL, XH, YL, YH, ZL, ZH
     
     //if(QMC5883DataRdy()) {
         I2C_ReadRegisters(QMC5883L_ADDR, QMC5883L_X_LSB, temp, 6);

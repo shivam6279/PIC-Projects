@@ -8,26 +8,45 @@ float roll_offset = ROLLOFFSET;
 float pitch_offset = PITCHOFFSET;
 float heading_offset = HEADINGOFFSET;
 
-void MultiplyVectorQuarternion(float q[4], XYZ r, XYZ *v) {
-    float num1 = q[0] * 2.0;
-	float num2 = q[1] * 2.0;
-	float num3 = q[2] * 2.0;
-	float num4 = q[0] * num1;
-	float num5 = q[1] * num2;
-	float num6 = q[2] * num3;
-	float num7 = q[0] * num2;
-	float num8 = q[0] * num3;
-	float num9 = q[1] * num3;
-	float num10 = q[3] * num1;
-	float num11 = q[3] * num2;
-	float num12 = q[3] * num3;
+XYZ MultiplyVectorQuaternion(XYZ v, float q_in[4]) {
+    XYZ ret;
+    float q[4];
+    q[0] = q_in[0];
+    q[1] = -q_in[1];
+    q[2] = -q_in[2];
+    q[3] = -q_in[3];
+
+    // float qw_2 = q[0]*q[0];
+    // float qi_2 = q[1]*q[1];
+    // float qj_2 = q]2]*q[2];
+    // float qk_2 = q[3]*q[3];
+    // float qwi = q[0]*q[1];
+    // float qwj = q[0]*q[2];
+    // float qwk = q[0]*q[3];
+    // float qij = q[1]*q[2];
+    // float qik = q[1]*q[3];
+    // float qjk = q[2]*q[3];
+
+    float r11 = 1 - 2*(q[2]*q[2] + q[3]*q[3]);
+	float r12 = 2*(q[1]*q[2] - q[3]*q[0]);
+	float r13 = 2*(q[1]*q[3] + q[2]*q[0]);
+	float r21 = 2*(q[1]*q[2] + q[3]*q[0]);
+	float r22 = 1 - 2*(q[1]*q[1] + q[3]*q[3]);
+	float r23 = 2*(q[2]*q[3] - q[1]*q[0]);
+	float r31 = 2*(q[1]*q[3] - q[2]*q[0]);
+	float r32 = 2*(q[2]*q[3] + q[1]*q[0]);
+	float r33 = 1 - 2*(q[1]*q[1] + q[2]*q[2]);
     
-    v->x = (1.0 - (num5 + num6)) * r.x + (num7 - num12) * r.y + (num8 + num11) * r.z;
-    v->y = (num7 + num12) * r.x + (1.0 - (num4 + num6)) * r.y + (num9 - num10) * r.z;
-    v->z = (num8 - num11) * r.x + (num9 + num10) * r.y + (1.0 - (num4 + num5)) * r.z;
+    ret.x = v.x * r11 + v.y * r12 + v.z * r13;
+    ret.y = v.x * r21 + v.y * r22 + v.z * r23;
+    ret.z = v.x * r31 + v.y * r32 + v.z * r33;
+
+    return v;
 }
 
-void RotateVector(float roll, float pitch, float yaw, XYZ *v) {
+XYZ RotateVectorEuler(XYZ v, float roll, float pitch, float yaw) {
+    XYZ r;
+
     float rcos = cos(roll / RAD_TO_DEGREES);
     float rsin = sin(roll / RAD_TO_DEGREES);
     
@@ -46,28 +65,38 @@ void RotateVector(float roll, float pitch, float yaw, XYZ *v) {
     float c1 = -psin;
     float c2 = pcos * rsin;
     float c3 = pcos * rcos;
-    
-    XYZ temp;
-    temp.x = v->x;
-    temp.y = v->y;
-    temp.z = v->z;
-    
-    v->x = temp.x * a1 + temp.y * a2 + temp.z * a3;
-    v->y = temp.x * b1 + temp.y * b2 + temp.z * b3;
-    v->z = temp.x * c1 + temp.y * c2 + temp.z * c3;
+
+    r.x = v.x * a1 + v.y * a2 + v.z * a3;
+    r.y = v.x * b1 + v.y * b2 + v.z * b3;
+    r.z = v.x * c1 + v.y * c2 + v.z * c3;
+
+    return r;
 }
 
 void QuaternionToEuler(float q[], float *roll, float *pitch, float *yaw) {
     float a = q[2] * q[2];
 
     //Converting quaternion to Euler angles
-    *roll = -(asin(2.0f * (q[0] * q[2] - q[3] * q[1]))) * RAD_TO_DEGREES - roll_offset;
-    *pitch = (atan2(2.0f * (q[0] * q[1] + q[2] * q[3]), 1.0f - 2.0f * (q[1] * q[1] + a)) + PI) * RAD_TO_DEGREES - pitch_offset;
-    *yaw = -atan2(2.0f * (q[0] * q[3] + q[1] * q[2]), 1.0f - 2.0f * (a + q[3] * q[3])) * RAD_TO_DEGREES - heading_offset;
+    *roll = -(asin(2.0f * (q[0] * q[2] - q[3] * q[1]))) * RAD_TO_DEGREES;
+    *pitch = (atan2(2.0f * (q[0] * q[1] + q[2] * q[3]), 1.0f - 2.0f * (q[1] * q[1] + a)) + PI) * RAD_TO_DEGREES;
+    *yaw = -atan2(2.0f * (q[0] * q[3] + q[1] * q[2]), 1.0f - 2.0f * (a + q[3] * q[3])) * RAD_TO_DEGREES;
     
-    *roll = LimitAngle(*roll);
-    *pitch = LimitAngle(*pitch);
-    *yaw = LimitAngle(*yaw);
+    *roll = LimitAngle(*roll - roll_offset);
+    *pitch = LimitAngle(*pitch - pitch_offset);
+    *yaw = LimitAngle(*yaw - heading_offset);
+}
+
+void QuaternionToTait_Bryan(float q[], float *roll, float *pitch, float *yaw) {
+    float a = q[2] * q[2];
+
+    //Converting quaternion to Euler angles
+    *pitch = -atan2(q[2]*q[3] + q[0]*q[1], 0.5f - (q[1]*q[1] + a)) * RAD_TO_DEGREES;
+    *roll = asin(-2*(q[1]*q[3] - q[0]*q[2])) * RAD_TO_DEGREES;
+    *yaw = -atan2(q[1]*q[2] + q[0]*q[3], 0.5f - (a + q[3]*q[3])) * RAD_TO_DEGREES;
+
+    *roll = LimitAngle(*roll - roll_offset);
+    *pitch = LimitAngle(*pitch - pitch_offset);
+    *yaw = LimitAngle(*yaw - heading_offset);
 }
 
 void MadgwickQuaternionUpdate(float q[], XYZ a, XYZ g, XYZ m, float deltat) {
@@ -172,7 +201,7 @@ float invSqrt(float x) {
     return y;
 }
 
-void GetCompensatedAcc(float q[4], float gravity_mag, XYZ acc, XYZ *acc_pure, XYZ *acc_comp) {
+void GetCompensatedAcc(float q[4], float gravity_mag, XYZ acc, XYZ *acc_comp) {
     float num1 = q[0] * 2.0;
     float num2 = q[1] * 2.0;
     float num3 = q[2] * 2.0;
@@ -191,13 +220,13 @@ void GetCompensatedAcc(float q[4], float gravity_mag, XYZ acc, XYZ *acc_pure, XY
     gravity.y = num7 + num12;
     gravity.z = q[0] * q[0] - q[1] * q[1] - q[2] * q[2] + q[3] * q[3];
     
-    acc_pure->x = -ACC_GRAVITY * (acc.x / gravity_mag - gravity.x);
-    acc_pure->y = -ACC_GRAVITY * (acc.y / gravity_mag - gravity.y);
-    acc_pure->z = -ACC_GRAVITY * (acc.z / gravity_mag - gravity.z);  
+//    acc_pure->x = -ACC_GRAVITY * (acc.x / gravity_mag - gravity.x);
+//    acc_pure->y = -ACC_GRAVITY * (acc.y / gravity_mag - gravity.y);
+//    acc_pure->z = -ACC_GRAVITY * (acc.z / gravity_mag - gravity.z);  
 
-    acc_comp->x = (1.0 - (num5 + num6)) * acc_pure->x + (num7 - num12) * acc_pure->y + (num8 + num11) * acc_pure->z;
-    acc_comp->y = (num7 + num12) * acc_pure->x + (1.0 - (num4 + num6)) * acc_pure->y + (num9 - num10) * acc_pure->z;
-    acc_comp->z = -1 * ((num8 - num11) * acc_pure->x + (num9 + num10) * acc_pure->y + (1.0 - (num4 + num5)) * acc_pure->z);
+    acc_comp->x = (1.0 - (num5 + num6)) * acc.x + (num7 - num12) * acc.y + (num8 + num11) * acc.z;
+    acc_comp->y = (num7 + num12) * acc.x + (1.0 - (num4 + num6)) * acc.y + (num9 - num10) * acc.z;
+    acc_comp->z = -1 * ((num8 - num11) * acc.x + (num9 + num10) * acc.y + (1.0 - (num4 + num5)) * acc.z);
 }
 
 static float altitude_kf_P[2][2] = { { 1.0f, 0.0f },
