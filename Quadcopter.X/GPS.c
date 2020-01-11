@@ -115,21 +115,21 @@ void __ISR_AT_VECTOR(_TIMER_5_VECTOR, IPL4SRS) GPS_timer(void) {
 
 double DifferenceLatLon(double lat1, double lon1, double lat2, double lon2) {
     double a;
-    lat1 /= RAD_TO_DEGREES; 
-    lat2 /= RAD_TO_DEGREES; 
-    lon1 /= RAD_TO_DEGREES; 
-    lon2 /= RAD_TO_DEGREES;
+    lat1 = TO_RAD(lat1); 
+    lat2 = TO_RAD(lat2); 
+    lon1 = TO_RAD(lon1);  
+    lon2 = TO_RAD(lon2); 
     a = pow(sin((lat2 - lat1) / 2), 2) + cos(lat1) * cos(lat2) * pow(sin((lon2 - lon1) / 2), 2);
     a = 2 * atan2(sqrt(a), sqrt(1 - a));
     return (6371000.0 * a);
 }
 
 float DifferenceBearing(double lat1, double lon1, double lat2, double lon2) {
-    lat1 /= RAD_TO_DEGREES; 
-    lat2 /= RAD_TO_DEGREES; 
-    lon1 /= RAD_TO_DEGREES; 
-    lon2 /= RAD_TO_DEGREES;
-    return (atan2(-(sin(lon2 - lon1) * cos(lat2)), (cos(lat1) * sin(lat2) - sin(lat1) * cos(lat2) * cos(lon2 - lon1)))) * RAD_TO_DEGREES;
+    lat1 = TO_RAD(lat1); 
+    lat2 = TO_RAD(lat2); 
+    lon1 = TO_RAD(lon1);  
+    lon2 = TO_RAD(lon2); 
+    return TO_DEG(atan2(-(sin(lon2 - lon1) * cos(lat2)), (cos(lat1) * sin(lat2) - sin(lat1) * cos(lat2) * cos(lon2 - lon1))));
 }
 
 void GetLocation() {

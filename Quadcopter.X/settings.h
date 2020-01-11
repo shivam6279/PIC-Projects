@@ -14,9 +14,11 @@
 #define MAX_YAW_RATE 180.0f         // degrees/sec
 #define MAX_ALTITUDE_RATE 0.7f      // meters/sec
 
-#define ROLLOFFSET -1.2f				//degrees
-#define PITCHOFFSET -2.6f			//degrees
-#define HEADINGOFFSET -87.0f       	//degrees
+#define ROLLOFFSET -1.2f			// degrees
+#define PITCHOFFSET -2.6f			// degrees
+#define HEADINGOFFSET -87.0f       	// degrees
+
+#define MIN_THROTTLE_INTEGRATION 3
 
 #define USE_EEPROM 0
 
@@ -126,11 +128,13 @@
     #define MOTOR_SPIN 1.0f
 #endif
 
-//IMU
+//IMU'
 #define QMC5883	//HMC5883 or QMC5883
 #define MS5611	//BMP180 or MS5611
 
-#define PI 3.14159265
-#define RAD_TO_DEGREES 57.29577951
+#define PI 3.1415926535897931f
+
+#define TO_DEG(x) (x * 180.0 / PI)
+#define TO_RAD(x) (x * PI / 180.0)
 
 #endif

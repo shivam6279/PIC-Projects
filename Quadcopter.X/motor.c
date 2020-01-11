@@ -18,9 +18,9 @@ void MotorsReset(Motors *x) {
 }
 
 void CalibrateESC() {
-    WriteRGBLed(0, 0, 4095);   
+    WriteRGBLed(0, 0, 255);   
     delay_ms(5000); 
-    WriteRGBLed(0, 4095, 4095); 
+    WriteRGBLed(0, 255, 255); 
 
     write_pwm(MOTOR_UPRIGHT_PIN,   MOTOR_MAX);
     write_pwm(MOTOR_DOWNLEFT_PIN,  MOTOR_MAX);

@@ -27,34 +27,38 @@ XYZ MultiplyVectorQuaternion(XYZ v, float q_in[4]) {
     // float qik = q[1]*q[3];
     // float qjk = q[2]*q[3];
 
-    float r11 = 1 - 2*(q[2]*q[2] + q[3]*q[3]);
-	float r12 = 2*(q[1]*q[2] - q[3]*q[0]);
-	float r13 = 2*(q[1]*q[3] + q[2]*q[0]);
-	float r21 = 2*(q[1]*q[2] + q[3]*q[0]);
-	float r22 = 1 - 2*(q[1]*q[1] + q[3]*q[3]);
-	float r23 = 2*(q[2]*q[3] - q[1]*q[0]);
-	float r31 = 2*(q[1]*q[3] - q[2]*q[0]);
-	float r32 = 2*(q[2]*q[3] + q[1]*q[0]);
-	float r33 = 1 - 2*(q[1]*q[1] + q[2]*q[2]);
+    float r11 = 1.0f - 2.0f*(q[2]*q[2] + q[3]*q[3]);
+	float r12 = 2.0f*(q[1]*q[2] - q[3]*q[0]);
+	float r13 = 2.0f*(q[1]*q[3] + q[2]*q[0]);
+	float r21 = 2.0f*(q[1]*q[2] + q[3]*q[0]);
+	float r22 = 1.0f - 2.0f*(q[1]*q[1] + q[3]*q[3]);
+	float r23 = 2.0f*(q[2]*q[3] - q[1]*q[0]);
+	float r31 = 2.0f*(q[1]*q[3] - q[2]*q[0]);
+	float r32 = 2.0f*(q[2]*q[3] + q[1]*q[0]);
+	float r33 = 1.0f - 2.0f*(q[1]*q[1] + q[2]*q[2]);
     
     ret.x = v.x * r11 + v.y * r12 + v.z * r13;
     ret.y = v.x * r21 + v.y * r22 + v.z * r23;
     ret.z = v.x * r31 + v.y * r32 + v.z * r33;
 
-    return v;
+    return ret;
 }
 
 XYZ RotateVectorEuler(XYZ v, float roll, float pitch, float yaw) {
     XYZ r;
+    
+    roll = TO_RAD(roll);
+    pitch = TO_RAD(pitch);
+    yaw = TO_RAD(yaw);
 
-    float rcos = cos(roll / RAD_TO_DEGREES);
-    float rsin = sin(roll / RAD_TO_DEGREES);
+    float rcos = cos(roll);
+    float rsin = sin(roll);
     
-    float pcos = cos(pitch / RAD_TO_DEGREES);
-    float psin = sin(pitch / RAD_TO_DEGREES);
+    float pcos = cos(pitch);
+    float psin = sin(pitch);
     
-    float ycos = cos(yaw / RAD_TO_DEGREES);
-    float ysin = sin(yaw / RAD_TO_DEGREES);
+    float ycos = cos(yaw);
+    float ysin = sin(yaw);
     
     float a1 = ycos * pcos;
     float a2 = ycos * psin * rsin - ysin * pcos;
@@ -74,26 +78,13 @@ XYZ RotateVectorEuler(XYZ v, float roll, float pitch, float yaw) {
 }
 
 void QuaternionToEuler(float q[], float *roll, float *pitch, float *yaw) {
-    float a = q[2] * q[2];
+    float q2_2 = q[2] * q[2];
 
     //Converting quaternion to Euler angles
-    *roll = -(asin(2.0f * (q[0] * q[2] - q[3] * q[1]))) * RAD_TO_DEGREES;
-    *pitch = (atan2(2.0f * (q[0] * q[1] + q[2] * q[3]), 1.0f - 2.0f * (q[1] * q[1] + a)) + PI) * RAD_TO_DEGREES;
-    *yaw = -atan2(2.0f * (q[0] * q[3] + q[1] * q[2]), 1.0f - 2.0f * (a + q[3] * q[3])) * RAD_TO_DEGREES;
+    *roll = TO_DEG(atan2(q[2]*q[3] + q[0]*q[1], 0.5f - (q[1]*q[1] + q2_2)));
+    *pitch = TO_DEG(asin(2.0f * (q[0]*q[2] - q[1]*q[3])) + PI);
+    *yaw = TO_DEG(atan2((q[0]*q[3] + q[1]*q[2]), 0.5f - (q2_2 + q[3]*q[3])));
     
-    *roll = LimitAngle(*roll - roll_offset);
-    *pitch = LimitAngle(*pitch - pitch_offset);
-    *yaw = LimitAngle(*yaw - heading_offset);
-}
-
-void QuaternionToTait_Bryan(float q[], float *roll, float *pitch, float *yaw) {
-    float a = q[2] * q[2];
-
-    //Converting quaternion to Euler angles
-    *pitch = -atan2(q[2]*q[3] + q[0]*q[1], 0.5f - (q[1]*q[1] + a)) * RAD_TO_DEGREES;
-    *roll = asin(-2*(q[1]*q[3] - q[0]*q[2])) * RAD_TO_DEGREES;
-    *yaw = -atan2(q[1]*q[2] + q[0]*q[3], 0.5f - (a + q[3]*q[3])) * RAD_TO_DEGREES;
-
     *roll = LimitAngle(*roll - roll_offset);
     *pitch = LimitAngle(*pitch - pitch_offset);
     *yaw = LimitAngle(*yaw - heading_offset);
@@ -107,9 +98,9 @@ void MadgwickQuaternionUpdate(float q[], XYZ a, XYZ g, XYZ m, float deltat) {
     float _2q0mx, _2q0my, _2q0mz, _2q1mx, _2bx, _2bz, _4bx, _4bz, _2q0, _2q1, _2q2, _2q3, _2q0q2, _2q2q3, q0q0, q0q1, q0q2, q0q3, q1q1, q1q2, q1q3, q2q2, q2q3, q3q3;
 
     // Convert gyroscope degrees/sec to radians/sec
-    g.x *= 0.0174533f;
-    g.y *= 0.0174533f;
-    g.z *= 0.0174533f;
+    g.x = TO_RAD(g.x);
+    g.y = TO_RAD(g.y);
+    g.z = TO_RAD(g.z);
 
     // Rate of change of quaternion from gyroscope
     qDot1 = 0.5f * (-q[1] * g.x - q[2] * g.y - q[3] * g.z);
@@ -201,37 +192,9 @@ float invSqrt(float x) {
     return y;
 }
 
-void GetCompensatedAcc(float q[4], float gravity_mag, XYZ acc, XYZ *acc_comp) {
-    float num1 = q[0] * 2.0;
-    float num2 = q[1] * 2.0;
-    float num3 = q[2] * 2.0;
-    float num4 = q[0] * num1;
-    float num5 = q[1] * num2;
-    float num6 = q[2] * num3;
-    float num7 = q[0] * num2;
-    float num8 = q[0] * num3;
-    float num9 = q[1] * num3;
-    float num10 = q[3] * num1;
-    float num11 = q[3] * num2;
-    float num12 = q[3] * num3;
-    XYZ gravity;
-    
-    gravity.x = num11 - num8;
-    gravity.y = num7 + num12;
-    gravity.z = q[0] * q[0] - q[1] * q[1] - q[2] * q[2] + q[3] * q[3];
-    
-//    acc_pure->x = -ACC_GRAVITY * (acc.x / gravity_mag - gravity.x);
-//    acc_pure->y = -ACC_GRAVITY * (acc.y / gravity_mag - gravity.y);
-//    acc_pure->z = -ACC_GRAVITY * (acc.z / gravity_mag - gravity.z);  
-
-    acc_comp->x = (1.0 - (num5 + num6)) * acc.x + (num7 - num12) * acc.y + (num8 + num11) * acc.z;
-    acc_comp->y = (num7 + num12) * acc.x + (1.0 - (num4 + num6)) * acc.y + (num9 - num10) * acc.z;
-    acc_comp->z = -1 * ((num8 - num11) * acc.x + (num9 + num10) * acc.y + (1.0 - (num4 + num5)) * acc.z);
-}
 
 static float altitude_kf_P[2][2] = { { 1.0f, 0.0f },
                                      { 0.0f, 1.0f } };
-
 static float altitude_kf_h = 0.0;
 static float altitude_kf_v = 0.0;
 

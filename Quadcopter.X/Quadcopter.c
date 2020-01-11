@@ -46,27 +46,6 @@
 #define MODE_ALT_HOLD 2
 #define MODE_POS_HOLD 3
 
-XYZ RotateVectorEuler(XYZ v, float roll, float pitch, float yaw) {
-    XYZ ret;
-    
-    roll  /= RAD_TO_DEGREES;
-    pitch /= RAD_TO_DEGREES;
-    yaw   /= RAD_TO_DEGREES;
-
-    float cr = cos(roll);
-    float sr = sin(roll);
-    float cp = cos(pitch);
-    float sp = sin(pitch);
-    float cy = cos(yaw);
-    float sy = sin(yaw);
-
-    ret.x = v.x * cp*cy + v.y * (sr*sp*cy - cr*sy) + v.z * (sr*sy + cr*sp*cy);
-    ret.y = v.x * cp*sy + v.y * (cr*cy - sr*sp*sy) + v.z * (cr*sp*sy - sr*cy);
-    ret.z = v.x * (-sp) + v.y * sr*cp              + v.z * cr*cp;
-
-    return ret;
-}
-
 void main() {    
     Motors speed;
     PID pitch, roll, yaw, altitude, GPS;
@@ -86,12 +65,10 @@ void main() {
     char loop_mode, p_loop_mode;                                                    //Stabilize/alt-hold/pos-hold
     bool kill, p_kill;
     float acc_sum = 0;
-
-    float temp_pitch, temp_roll, temp_heading;
     
     //Startup initialization   
     Init();    
-    WriteRGBLed(4095, 0, 0);                            //Red
+    WriteRGBLed(255, 0, 0);                            //Red
     delay_ms(100);
     Init_10DOF();    
     //Calibrate ESC
@@ -102,26 +79,25 @@ void main() {
     delay_ms(100);
     //Calibrate sensors
     if(XBee.y1 > 13 && XBee.x1 > 13) {                  //display sensor readings
-        WriteRGBLed(4095, 0, 3800);                     //Magenta
-        SendCalibrationData();
+        WriteRGBLed(255, 0, 240);                       //Magenta
+        //SendCalibrationData();
+        CalibrationMenu();
     }    
     //Set PID gains
     SetPIDGain(&roll, &pitch, &yaw, &altitude, &GPS);
     delay_ms(1500);
-    
-    roll_offset = 0;
-    pitch_offset = 0;
-    heading_offset = 0;
-    
+
     while(1) {
         ResetPID(&roll, &pitch, &yaw, &altitude, &GPS); //Clear PID variables
         ResetQuaternion(q);                             //Reset quaternion
-        MotorsReset(&speed);                            //Clear motor speeds   
+        MotorsReset(&speed);        
+                            //Clear motor speeds   
 #if (board_version == 4 || board_version == 5) && USE_EEPROM == 1
         if(!eeprom_readPID(&roll, &pitch, &yaw, &altitude, &GPS)) {
             SetPIDGain(&roll, &pitch, &yaw, &altitude, &GPS);
         }
         eeprom_readCalibration();
+        eeprom_readOffsets();
 #endif
         
         // Wait to be armed
@@ -157,13 +133,13 @@ void main() {
                 acc = GetAcc();
                 gyro = GetGyro();
 
-#if board_version == 4 || board_version == 5
+            #if board_version == 4 || board_version == 5
                 if(ToF_counter >= 10) {
                     ToF_distance = ToF_readRange();
                     if(ToF_valueGood() != 0)
                         ToF_distance = -1;
                 }
-#endif
+            #endif
 
                 //Update quaternion
                 MadgwickQuaternionUpdate(q, acc, gyro, compass, IMU_loop_time);
@@ -171,18 +147,14 @@ void main() {
                 QuaternionToEuler(q, &roll.error, &pitch.error, &heading);
                 yaw.error = LimitAngle(heading - take_off_heading);
                 
-                QuaternionToTait_Bryan(q, &temp_roll, &temp_pitch, &temp_heading);
-
                 //Update altitude kalman filter
-                //GetCompensatedAcc(q, gravity_mag, acc, &acc_comp);
-
-                //acc_comp = RotateVectorEuler(acc, pitch.error, roll.error, 0.0);
-                acc_comp = MultiplyVectorQuaternion(acc, q);
+                acc_comp = RotateVectorEuler(acc, roll.error+roll_offset, pitch.error+pitch_offset, 0.0);
+                //acc_comp = MultiplyVectorQuaternion(acc, q);
                 acc_sum += (acc.z + gravity_mag) * IMU_loop_time;
 
                 altitude_KF_propagate(acc_comp.z, IMU_loop_time);         
 
-                if(XBee_rx.y2 > 1 && !kill) {
+                if(XBee_rx.y2 > MIN_THROTTLE_INTEGRATION && !kill) {
                     PIDIntegrateAngle(&roll,  IMU_loop_time);
                     PIDIntegrateAngle(&pitch, IMU_loop_time);
                     PIDIntegrateAngle(&yaw,   IMU_loop_time);
@@ -225,13 +197,13 @@ void main() {
 
                 if(p_loop_mode != loop_mode || p_kill != kill) {
                     if(kill) 
-                        WriteRGBLed(4095, 4095, 4095);  //White
+                        WriteRGBLed(255, 255, 255);  //White
                     else if(loop_mode == MODE_STABILIZE) 
-                        WriteRGBLed(0, 4095, 0);        //Green
+                        WriteRGBLed(0, 255, 0);        //Green
                     else if(loop_mode == MODE_ALT_HOLD) 
-                        WriteRGBLed(0, 4095, 4095);     //Cyan
+                        WriteRGBLed(0, 255, 255);     //Cyan
                     else if(loop_mode == MODE_POS_HOLD) 
-                        WriteRGBLed(4095, 0, 4095);     //Magenta
+                        WriteRGBLed(255, 0, 255);     //Magenta
 
                     if(loop_mode == MODE_ALT_HOLD) {
                         altitude_setpoint = (float)XBee_rx.y2 / THROTTLE_MAX * MAX_SPEED;
@@ -251,11 +223,11 @@ void main() {
                     if(XBee_rx.x1 == 0 && XBee_rx.y1 == 0) 
                         remote_angle = 0;
                     else 
-                        remote_angle = -atan2((float)XBee_rx.x1, (float)XBee_rx.y1) * RAD_TO_DEGREES;                       //Angle with respect to pilot/starting position
+                        remote_angle = TO_DEG(-atan2((float)XBee_rx.x1, (float)XBee_rx.y1));                                //Angle with respect to pilot/starting position
                     remote_angle_difference = LimitAngle(yaw.error - remote_angle);                                         //Remote's angle with respect to quad's current direction
 
-                    pitch.offset = max_pitch_roll_tilt * remote_magnitude / REMOTE_MAX * -cos(remote_angle_difference / RAD_TO_DEGREES);
-                    roll.offset  = max_pitch_roll_tilt * remote_magnitude / REMOTE_MAX *  sin(remote_angle_difference / RAD_TO_DEGREES);
+                    pitch.offset = max_pitch_roll_tilt * remote_magnitude / REMOTE_MAX * -cos(TO_RAD(remote_angle_difference));
+                    roll.offset  = max_pitch_roll_tilt * remote_magnitude / REMOTE_MAX *  sin(TO_RAD(remote_angle_difference));
                 }
             }
 
@@ -275,10 +247,10 @@ void main() {
                 XBeeWriteChar('Z');
                 XBeeWriteFloat(pitch.error, 2); XBeeWriteChar('\n');
                 XBeeWriteFloat(roll.error, 2); XBeeWriteChar('\n');
-                XBeeWriteFloat(temp_pitch, 2); XBeeWriteChar('\n');
-                XBeeWriteFloat(temp_roll, 2); XBeeWriteChar('\n');
-                XBeeWriteFloat(heading, 8); XBeeWriteChar('\n');                      
-                XBeeWriteFloat(temp_heading, 8); XBeeWriteChar('\n');
+                XBeeWriteFloat(yaw.error, 2); XBeeWriteChar('\n');
+                XBeeWriteFloat(altitude.error, 2); XBeeWriteChar('\n');
+                XBeeWriteFloat(altitude.output, 8); XBeeWriteChar('\n');                      
+                XBeeWriteFloat(latitude, 8); XBeeWriteChar('\n');
                 XBeeWriteFloat(longitude, 8); XBeeWriteChar('\r');
             }
             
@@ -315,8 +287,8 @@ void main() {
                     GPS_bearing_difference = LimitAngle(heading - DifferenceBearing(take_off_latitude, take_off_longitude, latitude, longitude));
                     GPS.output = (GPS.p * GPS.error); 
 
-                    pitch.offset = -GPS.output * cos((GPS_bearing_difference / RAD_TO_DEGREES) + PI);
-                    roll.offset  =  GPS.output * sin((GPS_bearing_difference / RAD_TO_DEGREES) + PI);
+                    pitch.offset = -GPS.output * cos(TO_RAD(GPS_bearing_difference) + PI);
+                    roll.offset  =  GPS.output * sin(TO_RAD(GPS_bearing_difference) + PI);
 
                     roll.offset  = LimitValue(roll.offset, -max_pitch_roll_tilt, max_pitch_roll_tilt);
                     pitch.offset = LimitValue(pitch.offset, -max_pitch_roll_tilt, max_pitch_roll_tilt);
@@ -344,9 +316,9 @@ void main() {
                 }
                 
                 if(roll.error < 30 && roll.error > -30)
-                    altitude.output /= cos(roll.error / RAD_TO_DEGREES);
+                    altitude.output /= cos(TO_RAD(roll.error));
                 if(pitch.error < 30 && pitch.error > -30)
-                    altitude.output /= cos(pitch.error / RAD_TO_DEGREES);
+                    altitude.output /= cos(TO_RAD(pitch.error));
 
                 //Motor Output
 

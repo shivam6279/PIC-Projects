@@ -165,11 +165,11 @@ void StrWriteFloat(double a, unsigned char right, volatile char str[], unsigned 
         str[n] = ((long int)(a * tens) % 10) + 48;
 }
 
-void WriteRGBLed(unsigned int r, unsigned int g, unsigned int b) {
-#if board_version == 4
-    r = (float)r * (float)PWM_MAX / 4095.0f;
-    g = (float)g * (float)PWM_MAX / 4095.0f;
-    b = (float)b * (float)PWM_MAX / 4095.0f;
+void WriteRGBLed(unsigned char r, unsigned char g, unsigned char b) {
+#if board_version == 4 || board_version == 5
+    r = (float)r * (float)PWM_MAX / 255.0f;
+    g = (float)g * (float)PWM_MAX / 255.0f;
+    b = (float)b * (float)PWM_MAX / 255.0f;
 #endif
     write_pwm(RGBLED_RED_PIN,   r); 
     write_pwm(RGBLED_GREEN_PIN, g); 

@@ -98,9 +98,9 @@ XYZ GetRawAcc() {
 
     // Order: XH, XL, YH, YZ, ZH, ZL
 
-    acc.y = -(signed short)(temp[0] << 8 | temp[1]);
-    acc.x = (signed short)(temp[2] << 8 | temp[3]);
-    acc.z = (signed short)(temp[4] << 8 | temp[5]);
+    acc.x = -(signed short)(temp[0] << 8 | temp[1]);
+    acc.y =  (signed short)(temp[2] << 8 | temp[3]);
+    acc.z = -(signed short)(temp[4] << 8 | temp[5]);
     return acc;
 }
 
@@ -134,9 +134,9 @@ XYZ GetRawGyro() {
 
     // Order: XH, XL, YH, YZ, ZH, ZL
 
-    gyro.y = -(signed short)(temp[0] << 8 | temp[1]);
-    gyro.x = (signed short)(temp[2] << 8 | temp[3]);
-    gyro.z = (signed short)(temp[4] << 8 | temp[5]);
+    gyro.x = -(signed short)(temp[0] << 8 | temp[1]);
+    gyro.y =  (signed short)(temp[2] << 8 | temp[3]);
+    gyro.z = -(signed short)(temp[4] << 8 | temp[5]);
     return gyro;
 }
 
@@ -305,9 +305,9 @@ XYZ GetRawCompass() {
     
     //if(QMC5883DataRdy()) {
         I2C_ReadRegisters(QMC5883L_ADDR, QMC5883L_X_LSB, temp, 6);
-        compass.y = -(signed short)(temp[0] | temp[1] << 8);
-        compass.x = (signed short)(temp[2] | temp[3] << 8);
-        compass.z = (signed short)(temp[4] | temp[5] << 8);
+        compass.x = -(signed short)(temp[0] | temp[1] << 8);
+        compass.y =  (signed short)(temp[2] | temp[3] << 8);
+        compass.z = -(signed short)(temp[4] | temp[5] << 8);
     //}
     
 #if board_version == 1 || board_version == 2 || board_version == 3

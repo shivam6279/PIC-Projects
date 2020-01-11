@@ -19,7 +19,7 @@ extern void ResetCounters();
 extern void SetPIDGain(PID*, PID*, PID*, PID*, PID*);
 extern float LimitAngle(float);
 extern float LimitValue(float, float, float);
-extern void WriteRGBLed(unsigned int, unsigned int, unsigned int);
+extern void WriteRGBLed(unsigned char, unsigned char, unsigned char);
 extern void PIDSet(PID*, float, float, float);
 extern void PIDIntegrate(PID*, float);
 extern void PIDIntegrateAngle(PID*, float);
@@ -28,7 +28,6 @@ extern void PIDCompute(PID*);
 
 extern void StrWriteInt(int, volatile char[], unsigned char);
 extern void StrWriteFloat(double, unsigned char, volatile char[], unsigned char);
-extern void WriteRGBLed(unsigned int, unsigned int, unsigned int);
 
 extern float max_pitch_roll_tilt, max_yaw_rate;
 

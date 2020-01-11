@@ -8,30 +8,30 @@
 
 #define ACC_GRAVITY 9.81f //m/s^2
 
-#define ACC_X_OFFSET 0
-#define ACC_Y_OFFSET 0
-#define ACC_Z_OFFSET 0
+#define ACC_X_OFFSET 0.0f
+#define ACC_Y_OFFSET 0.0f
+#define ACC_Z_OFFSET 0.0f
 
-#define ACC_X_GAIN 1
-#define ACC_Y_GAIN 1
-#define ACC_Z_GAIN 1
+#define ACC_X_GAIN 1.0f
+#define ACC_Y_GAIN 1.0f
+#define ACC_Z_GAIN 1.0f
 
-#define GYRO_X_OFFSET -260
-#define GYRO_Y_OFFSET -470
-#define GYRO_Z_OFFSET 45
+#define GYRO_X_OFFSET -470.0f
+#define GYRO_Y_OFFSET -260.0f
+#define GYRO_Z_OFFSET -45.0f
 
-#define GYRO_X_GAIN 98
-#define GYRO_Y_GAIN 98
-#define GYRO_Z_GAIN 106
+#define GYRO_X_GAIN 98.0f
+#define GYRO_Y_GAIN 98.0f
+#define GYRO_Z_GAIN 106.0f
 
-#define COMPASS_X_MIN -5696.0f
-#define COMPASS_X_MAX 3441.0f
+#define COMPASS_X_MIN -4147.0f
+#define COMPASS_X_MAX 5727.0f
 
-#define COMPASS_Y_MIN -4147.0f
-#define COMPASS_Y_MAX 5727.0f
+#define COMPASS_Y_MIN -5696.0f
+#define COMPASS_Y_MAX 3441.0f
 
-#define COMPASS_Z_MIN -7901.0f
-#define COMPASS_Z_MAX 1308.0f
+#define COMPASS_Z_MIN -1308.0f
+#define COMPASS_Z_MAX 7901.0f
 
 #ifdef BMP180
 #define OVERSAMPLING 3  //0 - 3
