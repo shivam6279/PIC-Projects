@@ -217,7 +217,7 @@ void eeprom_writeOffsets() {
     *(float*)(str)      = roll_offset;
     *(float*)(str + 4)  = pitch_offset;
     *(float*)(str + 8)  = heading_offset;
-    (str + 12) = EEPROM_OFFSET_KEY;
+    *(str + 12) = EEPROM_OFFSET_KEY;
     eeprom_writeBytes(ROLL_OFFSET_ADDR, str, 13);
     delay_ms(6);
 }

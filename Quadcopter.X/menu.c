@@ -12,7 +12,7 @@
 
 void HSVtoRGB(int H, double S, double V, unsigned char *r, unsigned char *g, unsigned char *b) {
     double C = S * V;
-    double X = C * (1 - abs(fmod(H / 60.0, 2) - 1));
+    double X = C * (1.0 - fabs(fmod(H / 60.0, 2.0) - 1.0));
     double m = V - C;
     double Rs, Gs, Bs;
 
@@ -47,16 +47,20 @@ void HSVtoRGB(int H, double S, double V, unsigned char *r, unsigned char *g, uns
         Bs = X; 
     }
     
-    *r = ((double)(Rs + m) * 255.0);
-    *g = ((double)(Gs + m) * 255.0);
-    *b = ((double)(Bs + m) * 255.0);
+    float fr = ((float)(Rs + m) * 255.0f);
+    float fg = ((float)(Gs + m) * 255.0f);
+    float fb = ((float)(Bs + m) * 255.0f);
+    
+    *r = (unsigned char)fr;
+    *g = (unsigned char)fg;
+    *b = (unsigned char)fb;
 }
 
 void Menu(PID *x, PID *y, PID *z, PID *a){
     bool flag_menu = 1; 
     signed char cursor = 0; 
     unsigned char r, g, b;
-    int hue;
+    int hue = 0;
     unsigned int arming_counter = 0;
     rx XBee;
 
@@ -173,7 +177,7 @@ void CalibrationMenu() {
     q[2] = 0;
     q[3] = 0;
     
-    for(i = 0; i < 10; i++) {
+    for(i = 0; i < 20; i++) {
         StartDelayCounter();
         XBeeWriteChar('Z');
         XBeeWriteStr("Calibration Menu\r");
@@ -181,7 +185,7 @@ void CalibrationMenu() {
     }
     
     while(XBee.rs == 0) {
-        if(XBee.x1 > 12 & flag_menu == 0) {
+        if(XBee.x2 > 12 && flag_menu == 0) {
             if(cursor == 0) {
                 SendCalibrationData();
                 p_ls = XBee.ls;
@@ -345,24 +349,24 @@ void CalibrationMenu() {
             XBeeWriteStr("->");
         else
             XBeeWriteStr("  ");
-        XBeeWriteStr("Calibrate pitch and roll offsets (after 1 and 2)\n");
+        XBeeWriteStr("Calibrate pitch and roll offsets\n");
         if(cursor == 3)
             XBeeWriteStr("->");
         else
             XBeeWriteStr("  ");
         XBeeWriteStr("Change constants\r");
         
-        while(ms_counter() < 25);
+        while(ms_counter() < 50);
     }
 }
 
-void ArmingSequence(float q[], float *gravity_mag, float *to_heading, float *to_altitude, float *to_latitude, float *to_longitude) {         
+void ArmingSequence(float q[], float *gravity_mag, float *to_roll, float *to_pitch, float *to_heading, float *to_altitude, float *to_latitude, float *to_longitude) {         
     int i;
     const int ITERATIONS = 1000;
     XYZ acc, gyro, compass;
     XYZ gravity;
     
-    WriteRGBLed(255, 100, 0); //Yellow
+    WriteRGBLed(255, 200, 0); //Yellow
     
     delay_ms(100);
     
@@ -392,7 +396,7 @@ void ArmingSequence(float q[], float *gravity_mag, float *to_heading, float *to_
     *gravity_mag = sqrt(gravity.x * gravity.x + gravity.y * gravity.y + gravity.z * gravity.z);
 
     //Read initial heading
-    *to_heading = LimitAngle(TO_DEG(-atan2(2.0f * (q[1] * q[2] + q[0] * q[3]), q[0] * q[0] + q[1] * q[1] - q[2] * q[2] - q[3] * q[3])) - heading_offset);
+    QuaternionToEuler(q, to_roll, to_pitch, to_heading);
 
     //Read take-off altitude
     altitude_KF_reset();

@@ -14,6 +14,7 @@ volatile unsigned int tx_buffer_timer = 0;
 
 float max_pitch_roll_tilt = MAX_PITCH_ROLL_TILT;
 float max_yaw_rate = MAX_YAW_RATE;
+float max_altitude_rate = MAX_ALTITUDE_RATE;
 
 void __ISR_AT_VECTOR(_TIMER_4_VECTOR, IPL7SRS) pid_loop_timer(void){
     IFS0bits.T4IF = 0;
@@ -50,7 +51,7 @@ void SetPIDGain(PID *roll, PID* pitch, PID *yaw, PID *altitude, PID *GPS) {
     PIDSet(roll,     1.30, 1.30, 0.50);
     PIDSet(pitch,    1.30, 1.30, 0.50);
     PIDSet(yaw,      1.30, 1.30, 0.50);
-    PIDSet(altitude, 36.0, 5.00, 5.00);
+    PIDSet(altitude, 36.0, 5.00, 30.00);
     PIDSet(GPS,      1.50, 0.05, 0.00);
 #endif
 #ifdef mini
@@ -165,11 +166,14 @@ void StrWriteFloat(double a, unsigned char right, volatile char str[], unsigned 
         str[n] = ((long int)(a * tens) % 10) + 48;
 }
 
-void WriteRGBLed(unsigned char r, unsigned char g, unsigned char b) {
+void WriteRGBLed(unsigned int r, unsigned int g, unsigned int b) {
 #if board_version == 4 || board_version == 5
-    r = (float)r * (float)PWM_MAX / 255.0f;
-    g = (float)g * (float)PWM_MAX / 255.0f;
-    b = (float)b * (float)PWM_MAX / 255.0f;
+    float fr = (float)r * (float)PWM_MAX / 255.0f;
+    float fg = (float)g * (float)PWM_MAX / 255.0f;
+    float fb = (float)b * (float)PWM_MAX / 255.0f;
+    r = (unsigned int)fr;
+    g = (unsigned int)fg;
+    b = (unsigned int)fb;
 #endif
     write_pwm(RGBLED_RED_PIN,   r); 
     write_pwm(RGBLED_GREEN_PIN, g); 

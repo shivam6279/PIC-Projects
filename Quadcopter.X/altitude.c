@@ -5,13 +5,11 @@
 #include "AHRS.h"
 #include "settings.h"
 
-float max_altitude_rate = MAX_ALTITUDE_RATE;
-
 #if ALTITUDE_BUFFER_SIZE > 0
     float altitude_buffer[ALTITUDE_BUFFER_SIZE];
 #endif
 
-bool LoopAltitude(float *altitude, float *temperature) {
+bool LoopAltitude(float *altitude, float *temperature, bool restart) {
     int i;
     
     bool ret = false;
@@ -64,10 +62,14 @@ bool LoopAltitude(float *altitude, float *temperature) {
             //altitude_KF_update(GetAltitude(ComputePressure(raw_pressure, raw_temperature)));
             
             ret = true;
-
-            StartPressureRead();
+            
+            if(restart) {
+                StartPressureRead();                
+                altitude_stage = 1;
+            } else {
+                altitude_stage = 0;
+            }
             altitude_timer = 0;
-            altitude_stage = 1;
         }
     #endif
     

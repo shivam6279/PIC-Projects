@@ -4,9 +4,6 @@
 #include "PID.h"
 #include <stdbool.h>
 
-#define XBEE_START_BYTE 0x40
-#define XBEE_END_BYTE	0x80
-
 #define XBEE_TX_BUFFER_LEN 1024
 
 typedef struct {

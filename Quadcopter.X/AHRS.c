@@ -12,9 +12,9 @@ XYZ MultiplyVectorQuaternion(XYZ v, float q_in[4]) {
     XYZ ret;
     float q[4];
     q[0] = q_in[0];
-    q[1] = -q_in[1];
-    q[2] = -q_in[2];
-    q[3] = -q_in[3];
+    q[1] = q_in[1];
+    q[2] = q_in[2];
+    q[3] = q_in[3];
 
     // float qw_2 = q[0]*q[0];
     // float qi_2 = q[1]*q[1];
@@ -81,9 +81,9 @@ void QuaternionToEuler(float q[], float *roll, float *pitch, float *yaw) {
     float q2_2 = q[2] * q[2];
 
     //Converting quaternion to Euler angles
-    *roll = TO_DEG(atan2(q[2]*q[3] + q[0]*q[1], 0.5f - (q[1]*q[1] + q2_2)));
-    *pitch = TO_DEG(asin(2.0f * (q[0]*q[2] - q[1]*q[3])) + PI);
-    *yaw = TO_DEG(atan2((q[0]*q[3] + q[1]*q[2]), 0.5f - (q2_2 + q[3]*q[3])));
+    *roll = 180.0f + TO_DEG(atan2(q[2]*q[3] + q[0]*q[1], 0.5f - (q[1]*q[1] + q2_2)));
+    *pitch = TO_DEG(asin(2.0f * (q[1]*q[3] - q[0]*q[2])));
+    *yaw = TO_DEG(atan2((q[1]*q[2] + q[0]*q[3]), 0.5f - (q2_2 + q[3]*q[3])));
     
     *roll = LimitAngle(*roll - roll_offset);
     *pitch = LimitAngle(*pitch - pitch_offset);

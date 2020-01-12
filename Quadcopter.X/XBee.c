@@ -253,7 +253,7 @@ void XBeeWriteChar(char a) {
 }
 
 void XBeeWriteStr(const char str[]) {
-    unsigned char i;
+    unsigned int i;
 
     UART1_TX_INTERRUPT = 0;
     
@@ -266,8 +266,6 @@ void XBeeWriteStr(const char str[]) {
 }
 
 void XBeeWriteRawInt(int a) {
-    char str[2];
-
     UART1_TX_INTERRUPT = 0;
 
     *(int*)(tx_buffer + tx_buffer_index) = a;
@@ -279,8 +277,6 @@ void XBeeWriteRawInt(int a) {
 }
 
 void XBeeWriteRawFloat(float a) {
-    char str[4];
-
     UART1_TX_INTERRUPT = 0;
 
     *(float*)(tx_buffer + tx_buffer_index) = a;

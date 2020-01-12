@@ -1,4 +1,4 @@
-	w#ifndef _EEPROM_H_
+#ifndef _EEPROM_H_
 #define _EEPROM_H_
 
 #include <stdbool.h>
