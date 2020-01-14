@@ -151,8 +151,10 @@ void main() {
                 //Update altitude kalman filter
                 //acc_comp = RotateVectorEuler(acc, roll.error+roll_offset, pitch.error+pitch_offset, 0.0);
                 acc_comp = MultiplyVectorQuaternion(acc, q);
-
-                altitude_KF_propagate(acc_comp.z - gravity_mag, IMU_loop_time);         
+                acc_comp.z -= gravity_mag;
+                
+                if(fabs(acc_comp.z) < 10.0f)
+                    altitude_KF_propagate(acc_comp.z, IMU_loop_time);         
 
                 if(XBee_rx.y2 > MIN_THROTTLE_INTEGRATION && !kill) {
                     PIDIntegrateAngle(&roll,  IMU_loop_time);
@@ -163,9 +165,9 @@ void main() {
 
             //-------------------------------------------------------------Altitude acquisition--------------------------------------------------------------------------
             if(LoopAltitude(&altitude.error, &temperature, true)) {
-                altitude_KF_update(altitude.error - take_off_altitude);                
-                altitude.error = altitude_KF_getAltitude();
-                altitude.derivative = -1.0 * altitude_KF_getVelocity();
+                if(fabs(altitude.error - altitude_KF_getAltitude()) < 1.5f)
+                    altitude_KF_update(altitude.error - take_off_altitude);                
+                altitude.error = altitude_KF_getAltitude();                
                 
                 if(loop_mode == MODE_ALT_HOLD) {
                     if(XBee_rx.y2 > 10 && XBee_rx.y2 < 20)  //Throttle stick in the mid position
@@ -264,6 +266,8 @@ void main() {
 
                 //--Alt-hold---
                 else if(loop_mode == MODE_ALT_HOLD) {
+                    altitude.derivative = -1.0 * altitude_KF_getVelocity();
+                    
                     if(XBee_rx.y2 > 10 && XBee_rx.y2 < 20) {  //Throttle stick in the mid position
                         altitude.output = (altitude.p * (altitude.offset - altitude.error) + altitude.i * altitude.sum + altitude.d * altitude.derivative) + altitude_setpoint;
                     } else {
@@ -320,6 +324,8 @@ void main() {
                     altitude.output /= cos(TO_RAD(pitch.error));
 
                 //Motor Output
+                
+                altitude.output = LimitValue(altitude.output, 0.0f, 900.0f);
 
                 speed.upRight   = altitude.output - pitch.output + roll.output + (yaw.output * MOTOR_SPIN);
                 speed.downLeft  = altitude.output + pitch.output - roll.output + (yaw.output * MOTOR_SPIN);
