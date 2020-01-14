@@ -20,6 +20,7 @@ extern void altitude_KF_reset();
 extern void altitude_KF_propagate(float, float);
 extern void altitude_KF_update(float);
 extern float altitude_KF_getAltitude();
+extern float altitude_KF_setAltitude(float);
 extern float altitude_KF_getVelocity();
 
 extern float roll_offset, pitch_offset, heading_offset;

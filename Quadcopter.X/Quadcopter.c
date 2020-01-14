@@ -55,7 +55,7 @@ void main() {
     rx XBee_rx;
     float q[4];                                                                     //Quaternion
     float take_off_altitude, temperature;                                           //Offsets
-    float heading;                                                                  //yaw
+    float temp_altitude, heading;                                                                  //yaw
     float take_off_roll, take_off_pitch, take_off_heading;
     float remote_magnitude, remote_angle, remote_angle_difference;                  //RC
     float altitude_setpoint;                                                        //altitude
@@ -153,8 +153,8 @@ void main() {
                 acc_comp = MultiplyVectorQuaternion(acc, q);
                 acc_comp.z -= gravity_mag;
                 
-                if(fabs(acc_comp.z) < 10.0f)
-                    altitude_KF_propagate(acc_comp.z, IMU_loop_time);         
+                //if(fabs(acc_comp.z) < 10.0f)
+                altitude_KF_propagate(acc_comp.z, IMU_loop_time);         
 
                 if(XBee_rx.y2 > MIN_THROTTLE_INTEGRATION && !kill) {
                     PIDIntegrateAngle(&roll,  IMU_loop_time);
@@ -164,10 +164,10 @@ void main() {
             }
 
             //-------------------------------------------------------------Altitude acquisition--------------------------------------------------------------------------
-            if(LoopAltitude(&altitude.error, &temperature, true)) {
-                if(fabs(altitude.error - altitude_KF_getAltitude()) < 1.5f)
-                    altitude_KF_update(altitude.error - take_off_altitude);                
-                altitude.error = altitude_KF_getAltitude();                
+            if(LoopAltitude(&temp_altitude, &temperature, true)) {
+                if(fabs(temp_altitude - altitude_KF_getAltitude()) < 1.5f)
+                    altitude_KF_update(temp_altitude);                
+                altitude.error = altitude_KF_getAltitude() - take_off_altitude;                
                 
                 if(loop_mode == MODE_ALT_HOLD) {
                     if(XBee_rx.y2 > 10 && XBee_rx.y2 < 20)  //Throttle stick in the mid position
@@ -237,10 +237,10 @@ void main() {
                 tx_buffer_timer = 0;
                 XBeeWriteChar('C');
                 XBeeWriteFloat(pitch.error, 2); XBeeWriteChar(',');
-                XBeeWriteFloat(roll.error, 2); XBeeWriteChar(',');
-                XBeeWriteFloat(yaw.error, 2); XBeeWriteChar(',');
-                XBeeWriteFloat(altitude_KF_getAltitude(), 2); XBeeWriteChar(',');
-                XBeeWriteFloat(altitude_KF_getVelocity(), 8); XBeeWriteChar(',');                      
+                XBeeWriteFloat(altitude.offset - altitude.error, 2); XBeeWriteChar(',');
+                XBeeWriteFloat(altitude.derivative, 2); XBeeWriteChar(',');
+                XBeeWriteFloat(acc_comp.z, 2); XBeeWriteChar(',');
+                XBeeWriteFloat(altitude.sum, 8); XBeeWriteChar(',');                      
                 XBeeWriteFloat(altitude.output, 8); XBeeWriteChar(',');
                 XBeeWriteInt(loop_mode);
                 XBeeWriteChar('\r');
@@ -257,7 +257,9 @@ void main() {
             
             //--------------------------------------------------------PID Output to motors----------------------------------------------------------------------------
             if(esc_counter >= (ESC_TIME_us - 5)) {
-                esc_counter = 0;                
+                esc_counter = 0;     
+                
+                altitude.derivative = -1.0 * altitude_KF_getVelocity();
 
                 //--Stabilize--
                 if(loop_mode == MODE_STABILIZE) {
@@ -266,7 +268,6 @@ void main() {
 
                 //--Alt-hold---
                 else if(loop_mode == MODE_ALT_HOLD) {
-                    altitude.derivative = -1.0 * altitude_KF_getVelocity();
                     
                     if(XBee_rx.y2 > 10 && XBee_rx.y2 < 20) {  //Throttle stick in the mid position
                         altitude.output = (altitude.p * (altitude.offset - altitude.error) + altitude.i * altitude.sum + altitude.d * altitude.derivative) + altitude_setpoint;

@@ -429,6 +429,8 @@ void ArmingSequence(float q[], float *gravity_mag, float *to_roll, float *to_pit
     //Read take-off altitude
     altitude_KF_reset();
     *to_altitude = GetTakeoffAltitude();
+    altitude_KF_setAltitude(*to_altitude);
+    altitude_KF_update(*to_altitude);
     
     if(GPS_signal) { 
         *to_latitude = latitude; 

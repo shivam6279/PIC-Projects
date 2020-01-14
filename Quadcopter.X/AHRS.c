@@ -263,6 +263,10 @@ void altitude_KF_update(float altitude) {
     altitude_kf_P[1][1] = altitude_kf_P[1][1] - (K[1] * altitude_kf_P[0][1]);
 }
 
+float altitude_KF_setAltitude(float alt) {
+    altitude_kf_h = alt;
+}
+
 float altitude_KF_getAltitude() {
     return altitude_kf_h;
 }
