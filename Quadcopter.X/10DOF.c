@@ -1,8 +1,8 @@
 #include "10DOF.h"
 #include "bitbang_I2C.h"
 #include "settings.h"
+#include <stdbool.h>
 #include <math.h>
-
 
 XYZ acc_offset, acc_gain;
 XYZ gyro_offset;
@@ -91,22 +91,23 @@ void MPU6050Init() {
     gyro_offset.z = GYRO_Z_OFFSET;
 }
 
-XYZ GetRawAcc() {
-    XYZ acc;
+bool GetRawAcc(XYZ *acc) {
     unsigned char temp[6];
-    I2C_ReadRegisters(0xD0, 0x3B, temp, 6);
+    if(!I2C_ReadRegisters(0xD0, 0x3B, temp, 6))
+        return false;
 
     // Order: XH, XL, YH, YZ, ZH, ZL
 
-    acc.x = -(signed short)(temp[0] << 8 | temp[1]);
-    acc.y =  (signed short)(temp[2] << 8 | temp[3]);
-    acc.z = -(signed short)(temp[4] << 8 | temp[5]);
-    return acc;
+    acc->x = -(signed short)(temp[0] << 8 | temp[1]);
+    acc->y =  (signed short)(temp[2] << 8 | temp[3]);
+    acc->z = -(signed short)(temp[4] << 8 | temp[5]);
+    
+    return true;
 }
 
-XYZ GetAcc() { 
-    XYZ acc;
-    acc = GetRawAcc();
+bool GetAcc(XYZ *acc) {
+    if(!GetRawAcc(acc))
+        return false;
     
 #if IMU_BUFFER_SIZE > 0
     unsigned char i;    
@@ -120,29 +121,29 @@ XYZ GetAcc() {
     acc = VectorScale(acc, 1.0f / (float)IMU_BUFFER_SIZE);
 #endif
 
-    acc.x = (acc.x - acc_offset.x) * ACC_GRAVITY / 16384.0f * acc_gain.x;
-    acc.y = (acc.y - acc_offset.y) * ACC_GRAVITY / 16384.0f * acc_gain.y;
-    acc.z = (acc.z - acc_offset.z) * ACC_GRAVITY / 16384.0f * acc_gain.z;
+    acc->x = (acc->x - acc_offset.x) * ACC_GRAVITY / 16384.0f * acc_gain.x;
+    acc->y = (acc->y - acc_offset.y) * ACC_GRAVITY / 16384.0f * acc_gain.y;
+    acc->z = (acc->z - acc_offset.z) * ACC_GRAVITY / 16384.0f * acc_gain.z;
 
-    return acc;
+    return true;
 }
 
-XYZ GetRawGyro() {
-    XYZ gyro;
+bool GetRawGyro(XYZ *gyro) {
     unsigned char temp[6];
-    I2C_ReadRegisters(0xD0, 0x43, temp, 6);
+    if(!I2C_ReadRegisters(0xD0, 0x43, temp, 6))
+        return false;
 
     // Order: XH, XL, YH, YZ, ZH, ZL
 
-    gyro.x = -(signed short)(temp[0] << 8 | temp[1]);
-    gyro.y =  (signed short)(temp[2] << 8 | temp[3]);
-    gyro.z = -(signed short)(temp[4] << 8 | temp[5]);
-    return gyro;
+    gyro->x = -(signed short)(temp[0] << 8 | temp[1]);
+    gyro->y =  (signed short)(temp[2] << 8 | temp[3]);
+    gyro->z = -(signed short)(temp[4] << 8 | temp[5]);
+    return true;
 }
 
-XYZ GetGyro() { 
-    XYZ gyro;
-    gyro = GetRawGyro();
+bool GetGyro(XYZ *gyro) { 
+    if(!GetRawGyro(gyro))
+        return false;
     
 #if IMU_BUFFER_SIZE > 0
     unsigned char i;
@@ -156,10 +157,10 @@ XYZ GetGyro() {
 
     gyro = VectorScale(gyro, 1.0f / (float)IMU_BUFFER_SIZE);
 #endif
-    gyro.x = (gyro.x - gyro_offset.x) / GYRO_X_GAIN;
-    gyro.y = (gyro.y - gyro_offset.y) / GYRO_Y_GAIN;
-    gyro.z = (gyro.z - gyro_offset.z) / GYRO_Z_GAIN;
-    return gyro;
+    gyro->x = (gyro->x - gyro_offset.x) / GYRO_X_GAIN;
+    gyro->y = (gyro->y - gyro_offset.y) / GYRO_Y_GAIN;
+    gyro->z = (gyro->z - gyro_offset.z) / GYRO_Z_GAIN;
+    return true;
 }
 
 //-----------------------------------Magnetometer----------------------------------

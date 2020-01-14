@@ -220,7 +220,7 @@ void CalibrationMenu() {
             } else if(cursor == 1) {
                 for(i = 0; i <= 100; i++) {
                     StartDelayCounter();
-                    acc = GetRawAcc();
+                    GetRawAcc(&acc);
                     XBeeWriteChar('Z');
                     XBeeWriteStr("040Place board on a perfectly level surface\r");
                     while(ms_counter() < 20);
@@ -234,7 +234,7 @@ void CalibrationMenu() {
                     sr_len += FloatStrLen(acc.z, 1);
                     
                     StartDelayCounter();
-                    acc = GetRawAcc();
+                    GetRawAcc(&acc);
                     XBeeWriteChar('Z');
                     XBeeWriteChar((sr_len / 100) % 10 + '0');
                     XBeeWriteChar((sr_len / 10) % 10 + '0');
@@ -283,8 +283,8 @@ void CalibrationMenu() {
             } else if(cursor == 2) {
                 for(i = 0; i <= 100; i++) {
                     StartDelayCounter();
-                    acc = GetAcc();
-                    compass = GetCompass();
+                    GetAcc(&acc);
+                    GetCompass(&compass);
 
                     MadgwickQuaternionUpdate(q, acc, (XYZ){0.0, 0.0, 0.0}, compass, 0.050);
                     XBeeWriteChar('Z');
@@ -300,8 +300,8 @@ void CalibrationMenu() {
                 p_ls = XBee.ls;
                 while(p_ls == XBee.ls && XBee.rs == 0) {
                     StartDelayCounter();
-                    acc = GetAcc();
-                    compass = GetCompass();
+                    GetAcc(&acc);
+                    GetCompass(&compass);
 
                     MadgwickQuaternionUpdate(q, acc, (XYZ){0.0, 0.0, 0.0}, compass, 0.050);
                     QuaternionToEuler(q, &roll, &pitch, &heading);
@@ -401,9 +401,9 @@ void ArmingSequence(float q[], float *gravity_mag, float *to_roll, float *to_pit
     for(i = 0, VectorReset(&gravity), VectorReset(&gyro_offset); i < ITERATIONS; i++) {
         StartDelayCounter();
 
-        acc = GetAcc();
-        gyro = GetRawGyro();
-        compass = GetCompass();
+        GetAcc(&acc);
+        GetRawGyro(&gyro);
+        GetCompass(&compass);
         
         gravity = VectorAdd(gravity, acc);
         gyro_offset = VectorAdd(gyro_offset, gyro);

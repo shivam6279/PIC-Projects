@@ -106,13 +106,11 @@ void SendCalibrationData() {
     const float avg_factor = 25;
     
     XYZ acc, gyro, compass;
+    XYZ compass_min, compass_max, compass_avg;
 
-    XYZ compass_min, compass_max;
-    XYZ compass_avg;
-
-    acc = GetRawAcc();
-    gyro = GetRawGyro();
-    compass = GetRawCompass();
+    GetRawAcc(&acc);
+    GetRawGyro(&gyro);
+    GetRawCompass(&compass);
 
     compass_max = compass;    
     compass_min = compass; 
@@ -122,9 +120,9 @@ void SendCalibrationData() {
     
     bool p_ls = XBee.ls;
     while(XBee.ls == p_ls) {
-        acc = GetRawAcc();
-        gyro = GetRawGyro();
-        compass = GetRawCompass();
+        GetRawAcc(&acc);
+        GetRawGyro(&gyro);
+        GetRawCompass(&compass);
 
         compass_avg.x = ((avg_factor - 1) * compass_avg.x + compass.x) / avg_factor;
         compass_avg.y = ((avg_factor - 1) * compass_avg.y + compass.y) / avg_factor;

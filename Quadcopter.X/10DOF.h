@@ -56,10 +56,10 @@ extern XYZ VectorScale(XYZ, float);
 
 //MPU6050
 extern void MPU6050Init();
-extern XYZ GetRawAcc();
-extern XYZ GetAcc();
-extern XYZ GetRawGyro();
-extern XYZ GetGyro();
+extern bool GetRawAcc(XYZ*);
+extern bool GetAcc(XYZ*);
+extern bool GetRawGyro(XYZ*);
+extern bool GetGyro(XYZ*);
 
 //Magnetometer
 

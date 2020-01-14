@@ -130,9 +130,9 @@ void main() {
                 IMU_loop_time = (float)data_aq_counter / 1000000.0f;   // Loop time in seconds: 
                 data_aq_counter = 0;                
                 
-                compass = GetCompass(); 
-                acc = GetAcc();
-                gyro = GetGyro();
+                GetCompass(&compass); 
+                GetAcc(&acc);
+                GetGyro(&gyro);
 
             #if board_version == 4 || board_version == 5
                 if(ToF_counter >= 10) {

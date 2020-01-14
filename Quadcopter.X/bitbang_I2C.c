@@ -8,29 +8,38 @@ bool I2C_WriteRegisters(unsigned char address, unsigned char *data, unsigned int
     I2C_Send(address & 0xFE); 
     if(!I2C_GetAck()) {
         I2C_Stop();
-        return 0;
+        return false;
     }
     while(num--) {
         I2C_Send(*data);
         if(!I2C_GetAck()) {
             I2C_Stop();
-            return 0;
+            return false;
         }
         data++;
     }
     I2C_Stop();
-    return 1;
+    return true;
 }
 
-void I2C_ReadRegisters(unsigned char address, unsigned char start_adr, unsigned char *data, unsigned int num) {
+bool I2C_ReadRegisters(unsigned char address, unsigned char start_adr, unsigned char *data, unsigned int num) {
     I2C_Start();
     I2C_Send(address & 0xFE); 
-    I2C_GetAck();
+    if(!I2C_GetAck()) {
+        I2C_Stop();
+        return false;
+    }
     I2C_Send(start_adr);
-    I2C_GetAck();
+    if(!I2C_GetAck()) {
+        I2C_Stop();
+        return false;
+    }
     I2C_Start();
     I2C_Send(address | 0x01); 
-    I2C_GetAck();
+    if(!I2C_GetAck()) {
+        I2C_Stop();
+        return false;
+    }
     while(num--) {
         *data = I2C_Read();
         data++;
@@ -120,14 +129,16 @@ bool I2C_GetAck() {
     SDA_TRIS = 1;  
     SCL_TRIS = 1; 
     I2C_DelayFull();
-    //if(SDA){
-     //   return 0;  
-    //}
+    
+    if(SDA_PORT)
+        return 0;
+    
     I2C_DelayHalf(); 
     SCL_TRIS = 0;
     I2C_DelayFull();
     I2C_DelayFull();
-    return 1;
+    
+    return true;
 }
 
 void I2C_SendAck() {
@@ -141,18 +152,13 @@ void I2C_SendAck() {
 
 void I2C_SendNak() {
     SDA_TRIS = 1; 
+    SDA_LAT = 0;
     I2C_DelaySettle();   
     I2C_Clock();         
     I2C_DelaySettle();  
 }
 
 void inline I2C_DelayFull() {
-    /*
-    Nop();Nop();Nop();Nop();Nop();Nop();
-    Nop();Nop();Nop();Nop();Nop();Nop();
-    Nop();Nop();Nop();Nop();Nop();Nop();
-    Nop();Nop();Nop();Nop();Nop();Nop();
-    */
     Nop();Nop();Nop();Nop();Nop();Nop();
     Nop();Nop();Nop();Nop();Nop();Nop();
     Nop();Nop();Nop();Nop();Nop();Nop();
@@ -164,10 +170,6 @@ void inline I2C_DelayFull() {
 }
 
 void inline I2C_DelayHalf() {
-    /*
-    Nop();Nop();Nop();Nop();Nop();Nop();
-    Nop();Nop();Nop();Nop();Nop();Nop();
-    */
     Nop();Nop();Nop();Nop();Nop();Nop();
     Nop();Nop();Nop();Nop();Nop();Nop();
     Nop();Nop();Nop();Nop();Nop();Nop();
