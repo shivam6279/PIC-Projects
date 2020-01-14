@@ -13,8 +13,8 @@ void ShowInputData() {
     static int pre_y2 = 10;
     static int pre_dial1 = 3;
     static int pre_dial2 = 3;
-    static int pre_ts_x = 0;
-    static int pre_ts_y = 0;
+//    static int pre_ts_x = 0;
+//    static int pre_ts_y = 0;
     
     int i;
     int tx1, ty1;
@@ -41,16 +41,16 @@ void ShowInputData() {
         pre_y1 = ty1;
     }
     
-    GetTouchscreen();
-    if(ts_y > 145 && ts_y < (145 + 20)) {
-        if(ts_x > 116 && ts_x < (116 + 18)) dial1 = 0;
-        else if(ts_x > (116 + 21) && ts_x < (116 + 18 + 21)) dial1 = 1;
-        else if(ts_x > (116 + 21 * 2) && ts_x < (116 + 18 + 21 * 2)) dial1 = 2;
-
-        else if(ts_x > 186 && ts_x < (186 + 18)) dial2 = 0;
-        else if(ts_x > (186 + 21) && ts_x < (186 + 18 + 21)) dial2 = 1;
-        else if(ts_x > (186 + 21 * 2) && ts_x < (186 + 18 + 21 * 2)) dial2 = 2;
-    }
+//    GetTouchscreen();
+//    if(ts_y > 145 && ts_y < (145 + 20)) {
+//        if(ts_x > 116 && ts_x < (116 + 18)) dial1 = 0;
+//        else if(ts_x > (116 + 21) && ts_x < (116 + 18 + 21)) dial1 = 1;
+//        else if(ts_x > (116 + 21 * 2) && ts_x < (116 + 18 + 21 * 2)) dial1 = 2;
+//
+//        else if(ts_x > 186 && ts_x < (186 + 18)) dial2 = 0;
+//        else if(ts_x > (186 + 21) && ts_x < (186 + 18 + 21)) dial2 = 1;
+//        else if(ts_x > (186 + 21 * 2) && ts_x < (186 + 18 + 21 * 2)) dial2 = 2;
+//    }
 
     if(pre_dial1 != dial1) {
         if(pre_dial1 >=0 && pre_dial1 < 3) FillRect(116 + (pre_dial1 * 21), 145, 18, 20, 0xFFFF);

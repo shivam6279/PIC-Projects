@@ -172,6 +172,7 @@ void CalibrationMenu() {
     XYZ acc, gyro, compass;
     float q[4];
     float roll, pitch, heading;
+    unsigned int sr_len = 0;
     q[0] = 1;
     q[1] = 0;
     q[2] = 0;
@@ -180,7 +181,7 @@ void CalibrationMenu() {
     for(i = 0; i < 20; i++) {
         StartDelayCounter();
         XBeeWriteChar('Z');
-        XBeeWriteStr("Calibration Menu\r");
+        XBeeWriteStr("016Calibration Menu\r");
         while(ms_counter() < 50);
     }
     
@@ -190,8 +191,19 @@ void CalibrationMenu() {
                 SendCalibrationData();
                 p_ls = XBee.ls;
                 while(XBee.ls == p_ls && XBee.rs == 0) {
+                    sr_len = 51;
+                    sr_len += FloatStrLen(compass_offset.x, 3);
+                    sr_len += FloatStrLen(compass_offset.y, 3);
+                    sr_len += FloatStrLen(compass_offset.z, 3);
+                    sr_len += FloatStrLen(compass_gain.x, 6);
+                    sr_len += FloatStrLen(compass_gain.y, 6);
+                    sr_len += FloatStrLen(compass_gain.z, 6);
+                    
                     StartDelayCounter();
                     XBeeWriteChar('Z');
+                    XBeeWriteChar((sr_len / 100) % 10 + '0');
+                    XBeeWriteChar((sr_len / 10) % 10 + '0');
+                    XBeeWriteChar(sr_len % 10 + '0');
                     XBeeWriteStr("Compass calibration results\n");
                     XBeeWriteStr("Offset: ");
                     XBeeWriteFloat(compass_offset.x, 3); XBeeWriteStr(", ");
@@ -210,17 +222,25 @@ void CalibrationMenu() {
                     StartDelayCounter();
                     acc = GetRawAcc();
                     XBeeWriteChar('Z');
-                    XBeeWriteStr("Place board on a perfectly level surface\r");
+                    XBeeWriteStr("040Place board on a perfectly level surface\r");
                     while(ms_counter() < 20);
                 }
                 
                 p_ls = XBee.ls;
                 while(p_ls == XBee.ls && XBee.rs == 0) {
+                    sr_len = 78;
+                    sr_len += FloatStrLen(acc.x, 1);
+                    sr_len += FloatStrLen(acc.y, 1);
+                    sr_len += FloatStrLen(acc.z, 1);
+                    
                     StartDelayCounter();
                     acc = GetRawAcc();
                     XBeeWriteChar('Z');
+                    XBeeWriteChar((sr_len / 100) % 10 + '0');
+                    XBeeWriteChar((sr_len / 10) % 10 + '0');
+                    XBeeWriteChar(sr_len % 10 + '0');
                     XBeeWriteStr("Place board on a perfectly level surface\n");
-                    XBeeWriteStr("Toggle left switch to end");
+                    XBeeWriteStr("Toggle left switch to end\n");
                     XBeeWriteStr("X: ");
                     XBeeWriteFloat(acc.x, 1); XBeeWriteChar('\n');
                     XBeeWriteStr("Y: ");
@@ -238,8 +258,16 @@ void CalibrationMenu() {
                 
                 p_ls = XBee.ls;
                 while(XBee.ls == p_ls && XBee.rs == 0) {
+                    sr_len = 64;
+                    sr_len += FloatStrLen(acc_offset.x, 1);
+                    sr_len += FloatStrLen(acc_offset.y, 1);
+                    sr_len += FloatStrLen(acc_offset.z, 1);
+                    
                     StartDelayCounter();
                     XBeeWriteChar('Z');
+                    XBeeWriteChar((sr_len / 100) % 10 + '0');
+                    XBeeWriteChar((sr_len / 10) % 10 + '0');
+                    XBeeWriteChar(sr_len % 10 + '0');
                     XBeeWriteStr("Acc offset results\n");
                     XBeeWriteStr("Pitch Offset: ");
                     XBeeWriteFloat(acc_offset.x, 1); XBeeWriteChar('\n');
@@ -308,7 +336,7 @@ void CalibrationMenu() {
                     XBeeWriteFloat(roll, 3); XBeeWriteChar('\n');
                     XBeeWriteStr("Heading Offset: ");
                     XBeeWriteFloat(heading, 3); XBeeWriteChar('\r');
-                    while(ms_counter() < 50);
+                    while(ms_counter() < 25);
                 }
                 if(XBee.rs == 1)
                     break;
@@ -333,7 +361,7 @@ void CalibrationMenu() {
         StartDelayCounter();
         
         XBeeWriteChar('Z');
-        XBeeWriteStr("Calibration Menu\n");
+        XBeeWriteStr("134Calibration Menu\n");
         XBeeWriteStr("Select an Option:\n");
         if(cursor == 0)
             XBeeWriteStr("->");

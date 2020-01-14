@@ -45,7 +45,12 @@ void adc_init(){
     
     ADCTRG1 = 0;                      
     ADCTRG2 = 0;                   
-    ADCTRG3 = 0;    
+    ADCTRG3 = 0;
+    
+    ADCTRGMODEbits.SH4ALT = 1;
+    ADCTRGMODEbits.SH3ALT = 1;
+    ADCTRG1bits.TRGSRC3 = 1;
+    ADCTRG2bits.TRGSRC4 = 1;
     
     ADCTRG3bits.TRGSRC9 = 1;
     ADCTRG3bits.TRGSRC10 = 1;
@@ -53,6 +58,10 @@ void adc_init(){
     
     ADCCSS1 = 0;
     ADCCSS2 = 0;
+    
+    ADCCSS1bits.CSS3 = 1;
+    ADCCSS1bits.CSS4 = 1;
+    
     ADCCSS1bits.CSS9 = 1;
     ADCCSS1bits.CSS10 = 1;
     ADCCSS1bits.CSS12 = 1;
@@ -71,11 +80,19 @@ void adc_init(){
     
     ADCANCONbits.ANEN7 = 1;
     ADCCON3bits.DIGEN7 = 1;
+    
+    ADCANCONbits.ANEN3 = 1;
+    ADCANCONbits.ANEN4 = 1;
+    ADCCON3bits.DIGEN3 = 1;
+    ADCCON3bits.DIGEN4 = 1;
 }
 
 void init(){
     //IO pins
     TRISB = 0xE040;
+    TRISBbits.TRISB8 = 1;
+    TRISBbits.TRISB9 = 1;
+    
     TRISC = 0;
     TRISD = 0;
     TRISE = 0xF0;
@@ -84,6 +101,9 @@ void init(){
     ANSELB = 0xC000;
     ANSELE = 0xF0;
     ANSELG = 0x0180;
+    
+    ANSELBbits.ANSB8 = 1;
+    ANSELBbits.ANSB9 = 1;
     
     PRECONbits.PREFEN = 3;
     PRECONbits.PFMWS = 2;

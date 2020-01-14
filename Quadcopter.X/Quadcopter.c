@@ -109,7 +109,7 @@ void main() {
 #endif
 
         // Arm motors
-        // Set up quarternion - save parameters at take off
+        // Set up quaternion - save parameters at take off
         // Heading, altitude, latitude, longitude
         // Takes ~2 seconds
         ArmingSequence(q, &gravity_mag, &take_off_roll, &take_off_pitch, &take_off_heading, &take_off_altitude, &take_off_latitude, &take_off_longitude);

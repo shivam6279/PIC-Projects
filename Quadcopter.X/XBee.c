@@ -119,7 +119,9 @@ void SendCalibrationData() {
     compass_avg = compass;
     
     tx_buffer_index = 0;
-    while(XBee.rs == 0) {
+    
+    bool p_ls = XBee.ls;
+    while(XBee.ls == p_ls) {
         acc = GetRawAcc();
         gyro = GetRawGyro();
         compass = GetRawCompass();
@@ -213,8 +215,8 @@ void XBeeWriteInt(int a) {
     XBeeFillBuffer();
 }
 
-void XBeeWriteFloat(float a, unsigned char precision) {
-    unsigned char i;
+unsigned char XBeeWriteFloat(float a, unsigned char precision) {
+    unsigned char i, len = 0;;
     long int tens;
 
     UART1_TX_INTERRUPT = 0;
@@ -222,25 +224,57 @@ void XBeeWriteFloat(float a, unsigned char precision) {
     if(a < 0) { 
         a *= -1; 
         tx_buffer[tx_buffer_index++] = '-'; 
+        len++;
     }
     
     if(a > 1.0) {
         for(tens = 1; tens < a; tens *= 10);
         tens /= 10;
 
-        for(; tens > 0; tens /= 10)
+        for(; tens > 0; tens /= 10, len++)
             tx_buffer[tx_buffer_index++] = ((long int)(a / tens) % 10) + 48;
     } else {
         tx_buffer[tx_buffer_index++] = '0';
+        len++;
     }
 
     tx_buffer[tx_buffer_index++] = '.';
-    for(i = 0, tens = 10; i < precision; i++, tens *= 10, tx_buffer_index++)
-        tx_buffer[tx_buffer_index] = ((long int)(a * tens) % 10) + 48;
+    len++;
+    
+    for(i = 0, tens = 10; i < precision; i++, tens *= 10, len++)
+        tx_buffer[tx_buffer_index++] = ((long int)(a * tens) % 10) + 48;
 
     tx_buffer[tx_buffer_index] = '\0';
 
     XBeeFillBuffer();
+    
+    return len;
+}
+
+unsigned char FloatStrLen(float a, unsigned char precision) {
+    unsigned char i, len = 0;;
+    long int tens;
+
+    UART1_TX_INTERRUPT = 0;
+    
+    if(a < 0) { 
+        a *= -1;
+        len++;
+    }
+    
+    if(a > 1.0) {
+        for(tens = 1; tens < a; tens *= 10);
+        tens /= 10;
+
+        for(; tens > 0; tens /= 10, len++);
+    } else {
+        len++;
+    }
+    len++;
+    
+    for(i = 0, tens = 10; i < precision; i++, tens *= 10, len++);
+    
+    return len;
 }
 
 void XBeeWriteChar(char a) {

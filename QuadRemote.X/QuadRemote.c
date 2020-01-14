@@ -24,6 +24,9 @@ void get_adc_values();
 void get_touchscreen();
 
 char serial_monitor[30][54];
+char temp_sr_str[54];
+unsigned char sr_line_len[30];
+unsigned char pre_sr_line_len[30];
 
 unsigned char receive1;
 volatile char rx_buffer_global[1024];
@@ -34,7 +37,7 @@ volatile bool rx_signal = 0, rx_data_rdy = 0;
 
 void main() {
     bool rx_signal_flag = 1;
-    int i, j, c;
+    int i, j, k, c;
 
     unsigned char mode = 0;
     unsigned char pre_cursor = 100, pre_mode = 0;
@@ -44,6 +47,10 @@ void main() {
     char data_names[20][40];
     
     char rx_buffer[1024];
+    
+    for(i = 0; i < 30; i++) {
+        pre_sr_line_len[i] = 0;
+    }
     
     init();
     adc_init();
@@ -75,7 +82,7 @@ void main() {
     
     while(1) {
         if(rx_data_rdy && rx_signal) {
-            for(i = 0; i < 1024; i++) {
+            for(i = 0; i < 1024 && rx_buffer_global != '\0'; i++) {
                 rx_buffer[i] = rx_buffer_global[i];
             }
             mode = rx_buffer[0];
@@ -237,19 +244,43 @@ void main() {
                 }
                 pre_mode = mode;
                 
-                for(i = 0, j = 0, c = 1; rx_buffer[c] != '\0'; c++) {
-                    if(rx_buffer[c] == '\n') {
-                        serial_monitor[j][i] = '\0';
-                        i = 0;
-                        j++;
-                    } else {
-                        serial_monitor[j][i++] = rx_buffer[c];
-                    }
-                }
-                serial_monitor[j][i] = '\0';
+                unsigned int sr_len;
+                sr_len = 100 * (rx_buffer[1] - '0') + 10 * (rx_buffer[2] - '0') + (rx_buffer[3] - '0');
                 
-                for(i = 0; i <= j; i++) {
-                    WriteStr(serial_monitor[i], 0, (i + 1) * 8, 0x0000);
+                if((strlen(rx_buffer)- 4) == sr_len) {
+                    for(i = 0, j = 0, c = 4; rx_buffer[c] != '\0'; c++) {
+                        if(rx_buffer[c] == '\n') {
+                            serial_monitor[j][i] = '\0';
+                            i = 0;
+                            j++;
+                        } else {
+                            serial_monitor[j][i++] = rx_buffer[c];
+                        }
+                    }
+                    serial_monitor[j][i] = '\0';
+                    
+                    for(i = 0; i <= j; i++)
+                        sr_line_len[i] = strlen(serial_monitor[i]);
+                    for(; i < 30; i++)
+                        sr_line_len[i] = 0;
+                    
+                    for(i = 0; i < 30; i++) {
+                        if(pre_sr_line_len[i] > sr_line_len[i]) {
+                            for(k = 0; k < pre_sr_line_len[i]; k++) {
+                                temp_sr_str[k] = ' ';
+                            }
+                            temp_sr_str[k] = '\0';
+                            WriteStr(temp_sr_str, 0, (i + 1) * 8, 0xFFFF);
+                        }
+                    }
+
+                    for(i = 0; i <= j; i++) {
+                        WriteStr(serial_monitor[i], 0, (i + 1) * 8, 0x0000);
+                    }
+                    
+                    for(i = 0; i < 30; i++) {
+                        pre_sr_line_len[i] = sr_line_len[i];
+                    }
                 }
             }    
         }
@@ -323,12 +354,31 @@ void get_adc_values(){
     analog2_y = 0;
     for(i = 0; i < 10; i++){
         ADCCON3bits.GSWTRG = 1;
-        while(ADCDSTAT1bits.ARDY9 == 0 || ADCDSTAT1bits.ARDY10 == 0 || ADCDSTAT1bits.ARDY12 == 0 || ADCDSTAT1bits.ARDY13 == 0);
+        while(ADCDSTAT1bits.ARDY3 == 0 || ADCDSTAT1bits.ARDY4 == 0 || ADCDSTAT1bits.ARDY9 == 0 || ADCDSTAT1bits.ARDY10 == 0 || ADCDSTAT1bits.ARDY12 == 0 || ADCDSTAT1bits.ARDY13 == 0);
         analog1_x += ADCDATA12;
         analog2_x += ADCDATA9;
         analog1_y += ADCDATA13;
         analog2_y += ADCDATA10;
+        dial1 += ADCDATA3;
+        dial2 += ADCDATA4;
     }
+    dial1 /= 10;
+    dial2 /= 10;
+    
+    if(dial1 < 1240)
+        dial1 = 2;
+    else if(dial1 < 2000) 
+        dial1 = 1;
+    else
+        dial1 = 0;
+    
+    if(dial2 < 1240)
+        dial2 = 0;
+    else if(dial2 < 2000) 
+        dial2 = 1;
+    else
+        dial2 = 2;
+    
     analog1_x = 31.5 * (analog1_x - x1_offset) / (x1_max - x1_min);
     analog1_y = 31.5 * (analog1_y - y1_offset) / (y1_max - y1_min);
     analog2_x = 31.5 * (analog2_x - x2_offset) / (x2_max - x2_min);
