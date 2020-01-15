@@ -293,8 +293,7 @@ bool QMC5883DataRdy() {
     return false;
 }
 
-XYZ GetRawCompass() {
-    XYZ compass;
+bool GetRawCompass(XYZ *compass) {
     unsigned char temp[6];
     
 #if board_version == 1 || board_version == 2 || board_version == 3
@@ -305,17 +304,18 @@ XYZ GetRawCompass() {
     // Order: XL, XH, YL, YH, ZL, ZH
     
     //if(QMC5883DataRdy()) {
-        I2C_ReadRegisters(QMC5883L_ADDR, QMC5883L_X_LSB, temp, 6);
-        compass.x = -(signed short)(temp[0] | temp[1] << 8);
-        compass.y =  (signed short)(temp[2] | temp[3] << 8);
-        compass.z = -(signed short)(temp[4] | temp[5] << 8);
+        if(!I2C_ReadRegisters(QMC5883L_ADDR, QMC5883L_X_LSB, temp, 6))
+            return false;
+        compass->x = -(signed short)(temp[0] | temp[1] << 8);
+        compass->y =  (signed short)(temp[2] | temp[3] << 8);
+        compass->z = -(signed short)(temp[4] | temp[5] << 8);
     //}
     
 #if board_version == 1 || board_version == 2 || board_version == 3
     I2C_WriteRegisters(0xD0, (unsigned char[2]){0x6A, 0x20}, 2);
     I2C_WriteRegisters(0xD0, (unsigned char[2]){0x37, 0x00}, 2);
 #endif
-    return compass;
+    return true;
 }
 
 #endif
@@ -332,9 +332,9 @@ void ComputeCompassOffsetGain(XYZ c_min, XYZ c_max) {
     compass_gain.z = 2.0f / (c_max.z - c_min.z);
 }
 
-XYZ GetCompass() {
-    XYZ compass;
-    compass = GetRawCompass();
+bool GetCompass(XYZ *compass) {
+    if(!GetRawCompass(compass))
+        return false;
     
 #if IMU_BUFFER_SIZE > 0
     unsigned char i;
@@ -348,10 +348,11 @@ XYZ GetCompass() {
     compass = VectorScale(compass, 1.0f / IMU_BUFFER_SIZE);
 #endif
 
-    compass.x = (compass.x - compass_offset.x) * compass_gain.x;
-    compass.y = (compass.y - compass_offset.y) * compass_gain.y;
-    compass.z = (compass.z - compass_offset.z) * compass_gain.z;
-    return compass;
+    compass->x = (compass->x - compass_offset.x) * compass_gain.x;
+    compass->y = (compass->y - compass_offset.y) * compass_gain.y;
+    compass->z = (compass->z - compass_offset.z) * compass_gain.z;
+    
+    return true;
 }
 
 //------------------------------------Altimeter-----------------------------------

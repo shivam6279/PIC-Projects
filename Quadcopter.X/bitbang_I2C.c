@@ -47,6 +47,8 @@ bool I2C_ReadRegisters(unsigned char address, unsigned char start_adr, unsigned 
     }
     I2C_SendNak();
     I2C_Stop();
+    
+    return true;
 }
 
 void I2C_Send(unsigned char byte) {
@@ -123,6 +125,8 @@ unsigned char I2C_ReadBit() {
 }
 
 bool I2C_GetAck() {
+    bool ack = true;
+    
     SDA_LAT = 0;
     SCL_LAT = 0;
     SCL_TRIS = 0;                 
@@ -131,14 +135,14 @@ bool I2C_GetAck() {
     I2C_DelayFull();
     
     if(SDA_PORT)
-        return 0;
+        ack = 0;
     
     I2C_DelayHalf(); 
     SCL_TRIS = 0;
     I2C_DelayFull();
     I2C_DelayFull();
     
-    return true;
+    return ack;
 }
 
 void I2C_SendAck() {

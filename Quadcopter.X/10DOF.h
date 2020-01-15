@@ -75,8 +75,8 @@ bool QMC5883DataRdy();
 #endif
 
 extern void ComputeCompassOffsetGain(XYZ, XYZ);
-extern XYZ GetRawCompass();
-extern XYZ GetCompass();
+extern bool GetRawCompass(XYZ*);
+extern bool GetCompass(XYZ*);
 
 //Pressure sensors
 
