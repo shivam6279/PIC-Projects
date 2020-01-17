@@ -3,6 +3,90 @@
 
 unsigned long int delay_counter = 0;
 
+static unsigned int PWM_MAX;
+
+void pwm_init(float freq) {
+    float f = 100000000.0 / freq; 
+    unsigned char pre = 0;
+    while(f > 65535.0) { 
+        f /= 2.0;
+        pre++; 
+    }
+    unsigned int t = (unsigned int)f;
+    if(pre == 7) {
+        if(t > 32767) {
+            t /= 2;
+            pre++;
+        } else {
+            t *= 2; 
+            pre--;
+        }
+    }
+    if(pre == 8) pre = 7;
+
+    PWM_MAX = t;
+
+    CFGCONbits.OCACLK = 0;
+
+    OC1CON = 0;  
+    OC1R = 0;
+    OC1RS = 0;
+    OC1CON = 0b1110;
+
+    T3CONbits.TCKPS = pre & 0b111;
+    PR3 = PWM_MAX;
+    IPC3bits.T3IP = 4;
+    IFS0bits.T3IF = 0;
+    IEC0bits.T3IE = 1;
+
+    OC1CONbits.ON = 1;
+    TRISBbits.TRISB2 = 0;
+    CFGCONbits.IOLOCK = 0; // Unlock IO
+    RPB2Rbits.RPB2R = 0b1100;   //OC1
+    CFGCONbits.IOLOCK = 1;  // Lock IO
+    T3CONbits.TON = 1;
+}
+
+void write_pwm(int num, unsigned char val) {
+    unsigned int f_val = val;
+    f_val = ((float)val * (float)PWM_MAX / 255.0);
+    if (f_val <= 0) {
+        f_val = 0;
+    }
+    else if (f_val >= PWM_MAX) {
+        f_val = PWM_MAX;
+    }
+    switch(num) {
+        case 1:
+            OC1RS = f_val;
+            break;                
+        case 2:
+            OC2RS = f_val;
+            break;                
+        case 3:
+            OC3RS = f_val;
+            break;                
+        case 4:
+            OC4RS = f_val;
+            break;                
+        case 5:
+            OC5RS = f_val;
+            break;                
+        case 6:
+            OC6RS = f_val;
+            break;                
+        case 7:
+            OC7RS = f_val;
+            break;                
+        case 8:
+            OC8RS = f_val;
+            break;                
+        case 9:
+            OC9RS = f_val;
+            break;
+    }
+}
+
 void adc_init(){
     ADCCON1bits.ON = 0; 
     

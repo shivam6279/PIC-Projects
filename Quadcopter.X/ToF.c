@@ -1,8 +1,6 @@
 #include "ToF.h"
 #include "bitbang_I2C.h"
 
-#define VL6180X_ADDRESS 0x52
-
 void VL6180_init() {
     // private settings from page 24 of app note
     VL6180_write8(0x0207, 0x01);
@@ -82,15 +80,16 @@ unsigned char ToF_valueGood() {
 
 unsigned char VL6180_read8(unsigned int addr) {
     unsigned char data;
+    
     I2C_Start();
-    I2C_Send(VL6180X_ADDRESS & 0xFE); 
+    I2C_Send((VL6180X_ADDRESS << 1) & 0xFE); 
     I2C_GetAck();
     I2C_Send(addr >> 8);
     I2C_GetAck();
     I2C_Send(addr & 0xFF);
     I2C_GetAck();
     I2C_Start();
-    I2C_Send(VL6180X_ADDRESS | 0x01); 
+    I2C_Send((VL6180X_ADDRESS << 1) | 0x01); 
     I2C_GetAck();
     data = I2C_Read();
     I2C_SendNak();

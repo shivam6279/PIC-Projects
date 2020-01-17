@@ -4,51 +4,75 @@
 #include <xc.h>
 
 bool I2C_WriteRegisters(unsigned char address, unsigned char *data, unsigned int num) {
+    bool ret = true;
+    
+    address <<= 1;
+
     I2C_Start();
     I2C_Send(address & 0xFE); 
     if(!I2C_GetAck()) {
-        I2C_Stop();
-        return false;
+        ret = false;
     }
     while(num--) {
         I2C_Send(*data);
         if(!I2C_GetAck()) {
-            I2C_Stop();
-            return false;
+            ret = false;
         }
         data++;
     }
     I2C_Stop();
-    return true;
+    return ret;
 }
 
 bool I2C_ReadRegisters(unsigned char address, unsigned char start_adr, unsigned char *data, unsigned int num) {
+    bool ret = true;
+    
+    address <<= 1;
+
     I2C_Start();
     I2C_Send(address & 0xFE); 
     if(!I2C_GetAck()) {
-        I2C_Stop();
-        return false;
+        ret = false;
     }
     I2C_Send(start_adr);
     if(!I2C_GetAck()) {
-        I2C_Stop();
-        return false;
+        ret = false;
     }
     I2C_Start();
     I2C_Send(address | 0x01); 
     if(!I2C_GetAck()) {
-        I2C_Stop();
-        return false;
+        ret = false;
     }
-    while(num--) {
+    
+    if(num > 1) {
+        while(num--) {
+            *data = I2C_Read();
+            data++;
+            if(num > 0) I2C_SendAck();
+        }
+        
+    } else {
         *data = I2C_Read();
-        data++;
-        if(num > 0) I2C_SendAck();
     }
+    
     I2C_SendNak();
     I2C_Stop();
     
-    return true;
+    return ret;
+}
+
+bool I2C_CheckAddress(unsigned char addr) {
+    bool ret = true;
+    
+    addr <<= 1;
+    
+    I2C_Start();
+    I2C_Send(addr & 0xFE); 
+    if(!I2C_GetAck()) {
+        ret = false;
+    }
+    I2C_Stop();
+    return ret;
 }
 
 void I2C_Send(unsigned char byte) {
@@ -135,7 +159,7 @@ bool I2C_GetAck() {
     I2C_DelayFull();
     
     if(SDA_PORT)
-        ack = 0;
+        ack = false;
     
     I2C_DelayHalf(); 
     SCL_TRIS = 0;

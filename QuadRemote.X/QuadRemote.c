@@ -35,6 +35,11 @@ int buffer_counter = 0;
 unsigned int rx_time_counter = 0;
 volatile bool rx_signal = 0, rx_data_rdy = 0;
 
+int vibrate_timer = -1;
+
+volatile unsigned char rx_stage = 0;
+volatile unsigned int rx_len = 0;
+
 void main() {
     bool rx_signal_flag = 1;
     int i, j, k, c;
@@ -46,6 +51,8 @@ void main() {
     float data[10];
     char data_names[20][40];
     
+    unsigned char pre_d1, pre_d2;
+    
     char rx_buffer[1024];
     
     for(i = 0; i < 30; i++) {
@@ -53,6 +60,7 @@ void main() {
     }
     
     init();
+    pwm_init(10000);
     adc_init();
     timer2_init(1000);
     timer3_init(50);
@@ -79,6 +87,9 @@ void main() {
     DrawDisplayBounds();
     FillRect(270, (float)(31 - analog2_y) * 240.0/31.0, 50, (float)(analog2_y) * 240.0/31.0, 0xFFA0);
     FillRect(270, 0, 50, (float)(31 - analog2_y) * 240.0/31.0,0xFFFF);
+    
+    pre_d1 = dial1;
+    pre_d2 = dial2;
     
     while(1) {
         if(rx_data_rdy && rx_signal) {
@@ -290,25 +301,61 @@ void main() {
             rx_signal_flag = 0;
         }
         
+        if(pre_d1 != dial1 || pre_d2 != dial2) {
+            write_pwm(1, 255);
+            vibrate_timer = 350;
+        }
+        pre_d1 = dial1;
+        pre_d2 = dial2;
+        
         ShowInputData();
     }
 }
 
 void __ISR_AT_VECTOR(_UART1_RX_VECTOR, IPL6SRS) Xbee(void) {
     IFS3bits.U1RXIF = 0; 
+//    do {
+//        receive1 = U1RXREG & 0xFF;
+//        if(receive1 == '\r') {
+//            rx_signal = 1;
+//            rx_data_rdy = 1;
+//            rx_time_counter = 0;
+//            
+//            rx_buffer_global[buffer_counter] = '\0';
+//            buffer_counter = 0;
+//        } else {
+//            rx_buffer_global[buffer_counter++] = receive1;
+//        }
+//    }while(U1STAbits.URXDA);
+    static temp_rx_len;
     do {
         receive1 = U1RXREG & 0xFF;
-        if(receive1 == '\r') {
+        if(receive1 == '\f') {
+            rx_stage = 1;
+        } else if(rx_stage == 1) {
+            rx_len = (receive1 - '0') * 100;
+            rx_stage = 2;
+        } else if(rx_stage == 2) {
+            rx_len += (receive1 - '0') * 10;
+            rx_stage = 3;
+        } else if(rx_stage == 3) {
+            rx_len += (receive1 - '0');
+            temp_rx_len = rx_len;
+            rx_stage = 4;
+            buffer_counter = 0;
+        } else if(rx_stage == 4 && temp_rx_len > 1) {
+            rx_buffer_global[buffer_counter++] = receive1;
+            temp_rx_len--;
+        } else if(rx_stage == 4 && temp_rx_len <= 1) {
+            rx_buffer_global[buffer_counter++] = receive1;
+            rx_buffer_global[buffer_counter] = '\0';
             rx_signal = 1;
             rx_data_rdy = 1;
             rx_time_counter = 0;
-            
-            rx_buffer_global[buffer_counter] = '\0';
-            buffer_counter = 0;
-        } else {
-            rx_buffer_global[buffer_counter++] = receive1;
+            rx_stage = 0;
         }
-    }while(U1STAbits.URXDA);
+    }while(U1STAbits.URXDA);    
+    
     U1STAbits.OERR = 0;
     IFS3bits.U1RXIF = 0; 
 }
@@ -321,6 +368,13 @@ void __ISR_AT_VECTOR(_TIMER_5_VECTOR, IPL4SRS) XBee_rx(void) {
     } else {
         rx_time_counter++;
     }    
+    
+    if(vibrate_timer >= 0) {
+        if(vibrate_timer-- <= 0) {
+            write_pwm(1, 0);
+            vibrate_timer = -1;
+        }
+    }
 }
 
 void __ISR_AT_VECTOR(_TIMER_3_VECTOR, IPL3SRS) Xbee_send(void){

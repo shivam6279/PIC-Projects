@@ -70,7 +70,17 @@ void main() {
     Init();    
     
     WriteRGBLed(255, 0, 0);                            //Red
-    delay_ms(100);
+    
+    delay_ms(200);
+    
+    bool EEPROM_connected = I2C_CheckAddress(EEPROM_ADDRESS);
+    bool MPU6050_connected = I2C_CheckAddress(MPU6050_ADDR);
+    bool compass_connected = I2C_CheckAddress(HMC5883_ADDR) | I2C_CheckAddress(QMC5883L_ADDR);
+    bool ToF_connected = I2C_CheckAddress(VL6180X_ADDRESS);
+    
+    if(ToF_connected) 
+        VL6180_init();
+    
     Init_10DOF();    
     //Calibrate ESC
     if(XBee.y2 > 29 && XBee.x2 > 13) {
@@ -78,36 +88,60 @@ void main() {
     }
     TurnMotorsOff();
     delay_ms(100);
-    //Calibrate sensors
-    if(XBee.y1 > 13 && XBee.x1 > 13 && XBee.rs == 0) {  //display sensor readings
-        WriteRGBLed(255, 0, 240);                       //Magenta
-        //SendCalibrationData();
-        CalibrationMenu();
-    }    
+    
     //Set PID gains
     SetPIDGain(&roll, &pitch, &yaw, &altitude, &GPS);
     delay_ms(1500);
+    
+    unsigned int sr_len;
+    while(1) {
+        StartDelayCounter();
+        GetAcc(&acc);
+        GetCompass(&compass);
+
+        sr_len = 110;
+        sr_len += FloatStrLen(acc.x, 3);
+        sr_len += FloatStrLen(acc.y, 3);
+        sr_len += FloatStrLen(acc.z, 3);
+
+        MadgwickQuaternionUpdate(q, acc, (XYZ){0.0, 0.0, 0.0}, compass, 0.050);
+        QuaternionToEuler(q, &roll.error, &pitch.error, &heading);
+        XBeeWriteChar('\f');
+        XBeeWriteChar((sr_len / 100) % 10 + '0');
+        XBeeWriteChar((sr_len / 10) % 10 + '0');
+        XBeeWriteChar(sr_len % 10 + '0');
+        XBeeWriteStr("Place board on a perfectly level surface\nAnd point it north\n");
+        XBeeWriteStr("Toggle left switch to end\n");
+        XBeeWriteStr("Pitch: ");
+        XBeeWriteFloat(acc.x, 3); XBeeWriteChar('\n');
+        XBeeWriteStr("Roll: ");
+        XBeeWriteFloat(acc.y, 3); XBeeWriteChar('\n');
+        XBeeWriteStr("Heading: ");
+        XBeeWriteFloat(acc.z, 3);
+        while(ms_counter() < 50);
+    }
 
     while(1) {
         ResetPID(&roll, &pitch, &yaw, &altitude, &GPS); //Clear PID variables
         ResetQuaternion(q);                             //Reset quaternion
         MotorsReset(&speed);        
                             //Clear motor speeds   
-#if (board_version == 4 || board_version == 5) && USE_EEPROM == 1
-        if(!eeprom_readPID(&roll, &pitch, &yaw, &altitude, &GPS)) {
-            SetPIDGain(&roll, &pitch, &yaw, &altitude, &GPS);
+        
+        if(EEPROM_connected) {
+            if(!eeprom_readPID(&roll, &pitch, &yaw, &altitude, &GPS)) {
+                SetPIDGain(&roll, &pitch, &yaw, &altitude, &GPS);
+            }
+            eeprom_readCalibration();
+            eeprom_readOffsets();
         }
-        eeprom_readCalibration();
-        eeprom_readOffsets();
-#endif
         
         // Wait to be armed
         Menu(&roll, &pitch, &yaw, &altitude);
         
-#if (board_version == 4 || board_version == 5) && USE_EEPROM == 1
-        eeprom_writePID(&roll, &pitch, &yaw, &altitude, &GPS);
-#endif
-
+        if(EEPROM_connected) {
+            eeprom_writePID(&roll, &pitch, &yaw, &altitude, &GPS);
+        }
+        
         // Arm motors
         // Set up quaternion - save parameters at take off
         // Heading, altitude, latitude, longitude
@@ -134,14 +168,6 @@ void main() {
                 GetAcc(&acc);
                 GetGyro(&gyro);
 
-            #if board_version == 4 || board_version == 5
-                if(ToF_counter >= 10) {
-                    ToF_distance = ToF_readRange();
-                    if(ToF_valueGood() != 0)
-                        ToF_distance = -1;
-                }
-            #endif
-
                 //Update quaternion
                 MadgwickQuaternionUpdate(q, acc, gyro, compass, IMU_loop_time);
 
@@ -160,6 +186,17 @@ void main() {
                     PIDIntegrateAngle(&roll,  IMU_loop_time);
                     PIDIntegrateAngle(&pitch, IMU_loop_time);
                     PIDIntegrateAngle(&yaw,   IMU_loop_time);
+                }
+                
+                if(ToF_connected) {
+                    if(ToF_counter >= 50) {
+                        ToF_counter = 0;
+                        ToF_distance = ToF_readRange();
+                        ToF_distance *= cos(TO_RAD(roll.error));
+                        ToF_distance *= cos(TO_RAD(pitch.error));
+                        if(ToF_valueGood() != 0)
+                            ToF_distance = -1;
+                    }
                 }
             }
 
@@ -236,7 +273,7 @@ void main() {
             if(TxBufferEmpty() && tx_buffer_timer > 50) {
                 tx_buffer_timer = 0;
                 XBeeWriteChar('C');
-                XBeeWriteFloat(pitch.error, 2); XBeeWriteChar(',');
+                XBeeWriteFloat((float)ToF_distance / 10.0, 2); XBeeWriteChar(',');
                 XBeeWriteFloat(altitude.offset - altitude.error, 2); XBeeWriteChar(',');
                 XBeeWriteFloat(altitude.derivative, 2); XBeeWriteChar(',');
                 XBeeWriteFloat(acc_comp.z, 2); XBeeWriteChar(',');

@@ -55,6 +55,8 @@ extern XYZ VectorSubtract(XYZ, XYZ);
 extern XYZ VectorScale(XYZ, float);
 
 //MPU6050
+#define MPU6050_ADDR 0x68
+
 extern void MPU6050Init();
 extern bool GetRawAcc(XYZ*);
 extern bool GetAcc(XYZ*);
@@ -64,11 +66,16 @@ extern bool GetGyro(XYZ*);
 //Magnetometer
 
 //HMC5883
+#define HMC5883_ADDR 0x1E
+
 #ifdef HMC5883
 void HMC5883Init();
 #endif
 
 //QMC5883
+
+#define QMC5883L_ADDR 0x0D
+
 #ifdef QMC5883
 void QMC5883Init();
 bool QMC5883DataRdy();
@@ -83,6 +90,9 @@ extern bool GetCompass(XYZ*);
 extern unsigned char oversampling_delay;
 
 //BMP180
+
+#define BMP180_ADDR 0x77
+
 #ifdef BMP180
 extern void BMP180Init();
 extern void StartPressureRead();
@@ -94,6 +104,9 @@ extern float GetAltitude();
 #endif
 
 //MS5611
+
+#define MS5611_ADDR 0x77
+
 #ifdef MS5611
 extern void MS5611Init();
 extern void StartPressureRead();

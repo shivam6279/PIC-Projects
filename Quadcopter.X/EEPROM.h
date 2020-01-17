@@ -4,6 +4,8 @@
 #include <stdbool.h>
 #include "PID.h"
 
+#define EEPROM_ADDRESS  0x50
+
 bool eeprom_writeByte(unsigned char, unsigned char);
 unsigned char eeprom_readByte(unsigned char);
 bool eeprom_writeBytes(unsigned char, unsigned char*, unsigned char);

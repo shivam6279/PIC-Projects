@@ -6,6 +6,7 @@
 
 extern bool I2C_WriteRegisters(unsigned char address, unsigned char *data, unsigned int num);
 extern bool I2C_ReadRegisters(unsigned char address, unsigned char start_adr, unsigned char *data, unsigned int num);
+extern bool I2C_CheckAddress(unsigned char);
 extern void I2C_Send(unsigned char byte);
 extern unsigned char I2C_Read();
 extern bool I2C_GetAck();

@@ -2,6 +2,8 @@
 #define _pic32_H_
 
 extern void adc_init();
+extern void pwm_init(float);
+extern void write_pwm(int, unsigned char);
 extern void init();
 extern void delay_ms(unsigned int);
 extern void timer2_init(float);

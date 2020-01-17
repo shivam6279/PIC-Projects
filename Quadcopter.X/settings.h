@@ -20,8 +20,6 @@
 
 #define MIN_THROTTLE_INTEGRATION 3
 
-#define USE_EEPROM 0
-
 #if board_version == 1
 	#define RGBLED_RED_PIN 0
 	#define RGBLED_GREEN_PIN 1

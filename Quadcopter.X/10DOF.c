@@ -46,30 +46,30 @@ XYZ VectorScale(XYZ a, float scale) {
 void MPU6050Init() {
     unsigned char i;
     
-    I2C_WriteRegisters(0xD0, (unsigned char[2]){0x6B, 0x00}, 2);
-    I2C_WriteRegisters(0xD0, (unsigned char[2]){0x19, 0x07}, 2);
-    I2C_WriteRegisters(0xD0, (unsigned char[2]){0x1A, 0x03}, 2);
-    I2C_WriteRegisters(0xD0, (unsigned char[2]){0x1B, 0x00}, 2);
-    I2C_WriteRegisters(0xD0, (unsigned char[2]){0x1C, 0x00}, 2);
+    I2C_WriteRegisters(MPU6050_ADDR, (unsigned char[2]){0x6B, 0x00}, 2);
+    I2C_WriteRegisters(MPU6050_ADDR, (unsigned char[2]){0x19, 0x07}, 2);
+    I2C_WriteRegisters(MPU6050_ADDR, (unsigned char[2]){0x1A, 0x03}, 2);
+    I2C_WriteRegisters(MPU6050_ADDR, (unsigned char[2]){0x1B, 0x00}, 2);
+    I2C_WriteRegisters(MPU6050_ADDR, (unsigned char[2]){0x1C, 0x00}, 2);
     for(i = 0x1D; i <= 0x23; i++) 
-        I2C_WriteRegisters(0xD0, (unsigned char[2]){i, 0x00}, 2);
+        I2C_WriteRegisters(MPU6050_ADDR, (unsigned char[2]){i, 0x00}, 2);
     
-    I2C_WriteRegisters(0xD0, (unsigned char[2]){0x24, 0x40}, 2);
-    I2C_WriteRegisters(0xD0, (unsigned char[2]){0x25, 0x8C}, 2);
-    I2C_WriteRegisters(0xD0, (unsigned char[2]){0x26, 0x02}, 2);
-    I2C_WriteRegisters(0xD0, (unsigned char[2]){0x27, 0x88}, 2);
-    I2C_WriteRegisters(0xD0, (unsigned char[2]){0x28, 0x0C}, 2);
-    I2C_WriteRegisters(0xD0, (unsigned char[2]){0x29, 0x0A}, 2);
-    I2C_WriteRegisters(0xD0, (unsigned char[2]){0x2A, 0x81}, 2);
-    I2C_WriteRegisters(0xD0, (unsigned char[2]){0x64, 0x01}, 2);
-    I2C_WriteRegisters(0xD0, (unsigned char[2]){0x67, 0x03}, 2);
-    I2C_WriteRegisters(0xD0, (unsigned char[2]){0x01, 0x80}, 2);
-    I2C_WriteRegisters(0xD0, (unsigned char[2]){0x34, 0x04}, 2);
-    I2C_WriteRegisters(0xD0, (unsigned char[2]){0x64, 0x00}, 2);
-    I2C_WriteRegisters(0xD0, (unsigned char[2]){0x6A, 0x00}, 2);
-    I2C_WriteRegisters(0xD0, (unsigned char[2]){0x64, 0x01}, 2);
-    I2C_WriteRegisters(0xD0, (unsigned char[2]){0x6A, 0x20}, 2);
-    I2C_WriteRegisters(0xD0, (unsigned char[2]){0x34, 0x13}, 2);
+    I2C_WriteRegisters(MPU6050_ADDR, (unsigned char[2]){0x24, 0x40}, 2);
+    I2C_WriteRegisters(MPU6050_ADDR, (unsigned char[2]){0x25, 0x8C}, 2);
+    I2C_WriteRegisters(MPU6050_ADDR, (unsigned char[2]){0x26, 0x02}, 2);
+    I2C_WriteRegisters(MPU6050_ADDR, (unsigned char[2]){0x27, 0x88}, 2);
+    I2C_WriteRegisters(MPU6050_ADDR, (unsigned char[2]){0x28, 0x0C}, 2);
+    I2C_WriteRegisters(MPU6050_ADDR, (unsigned char[2]){0x29, 0x0A}, 2);
+    I2C_WriteRegisters(MPU6050_ADDR, (unsigned char[2]){0x2A, 0x81}, 2);
+    I2C_WriteRegisters(MPU6050_ADDR, (unsigned char[2]){0x64, 0x01}, 2);
+    I2C_WriteRegisters(MPU6050_ADDR, (unsigned char[2]){0x67, 0x03}, 2);
+    I2C_WriteRegisters(MPU6050_ADDR, (unsigned char[2]){0x01, 0x80}, 2);
+    I2C_WriteRegisters(MPU6050_ADDR, (unsigned char[2]){0x34, 0x04}, 2);
+    I2C_WriteRegisters(MPU6050_ADDR, (unsigned char[2]){0x64, 0x00}, 2);
+    I2C_WriteRegisters(MPU6050_ADDR, (unsigned char[2]){0x6A, 0x00}, 2);
+    I2C_WriteRegisters(MPU6050_ADDR, (unsigned char[2]){0x64, 0x01}, 2);
+    I2C_WriteRegisters(MPU6050_ADDR, (unsigned char[2]){0x6A, 0x20}, 2);
+    I2C_WriteRegisters(MPU6050_ADDR, (unsigned char[2]){0x34, 0x13}, 2);
     
 #if IMU_BUFFER_SIZE > 0
     for(i = 0; i < IMU_BUFFER_SIZE; i++) {
@@ -93,7 +93,7 @@ void MPU6050Init() {
 
 bool GetRawAcc(XYZ *acc) {
     unsigned char temp[6];
-    if(!I2C_ReadRegisters(0xD0, 0x3B, temp, 6))
+    if(!I2C_ReadRegisters(MPU6050_ADDR, 0x3B, temp, 6))
         return false;
 
     // Order: XH, XL, YH, YZ, ZH, ZL
@@ -130,7 +130,7 @@ bool GetAcc(XYZ *acc) {
 
 bool GetRawGyro(XYZ *gyro) {
     unsigned char temp[6];
-    if(!I2C_ReadRegisters(0xD0, 0x43, temp, 6))
+    if(!I2C_ReadRegisters(MPU6050_ADDR, 0x43, temp, 6))
         return false;
 
     // Order: XH, XL, YH, YZ, ZH, ZL
@@ -172,17 +172,17 @@ void HMC5883Init() {
     unsigned char i;
     
 #if board_version == 1 || board_version == 2 || board_version == 3
-    I2C_WriteRegisters(0xD0, (unsigned char[2]){0x6A, 0x00}, 2);
-    I2C_WriteRegisters(0xD0, (unsigned char[2]){0x37, 0x02}, 2);
+    I2C_WriteRegisters(MPU6050_ADDR, (unsigned char[2]){0x6A, 0x00}, 2);
+    I2C_WriteRegisters(MPU6050_ADDR, (unsigned char[2]){0x37, 0x02}, 2);
 #endif
     
-    I2C_WriteRegisters(0x3C, (unsigned char[2]){0, 0x14}, 2);
-    I2C_WriteRegisters(0x3C, (unsigned char[2]){1, 0x20}, 2);
-    I2C_WriteRegisters(0x3C, (unsigned char[2]){2, 0x00}, 2);
+    I2C_WriteRegisters(HMC5883_ADDR, (unsigned char[2]){0, 0x14}, 2);
+    I2C_WriteRegisters(HMC5883_ADDR, (unsigned char[2]){1, 0x20}, 2);
+    I2C_WriteRegisters(HMC5883_ADDR, (unsigned char[2]){2, 0x00}, 2);
     
 #if board_version == 1 || board_version == 2 || board_version == 3
-    I2C_WriteRegisters(0xD0, (unsigned char[2]){0x6A, 0x20}, 2);
-    I2C_WriteRegisters(0xD0, (unsigned char[2]){0x37, 0x00}, 2);
+    I2C_WriteRegisters(MPU6050_ADDR, (unsigned char[2]){0x6A, 0x20}, 2);
+    I2C_WriteRegisters(MPU6050_ADDR, (unsigned char[2]){0x37, 0x00}, 2);
 #endif
 
 #if IMU_BUFFER_SIZE > 0
@@ -196,15 +196,15 @@ void GetRawCompass() {
     unsigned char temp[6];
     
 #if board_version == 1 || board_version == 2 || board_version == 3
-    I2C_WriteRegisters(0xD0, (unsigned char[2]){0x6A, 0x00}, 2);
-    I2C_WriteRegisters(0xD0, (unsigned char[2]){0x37, 0x02}, 2);
+    I2C_WriteRegisters(MPU6050_ADDR, (unsigned char[2]){0x6A, 0x00}, 2);
+    I2C_WriteRegisters(MPU6050_ADDR, (unsigned char[2]){0x37, 0x02}, 2);
 #endif
     
-    I2C_ReadRegisters(0x3C, 0x03, temp, 6);
+    I2C_ReadRegisters(HMC5883_ADDR, 0x03, temp, 6);
     
 #if board_version == 1 || board_version == 2 || board_version == 3
-    I2C_WriteRegisters(0xD0, (unsigned char[2]){0x6A, 0x20}, 2);
-    I2C_WriteRegisters(0xD0, (unsigned char[2]){0x37, 0x00}, 2);
+    I2C_WriteRegisters(MPU6050_ADDR, (unsigned char[2]){0x6A, 0x20}, 2);
+    I2C_WriteRegisters(MPU6050_ADDR, (unsigned char[2]){0x37, 0x00}, 2);
 #endif
 
     // Order: XH, XL, YH, YZ, ZH, ZL
@@ -216,8 +216,6 @@ void GetRawCompass() {
 #endif
 
 //--QMC5883--
-
-#define QMC5883L_ADDR 0x1A
 
 //Register numbers
 #define QMC5883L_X_LSB 0
@@ -265,16 +263,16 @@ void QMC5883Init() {
     unsigned char i;
     
 #if board_version == 1 || board_version == 2 || board_version == 3
-    I2C_WriteRegisters(0xD0, (unsigned char[2]){0x6A, 0x00}, 2);
-    I2C_WriteRegisters(0xD0, (unsigned char[2]){0x37, 0x02}, 2);
+    I2C_WriteRegisters(MPU6050_ADDR, (unsigned char[2]){0x6A, 0x00}, 2);
+    I2C_WriteRegisters(MPU6050_ADDR, (unsigned char[2]){0x37, 0x02}, 2);
 #endif
     
     I2C_WriteRegisters(QMC5883L_ADDR, (unsigned char[2]){QMC5883L_RESET, 0x01}, 2);
     I2C_WriteRegisters(QMC5883L_ADDR, (unsigned char[2]){QMC5883L_CONFIG, (QMC5883L_CONFIG_OS512 | QMC5883L_CONFIG_2GAUSS | QMC5883L_CONFIG_50HZ | QMC5883L_CONFIG_CONT)}, 2);
     
 #if board_version == 1 || board_version == 2 || board_version == 3
-    I2C_WriteRegisters(0xD0, (unsigned char[2]){0x6A, 0x20}, 2);
-    I2C_WriteRegisters(0xD0, (unsigned char[2]){0x37, 0x00}, 2);
+    I2C_WriteRegisters(MPU6050_ADDR, (unsigned char[2]){0x6A, 0x20}, 2);
+    I2C_WriteRegisters(MPU6050_ADDR, (unsigned char[2]){0x37, 0x00}, 2);
 #endif
 
 #if IMU_BUFFER_SIZE > 0
@@ -297,8 +295,8 @@ bool GetRawCompass(XYZ *compass) {
     unsigned char temp[6];
     
 #if board_version == 1 || board_version == 2 || board_version == 3
-    I2C_WriteRegisters(0xD0, (unsigned char[2]){0x6A, 0x00}, 2);
-    I2C_WriteRegisters(0xD0, (unsigned char[2]){0x37, 0x02}, 2);
+    I2C_WriteRegisters(MPU6050_ADDR, (unsigned char[2]){0x6A, 0x00}, 2);
+    I2C_WriteRegisters(MPU6050_ADDR, (unsigned char[2]){0x37, 0x02}, 2);
 #endif
 
     // Order: XL, XH, YL, YH, ZL, ZH
@@ -312,8 +310,8 @@ bool GetRawCompass(XYZ *compass) {
     //}
     
 #if board_version == 1 || board_version == 2 || board_version == 3
-    I2C_WriteRegisters(0xD0, (unsigned char[2]){0x6A, 0x20}, 2);
-    I2C_WriteRegisters(0xD0, (unsigned char[2]){0x37, 0x00}, 2);
+    I2C_WriteRegisters(MPU6050_ADDR, (unsigned char[2]){0x6A, 0x20}, 2);
+    I2C_WriteRegisters(MPU6050_ADDR, (unsigned char[2]){0x37, 0x00}, 2);
 #endif
     return true;
 }
@@ -370,7 +368,7 @@ static float B5;
 
 void BMP180Init() {
     unsigned char temp[22];
-    I2C_ReadRegisters(0xEE, 0xAA, temp, 22);
+    I2C_ReadRegisters(BMP180_ADDR, 0xAA, temp, 22);
     ac1 = (signed short)(temp[0] << 8 | temp[1]);
     ac2 = (signed short)(temp[2] << 8 | temp[3]);
     ac3 = (signed short)(temp[4] << 8 | temp[5]);
@@ -394,17 +392,17 @@ void BMP180Init() {
 }
 
 void StartTemperatureRead() {
-    I2C_WriteRegisters(0xEE, (unsigned char[2]){0xF4, 0x2E}, 2);
+    I2C_WriteRegisters(BMP180_ADDR, (unsigned char[2]){0xF4, 0x2E}, 2);
 }
 
 void StartPressureRead() {
-    I2C_WriteRegisters(0xEE, (unsigned char[2]){0xF4, 0x34 + OVERSAMPLING * 64}, 2);
+    I2C_WriteRegisters(BMP180_ADDR, (unsigned char[2]){0xF4, 0x34 + OVERSAMPLING * 64}, 2);
 }
 
 void ReadRawTemperature() {
     float X1, X2;
     unsigned char t[2];
-    I2C_ReadRegisters(0xEE, 0xF6, t, 2);
+    I2C_ReadRegisters(BMP180_ADDR, 0xF6, t, 2);
     UT = t[0] << 8 | t[1];
     X1 = ((float)UT - (float)ac6) * ((float)ac5 / 32768.0f);
     X2 = ((float)(mc * 2048.0f)) / (X1 + (float)md);
@@ -424,7 +422,7 @@ float GetAltitude() {
     unsigned long int B4, B7;
     unsigned char t[3];
     
-    I2C_ReadRegisters(0xEE, 0xF6, t, 3);
+    I2C_ReadRegisters(BMP180_ADDR, 0xF6, t, 3);
     UP = ((t[0] << 16) | (t[1] << 8) | (t[2]));
     UP >>= (8 - OVERSAMPLING);
 
@@ -463,19 +461,19 @@ unsigned int MS5611_fc[6];
 
 void MS5611Init() {
     unsigned char temp[2];
-    I2C_WriteRegisters(0xEE, (unsigned char[1]){0x1E}, 1);
+    I2C_WriteRegisters(MS5611_ADDR, (unsigned char[1]){0x1E}, 1);
     delay_ms(100);
-    I2C_ReadRegisters(0xEE, 0xA2, temp, 2);
+    I2C_ReadRegisters(MS5611_ADDR, 0xA2, temp, 2);
     MS5611_fc[0] = temp[0] << 8 | temp[1];
-    I2C_ReadRegisters(0xEE, 0xA2 + 2, temp, 2);
+    I2C_ReadRegisters(MS5611_ADDR, 0xA2 + 2, temp, 2);
     MS5611_fc[1] = temp[0] << 8 | temp[1];
-    I2C_ReadRegisters(0xEE, 0xA2 + 4, temp, 2);
+    I2C_ReadRegisters(MS5611_ADDR, 0xA2 + 4, temp, 2);
     MS5611_fc[2] = temp[0] << 8 | temp[1];
-    I2C_ReadRegisters(0xEE, 0xA2 + 6, temp, 2);
+    I2C_ReadRegisters(MS5611_ADDR, 0xA2 + 6, temp, 2);
     MS5611_fc[3] = temp[0] << 8 | temp[1];
-    I2C_ReadRegisters(0xEE, 0xA2 + 8, temp, 2);
+    I2C_ReadRegisters(MS5611_ADDR, 0xA2 + 8, temp, 2);
     MS5611_fc[4] = temp[0] << 8 | temp[1];
-    I2C_ReadRegisters(0xEE, 0xA2 + 10, temp, 2);
+    I2C_ReadRegisters(MS5611_ADDR, 0xA2 + 10, temp, 2);
     MS5611_fc[5] = temp[0] << 8 | temp[1];
     #if OVERSAMPLING == 0
         oversampling_delay = 1;
@@ -491,25 +489,25 @@ void MS5611Init() {
 }
 
 void StartPressureRead() {
-    I2C_WriteRegisters(0xEE, (unsigned char[1]){0x40 + OVERSAMPLING * 2}, 1);
+    I2C_WriteRegisters(MS5611_ADDR, (unsigned char[1]){0x40 + OVERSAMPLING * 2}, 1);
 }
 
 unsigned long int ReadRawPressure() {
     unsigned char temp[3];
     unsigned long int r;
-    I2C_ReadRegisters(0xEE, 0x00, temp, 3);
+    I2C_ReadRegisters(MS5611_ADDR, 0x00, temp, 3);
     r = (unsigned long int)((unsigned long int)temp[0] << 16 | (unsigned long int)temp[1] << 8 | (unsigned long int)temp[2]);
     return r;
 }
 
 void StartTemperatureRead() {
-    I2C_WriteRegisters(0xEE, (unsigned char[1]){0x50 + OVERSAMPLING * 2}, 1);
+    I2C_WriteRegisters(MS5611_ADDR, (unsigned char[1]){0x50 + OVERSAMPLING * 2}, 1);
 }
 
 unsigned long int ReadRawTemperature() {
     unsigned char temp[3];
     unsigned long int r;
-    I2C_ReadRegisters(0xEE, 0x00, temp, 3);
+    I2C_ReadRegisters(MS5611_ADDR, 0x00, temp, 3);
     r = (unsigned long int)((unsigned long int)temp[0] << 16 | (unsigned long int)temp[1] << 8 | (unsigned long int)temp[2]);
     return r;
 }

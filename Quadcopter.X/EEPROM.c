@@ -8,8 +8,6 @@
 
 // CAT24C02 - 256 Bytes - 16 x 16 byte page write buffer
 
-#define EEPROM_ADDRESS  0xA0
-
 #define EEPROM_INITIAL_ADDR 0x00
 #define EEPROM_INITIAL_KEY  0x25
 
@@ -44,17 +42,19 @@ bool eeprom_writeByte(unsigned char addr, unsigned char byte) {
 unsigned char eeprom_readByte(unsigned char addr) {
     unsigned char data;
     
-    I2C_Start();
-    I2C_Send(EEPROM_ADDRESS & 0xFE); 
-    I2C_GetAck();
-    I2C_Send(addr);
-    I2C_GetAck();
-    I2C_Start();
-    I2C_Send(EEPROM_ADDRESS | 0x01); 
-    I2C_GetAck();
-    data = I2C_Read();
-    I2C_SendNak();
-    I2C_Stop();
+//    I2C_Start();
+//    I2C_Send(EEPROM_ADDRESS & 0xFE); 
+//    I2C_GetAck();
+//    I2C_Send(addr);
+//    I2C_GetAck();
+//    I2C_Start();
+//    I2C_Send(EEPROM_ADDRESS | 0x01); 
+//    I2C_GetAck();
+//    data = I2C_Read();
+//    I2C_SendNak();
+//    I2C_Stop();
+    
+    I2C_ReadRegisters(EEPROM_ADDRESS, addr, &data, 1);
     
     return data;
 }
