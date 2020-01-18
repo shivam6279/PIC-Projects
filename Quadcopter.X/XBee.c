@@ -6,6 +6,7 @@
 #include "GPS.h"
 #include "USART.h"
 #include "EEPROM.h"
+#include <string.h>
 #include <sys/attribs.h>
 
 volatile rx XBee;
@@ -188,6 +189,28 @@ bool TxBufferEmpty() {
     return 1;
 }
 
+void XBeeWriteChar(char a) {
+    UART1_TX_INTERRUPT = 0;
+
+    tx_buffer[tx_buffer_index++] = a;
+    tx_buffer[tx_buffer_index] = '\0';
+    
+    XBeeFillBuffer();
+}
+
+void XBeeWriteStr(const char str[]) {
+    unsigned int i;
+
+    UART1_TX_INTERRUPT = 0;
+    
+    for(i = 0; str[i] != '\0'; i++, tx_buffer_index++) 
+        tx_buffer[tx_buffer_index] = str[i];
+
+    tx_buffer[tx_buffer_index] = '\0';
+    
+    XBeeFillBuffer();
+}
+
 void XBeeWriteInt(int a) {
     long int tens;
 
@@ -252,8 +275,6 @@ unsigned char XBeeWriteFloat(float a, unsigned char precision) {
 unsigned char FloatStrLen(float a, unsigned char precision) {
     unsigned char i, len = 0;;
     long int tens;
-
-    UART1_TX_INTERRUPT = 0;
     
     if(a < 0) { 
         a *= -1;
@@ -273,28 +294,6 @@ unsigned char FloatStrLen(float a, unsigned char precision) {
     for(i = 0, tens = 10; i < precision; i++, tens *= 10, len++);
     
     return len;
-}
-
-void XBeeWriteChar(char a) {
-    UART1_TX_INTERRUPT = 0;
-
-    tx_buffer[tx_buffer_index++] = a;
-    tx_buffer[tx_buffer_index] = '\0';
-
-    XBeeFillBuffer();
-}
-
-void XBeeWriteStr(const char str[]) {
-    unsigned int i;
-
-    UART1_TX_INTERRUPT = 0;
-    
-    for(i = 0; str[i] != '\0'; i++, tx_buffer_index++) 
-        tx_buffer[tx_buffer_index] = str[i];
-
-    tx_buffer[tx_buffer_index] = '\0';
-
-    XBeeFillBuffer();
 }
 
 void XBeeWriteRawInt(int a) {
@@ -317,4 +316,100 @@ void XBeeWriteRawFloat(float a) {
     tx_buffer[tx_buffer_index] = '\0';
 
     XBeeFillBuffer();
+}
+
+
+void XBeePacketSend() {
+    int i;
+    int str_len = tx_buffer_index;
+    
+    for(i = tx_buffer_index + 4; i >= 4; i--) {
+        tx_buffer[i] = tx_buffer[i-4];
+    }
+    tx_buffer[0] = '\f';
+    
+    tx_buffer[1] = ((str_len / 100) - '0');
+    tx_buffer[2] = ((str_len / 10) % 10 - '0');
+    tx_buffer[3] = (str_len % 10 - '0');
+    
+    XBeeFillBuffer();
+}
+
+void XBeePacketChar(char a) {
+    UART1_TX_INTERRUPT = 0;
+
+    tx_buffer[tx_buffer_index++] = a;
+    tx_buffer[tx_buffer_index] = '\0';
+}
+
+void XBeePacketStr(const char str[]) {
+    unsigned int i;
+
+    UART1_TX_INTERRUPT = 0;
+    
+    for(i = 0; str[i] != '\0'; i++, tx_buffer_index++) 
+        tx_buffer[tx_buffer_index] = str[i];
+
+    tx_buffer[tx_buffer_index] = '\0';
+}
+
+void XBeePacketInt(int a) {
+    long int tens;
+
+    UART1_TX_INTERRUPT = 0;
+    
+    if(a < 0) { 
+        a *= -1; 
+        tx_buffer[tx_buffer_index++] = '-'; 
+    }
+    
+    if(a > 1) {
+        for(tens = 1; tens < a; tens *= 10);
+        tens /= 10;
+    } else {
+        tens = 1;
+    }
+
+    for(; tens > 0; tens /= 10)
+        tx_buffer[tx_buffer_index++] = ((long int)(a / tens) % 10) + 48;
+
+    tx_buffer[tx_buffer_index] = '\0';
+
+    XBeeFillBuffer();
+}
+
+unsigned char XBeePacketFloat(float a, unsigned char precision) {
+    unsigned char i, len = 0;;
+    long int tens;
+
+    UART1_TX_INTERRUPT = 0;
+    
+    if(a < 0) { 
+        a *= -1; 
+        tx_buffer[tx_buffer_index++] = '-'; 
+        len++;
+    }
+    
+    if(a > 1.0) {
+        for(tens = 1; tens < a; tens *= 10);
+        tens /= 10;
+
+        for(; tens > 0; tens /= 10, len++)
+            tx_buffer[tx_buffer_index++] = ((long int)(a / tens) % 10) + 48;
+    } else {
+        tx_buffer[tx_buffer_index++] = '0';
+        len++;
+    }
+
+    tx_buffer[tx_buffer_index++] = '.';
+    len++;
+    
+    for(i = 0, tens = 10; i < precision; i++, tens *= 10, len++)
+        tx_buffer[tx_buffer_index++] = ((long int)(a * tens) % 10) + 48;
+
+    tx_buffer[tx_buffer_index] = '\0';
+
+    XBeeFillBuffer();
+    
+    return len;
 }
