@@ -137,23 +137,23 @@ void SendCalibrationData() {
         if(compass_avg.y < compass_min.y) compass_min.y = compass_avg.y;
         if(compass_avg.z < compass_min.z) compass_min.z = compass_avg.z;
         
-        XBeeWriteChar('D');        
-        XBeeWriteInt(acc.x); XBeeWriteChar(',');
-        XBeeWriteInt(acc.y); XBeeWriteChar(',');
-        XBeeWriteInt(acc.z); XBeeWriteChar(',');
-        XBeeWriteInt(gyro.x); XBeeWriteChar(',');
-        XBeeWriteInt(gyro.y); XBeeWriteChar(',');
-        XBeeWriteInt(gyro.z); XBeeWriteChar(',');        
-        XBeeWriteInt(compass.x); XBeeWriteChar(',');
-        XBeeWriteInt(compass.y); XBeeWriteChar(',');
-        XBeeWriteInt(compass.z); XBeeWriteChar(',');
-        XBeeWriteInt(compass_max.x); XBeeWriteChar(',');
-        XBeeWriteInt(compass_max.y); XBeeWriteChar(',');
-        XBeeWriteInt(compass_max.z); XBeeWriteChar(',');
-        XBeeWriteInt(compass_min.x); XBeeWriteChar(',');
-        XBeeWriteInt(compass_min.y); XBeeWriteChar(',');
-        XBeeWriteInt(compass_min.z);
-        XBeeWriteChar('\r');
+        XBeePacketChar('D');        
+        XBeePacketInt(acc.x); XBeePacketChar(',');
+        XBeePacketInt(acc.y); XBeePacketChar(',');
+        XBeePacketInt(acc.z); XBeePacketChar(',');
+        XBeePacketInt(gyro.x); XBeePacketChar(',');
+        XBeePacketInt(gyro.y); XBeePacketChar(',');
+        XBeePacketInt(gyro.z); XBeePacketChar(',');        
+        XBeePacketInt(compass.x); XBeePacketChar(',');
+        XBeePacketInt(compass.y); XBeePacketChar(',');
+        XBeePacketInt(compass.z); XBeePacketChar(',');
+        XBeePacketInt(compass_max.x); XBeePacketChar(',');
+        XBeePacketInt(compass_max.y); XBeePacketChar(',');
+        XBeePacketInt(compass_max.z); XBeePacketChar(',');
+        XBeePacketInt(compass_min.x); XBeePacketChar(',');
+        XBeePacketInt(compass_min.y); XBeePacketChar(',');
+        XBeePacketInt(compass_min.z);
+        XBeePacketSend();
     
         delay_ms(35);
     }
@@ -321,16 +321,17 @@ void XBeeWriteRawFloat(float a) {
 
 void XBeePacketSend() {
     int i;
-    int str_len = tx_buffer_index;
+    tx_buffer_index += 4;
     
-    for(i = tx_buffer_index + 4; i >= 4; i--) {
+    UART1_TX_INTERRUPT = 0;
+    
+    for(i = tx_buffer_index; i >= 4; i--) {
         tx_buffer[i] = tx_buffer[i-4];
     }
-    tx_buffer[0] = '\f';
-    
-    tx_buffer[1] = ((str_len / 100) - '0');
-    tx_buffer[2] = ((str_len / 10) % 10 - '0');
-    tx_buffer[3] = (str_len % 10 - '0');
+    tx_buffer[0] = '\f';    
+    tx_buffer[1] = (((tx_buffer_index - 4) / 100) + '0');
+    tx_buffer[2] = (((tx_buffer_index - 4) / 10) % 10 + '0');
+    tx_buffer[3] = ((tx_buffer_index - 4) % 10 + '0');
     
     XBeeFillBuffer();
 }
@@ -374,8 +375,6 @@ void XBeePacketInt(int a) {
         tx_buffer[tx_buffer_index++] = ((long int)(a / tens) % 10) + 48;
 
     tx_buffer[tx_buffer_index] = '\0';
-
-    XBeeFillBuffer();
 }
 
 unsigned char XBeePacketFloat(float a, unsigned char precision) {
@@ -408,8 +407,6 @@ unsigned char XBeePacketFloat(float a, unsigned char precision) {
         tx_buffer[tx_buffer_index++] = ((long int)(a * tens) % 10) + 48;
 
     tx_buffer[tx_buffer_index] = '\0';
-
-    XBeeFillBuffer();
     
     return len;
 }

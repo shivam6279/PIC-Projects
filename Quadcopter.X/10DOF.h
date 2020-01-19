@@ -16,22 +16,22 @@
 #define ACC_Y_GAIN 1.0f
 #define ACC_Z_GAIN 1.0f
 
-#define GYRO_X_OFFSET -470.0f
-#define GYRO_Y_OFFSET -260.0f
-#define GYRO_Z_OFFSET -45.0f
+#define GYRO_X_OFFSET 120.0f
+#define GYRO_Y_OFFSET -2.0f
+#define GYRO_Z_OFFSET -40.0f
 
 #define GYRO_X_GAIN 98.0f
 #define GYRO_Y_GAIN 98.0f
 #define GYRO_Z_GAIN 106.0f
 
-#define COMPASS_X_MIN -5310.0f
-#define COMPASS_X_MAX 5095.0f
+#define COMPASS_X_MIN -3208.0f
+#define COMPASS_X_MAX 5532.0f
 
-#define COMPASS_Y_MIN -4566.0f
-#define COMPASS_Y_MAX 4634.0f
+#define COMPASS_Y_MIN -5006.0f
+#define COMPASS_Y_MAX 4171.0f
 
-#define COMPASS_Z_MIN -3185.0f
-#define COMPASS_Z_MAX 6393.0f
+#define COMPASS_Z_MIN -4578.0f
+#define COMPASS_Z_MAX 5545.0f
 
 #ifdef BMP180
 #define OVERSAMPLING 3  //0 - 3

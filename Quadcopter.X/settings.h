@@ -14,8 +14,8 @@
 #define MAX_YAW_RATE 180.0f         // degrees/sec
 #define MAX_ALTITUDE_RATE 0.7f      // meters/sec
 
-#define ROLLOFFSET -1.4f			// degrees
-#define PITCHOFFSET 1.4f			// degrees
+#define ROLLOFFSET 1.0f			// degrees
+#define PITCHOFFSET -3.05f			// degrees
 #define HEADINGOFFSET 0.0f       	// degrees
 
 #define MIN_THROTTLE_INTEGRATION 3

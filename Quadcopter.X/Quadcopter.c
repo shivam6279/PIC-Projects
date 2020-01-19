@@ -92,34 +92,6 @@ void main() {
     //Set PID gains
     SetPIDGain(&roll, &pitch, &yaw, &altitude, &GPS);
     delay_ms(1500);
-    
-    unsigned int sr_len;
-    while(1) {
-        StartDelayCounter();
-        GetAcc(&acc);
-        GetCompass(&compass);
-
-        sr_len = 110;
-        sr_len += FloatStrLen(acc.x, 3);
-        sr_len += FloatStrLen(acc.y, 3);
-        sr_len += FloatStrLen(acc.z, 3);
-
-        MadgwickQuaternionUpdate(q, acc, (XYZ){0.0, 0.0, 0.0}, compass, 0.050);
-        QuaternionToEuler(q, &roll.error, &pitch.error, &heading);
-        XBeeWriteChar('\f');
-        XBeeWriteChar((sr_len / 100) % 10 + '0');
-        XBeeWriteChar((sr_len / 10) % 10 + '0');
-        XBeeWriteChar(sr_len % 10 + '0');
-        XBeeWriteStr("Place board on a perfectly level surface\nAnd point it north\n");
-        XBeeWriteStr("Toggle left switch to end\n");
-        XBeeWriteStr("Pitch: ");
-        XBeeWriteFloat(acc.x, 3); XBeeWriteChar('\n');
-        XBeeWriteStr("Roll: ");
-        XBeeWriteFloat(acc.y, 3); XBeeWriteChar('\n');
-        XBeeWriteStr("Heading: ");
-        XBeeWriteFloat(acc.z, 3);
-        while(ms_counter() < 50);
-    }
 
     while(1) {
         ResetPID(&roll, &pitch, &yaw, &altitude, &GPS); //Clear PID variables
@@ -272,24 +244,25 @@ void main() {
             //--------------------------------------------------------Send Data to remote-----------------------------------------------------------------------------
             if(TxBufferEmpty() && tx_buffer_timer > 50) {
                 tx_buffer_timer = 0;
-                XBeeWriteChar('C');
-                XBeeWriteFloat((float)ToF_distance / 10.0, 2); XBeeWriteChar(',');
-                XBeeWriteFloat(altitude.offset - altitude.error, 2); XBeeWriteChar(',');
-                XBeeWriteFloat(altitude.derivative, 2); XBeeWriteChar(',');
-                XBeeWriteFloat(acc_comp.z, 2); XBeeWriteChar(',');
-                XBeeWriteFloat(altitude.sum, 8); XBeeWriteChar(',');                      
-                XBeeWriteFloat(altitude.output, 8); XBeeWriteChar(',');
-                XBeeWriteInt(loop_mode);
-                XBeeWriteChar('\r');
+//                XBeePacketChar('C');
+//                XBeePacketFloat((float)ToF_distance / 10.0, 2); XBeePacketChar(',');
+//                XBeePacketFloat(altitude.offset - altitude.error, 2); XBeePacketChar(',');
+//                XBeePacketFloat(altitude.derivative, 2); XBeePacketChar(',');
+//                XBeePacketFloat(acc_comp.z, 2); XBeePacketChar(',');
+//                XBeePacketFloat(altitude.sum, 8); XBeePacketChar(',');                      
+//                XBeePacketFloat(altitude.output, 8); XBeePacketChar(',');
+//                XBeePacketInt(loop_mode);
+//                XBeePacketSend();
                 
-//                XBeeWriteChar('Z');
-//                XBeeWriteFloat(pitch.error, 2); XBeeWriteChar('\n');
-//                XBeeWriteFloat(roll.error, 2); XBeeWriteChar('\n');
-//                XBeeWriteFloat(yaw.error, 2); XBeeWriteChar('\n');
-//                XBeeWriteFloat(altitude.error, 2); XBeeWriteChar('\n');
-//                XBeeWriteFloat(altitude.output, 8); XBeeWriteChar('\n');                      
-//                XBeeWriteFloat(latitude, 8); XBeeWriteChar('\n');
-//                XBeeWriteFloat(longitude, 8); XBeeWriteChar('\r');
+                XBeePacketChar('Z');
+                XBeePacketStr("Pitch: "); XBeePacketFloat(pitch.error, 2); XBeePacketChar('\n');
+                XBeePacketStr("Roll: "); XBeePacketFloat(roll.error, 2); XBeePacketChar('\n');
+                XBeePacketStr("Yaw: "); XBeePacketFloat(yaw.error, 2); XBeePacketChar('\n');
+                XBeePacketStr("Altitude: "); XBeePacketFloat(altitude.error, 2); XBeePacketChar('\n');
+                XBeePacketStr("Altitude speed: "); XBeePacketFloat(altitude.derivative, 2); XBeePacketChar('\n');
+                XBeePacketStr("Acc Z: "); XBeePacketFloat(acc_comp.z, 2); XBeePacketChar('\n');
+                XBeePacketStr("ToF distance: "); XBeePacketFloat((float)ToF_distance / 10.0, 2); XBeePacketChar('\n');
+                XBeePacketSend();
             }
             
             //--------------------------------------------------------PID Output to motors----------------------------------------------------------------------------

@@ -255,43 +255,38 @@ void main() {
                 }
                 pre_mode = mode;
                 
-                unsigned int sr_len;
-                sr_len = 100 * (rx_buffer[1] - '0') + 10 * (rx_buffer[2] - '0') + (rx_buffer[3] - '0');
-                
-                if((strlen(rx_buffer)- 4) == sr_len) {
-                    for(i = 0, j = 0, c = 4; rx_buffer[c] != '\0'; c++) {
-                        if(rx_buffer[c] == '\n') {
-                            serial_monitor[j][i] = '\0';
-                            i = 0;
-                            j++;
-                        } else {
-                            serial_monitor[j][i++] = rx_buffer[c];
-                        }
+                for(i = 0, j = 0, c = 1; rx_buffer[c] != '\0'; c++) {
+                    if(rx_buffer[c] == '\n') {
+                        serial_monitor[j][i] = '\0';
+                        i = 0;
+                        j++;
+                    } else {
+                        serial_monitor[j][i++] = rx_buffer[c];
                     }
-                    serial_monitor[j][i] = '\0';
-                    
-                    for(i = 0; i <= j; i++)
-                        sr_line_len[i] = strlen(serial_monitor[i]);
-                    for(; i < 30; i++)
-                        sr_line_len[i] = 0;
-                    
-                    for(i = 0; i < 30; i++) {
-                        if(pre_sr_line_len[i] > sr_line_len[i]) {
-                            for(k = 0; k < pre_sr_line_len[i]; k++) {
-                                temp_sr_str[k] = ' ';
-                            }
-                            temp_sr_str[k] = '\0';
-                            WriteStr(temp_sr_str, 0, (i + 1) * 8, 0xFFFF);
-                        }
-                    }
+                }
+                serial_monitor[j][i] = '\0';
 
-                    for(i = 0; i <= j; i++) {
-                        WriteStr(serial_monitor[i], 0, (i + 1) * 8, 0x0000);
+                for(i = 0; i <= j; i++)
+                    sr_line_len[i] = strlen(serial_monitor[i]);
+                for(; i < 30; i++)
+                    sr_line_len[i] = 0;
+
+                for(i = 0; i < 30; i++) {
+                    if(pre_sr_line_len[i] > sr_line_len[i]) {
+                        for(k = 0; k < pre_sr_line_len[i]; k++) {
+                            temp_sr_str[k] = ' ';
+                        }
+                        temp_sr_str[k] = '\0';
+                        WriteStr(temp_sr_str, 0, (i + 1) * 8, 0xFFFF);
                     }
-                    
-                    for(i = 0; i < 30; i++) {
-                        pre_sr_line_len[i] = sr_line_len[i];
-                    }
+                }
+
+                for(i = 0; i <= j; i++) {
+                    WriteStr(serial_monitor[i], 0, (i + 1) * 8, 0x0000);
+                }
+
+                for(i = 0; i < 30; i++) {
+                    pre_sr_line_len[i] = sr_line_len[i];
                 }
             }    
         }

@@ -154,19 +154,20 @@ void Menu(PID *x, PID *y, PID *z, PID *a){
             cal_counter = 0;
         
         StartDelayCounter();
-
-        XBeeWriteChar('A');
-        XBeeWriteInt(cursor); XBeeWriteChar(',');
-        XBeeWriteFloat(x->p, 3); XBeeWriteChar(',');
-        XBeeWriteFloat(x->i, 3); XBeeWriteChar(',');
-        XBeeWriteFloat(x->d, 3); XBeeWriteChar(',');
-        XBeeWriteFloat(a->p, 2); XBeeWriteChar(',');
-        XBeeWriteFloat(a->i, 2); XBeeWriteChar(',');
-        XBeeWriteFloat(a->d, 2); XBeeWriteChar(',');
-        XBeeWriteInt(GPS_connected); XBeeWriteChar(',');
-        XBeeWriteInt(GPS_signal); XBeeWriteChar(',');        
-        XBeeWriteInt(arming_counter); 
-        XBeeWriteChar('\r');
+        
+        while(!TxBufferEmpty());
+        XBeePacketChar('A');
+        XBeePacketInt(cursor);          XBeePacketChar(',');
+        XBeePacketFloat(x->p, 3);       XBeePacketChar(',');
+        XBeePacketFloat(x->i, 3);       XBeePacketChar(',');
+        XBeePacketFloat(x->d, 3);       XBeePacketChar(',');
+        XBeePacketFloat(a->p, 2);       XBeePacketChar(',');
+        XBeePacketFloat(a->i, 2);       XBeePacketChar(',');
+        XBeePacketFloat(a->d, 2);       XBeePacketChar(',');
+        XBeePacketInt(GPS_connected);   XBeePacketChar(',');
+        XBeePacketInt(GPS_signal);      XBeePacketChar(',');        
+        XBeePacketInt(arming_counter); 
+        XBeePacketSend();
         
         while(ms_counter() < 25);  
         StopDelayCounter();
@@ -189,10 +190,13 @@ void CalibrationMenu() {
     q[2] = 0;
     q[3] = 0;
     
+    XBeeClearBuffer();
+    
     for(i = 0; i < 20; i++) {
         StartDelayCounter();
-        XBeeWriteChar('Z');
-        XBeeWriteStr("016Calibration Menu\r");
+        XBeePacketChar('Z');
+        XBeePacketStr("Calibration Menu");
+        XBeePacketSend();
         while(ms_counter() < 50);
     }
     
@@ -202,28 +206,18 @@ void CalibrationMenu() {
                 SendCalibrationData();
                 p_ls = XBee.ls;
                 while(XBee.ls == p_ls && XBee.rs == 0) {
-                    sr_len = 51;
-                    sr_len += FloatStrLen(compass_offset.x, 3);
-                    sr_len += FloatStrLen(compass_offset.y, 3);
-                    sr_len += FloatStrLen(compass_offset.z, 3);
-                    sr_len += FloatStrLen(compass_gain.x, 6);
-                    sr_len += FloatStrLen(compass_gain.y, 6);
-                    sr_len += FloatStrLen(compass_gain.z, 6);
-                    
                     StartDelayCounter();
-                    XBeeWriteChar('Z');
-                    XBeeWriteChar((sr_len / 100) % 10 + '0');
-                    XBeeWriteChar((sr_len / 10) % 10 + '0');
-                    XBeeWriteChar(sr_len % 10 + '0');
-                    XBeeWriteStr("Compass calibration results\n");
-                    XBeeWriteStr("Offset: ");
-                    XBeeWriteFloat(compass_offset.x, 3); XBeeWriteStr(", ");
-                    XBeeWriteFloat(compass_offset.y, 3); XBeeWriteStr(", ");
-                    XBeeWriteFloat(compass_offset.z, 3); XBeeWriteChar('\n');
-                    XBeeWriteStr("Gain: ");
-                    XBeeWriteFloat(compass_gain.x, 6); XBeeWriteStr(", ");
-                    XBeeWriteFloat(compass_gain.y, 6); XBeeWriteStr(", ");
-                    XBeeWriteFloat(compass_gain.z, 6); XBeeWriteChar('\r');
+                    XBeePacketChar('Z');
+                    XBeePacketStr("Compass calibration results\n");
+                    XBeePacketStr("Offset: ");
+                    XBeePacketFloat(compass_offset.x, 3); XBeePacketStr(", ");
+                    XBeePacketFloat(compass_offset.y, 3); XBeePacketStr(", ");
+                    XBeePacketFloat(compass_offset.z, 3); XBeePacketChar('\n');
+                    XBeePacketStr("Gain: ");
+                    XBeePacketFloat(compass_gain.x, 6); XBeePacketStr(", ");
+                    XBeePacketFloat(compass_gain.y, 6); XBeePacketStr(", ");
+                    XBeePacketFloat(compass_gain.z, 6);
+                    XBeePacketSend();
                     while(ms_counter() < 50);
                 }
                 if(XBee.rs == 1)
@@ -232,32 +226,26 @@ void CalibrationMenu() {
                 for(i = 0; i <= 100; i++) {
                     StartDelayCounter();
                     GetRawAcc(&acc);
-                    XBeeWriteChar('Z');
-                    XBeeWriteStr("040Place board on a perfectly level surface\r");
+                    XBeePacketChar('Z');
+                    XBeePacketStr("Place board on a perfectly level surface");
+                    XBeePacketSend();
                     while(ms_counter() < 20);
                 }
                 
                 p_ls = XBee.ls;
-                while(p_ls == XBee.ls && XBee.rs == 0) {
-                    sr_len = 78;
-                    sr_len += FloatStrLen(acc.x, 1);
-                    sr_len += FloatStrLen(acc.y, 1);
-                    sr_len += FloatStrLen(acc.z, 1);
-                    
+                while(p_ls == XBee.ls && XBee.rs == 0) {                    
                     StartDelayCounter();
                     GetRawAcc(&acc);
-                    XBeeWriteChar('Z');
-                    XBeeWriteChar((sr_len / 100) % 10 + '0');
-                    XBeeWriteChar((sr_len / 10) % 10 + '0');
-                    XBeeWriteChar(sr_len % 10 + '0');
-                    XBeeWriteStr("Place board on a perfectly level surface\n");
-                    XBeeWriteStr("Toggle left switch to end\n");
-                    XBeeWriteStr("X: ");
-                    XBeeWriteFloat(acc.x, 1); XBeeWriteChar('\n');
-                    XBeeWriteStr("Y: ");
-                    XBeeWriteFloat(acc.y, 1); XBeeWriteChar('\n');
-                    XBeeWriteStr("Z: ");
-                    XBeeWriteFloat(acc.z, 1); XBeeWriteChar('\r');
+                    XBeePacketChar('Z');
+                    XBeePacketStr("Place board on a perfectly level surface\n");
+                    XBeePacketStr("Toggle left switch to end\n");
+                    XBeePacketStr("X: ");
+                    XBeePacketFloat(acc.x, 1); XBeePacketChar('\n');
+                    XBeePacketStr("Y: ");
+                    XBeePacketFloat(acc.y, 1); XBeePacketChar('\n');
+                    XBeePacketStr("Z: ");
+                    XBeePacketFloat(acc.z, 1);
+                    XBeePacketSend();
                     while(ms_counter() < 50);
                 }
                 if(XBee.rs == 1)
@@ -268,24 +256,17 @@ void CalibrationMenu() {
                 acc_offset.z = acc.z;
                 
                 p_ls = XBee.ls;
-                while(XBee.ls == p_ls && XBee.rs == 0) {
-                    sr_len = 51;
-                    sr_len += FloatStrLen(acc_offset.x, 1);
-                    sr_len += FloatStrLen(acc_offset.y, 1);
-                    sr_len += FloatStrLen(acc_offset.z, 1);
-                    
+                while(XBee.ls == p_ls && XBee.rs == 0) {                    
                     StartDelayCounter();
-                    XBeeWriteChar('Z');
-                    XBeeWriteChar((sr_len / 100) % 10 + '0');
-                    XBeeWriteChar((sr_len / 10) % 10 + '0');
-                    XBeeWriteChar(sr_len % 10 + '0');
-                    XBeeWriteStr("Acc offset results\n");
-                    XBeeWriteStr("X Offset: ");
-                    XBeeWriteFloat(acc_offset.x, 1); XBeeWriteChar('\n');
-                    XBeeWriteStr("Y Offset: ");
-                    XBeeWriteFloat(acc_offset.y, 1); XBeeWriteChar('\n');
-                    XBeeWriteStr("Z Offset: ");
-                    XBeeWriteFloat(acc_offset.z, 1); XBeeWriteChar('\r');
+                    XBeePacketChar('Z');
+                    XBeePacketStr("Acc offset results\n");
+                    XBeePacketStr("X Offset: ");
+                    XBeePacketFloat(acc_offset.x, 1); XBeePacketChar('\n');
+                    XBeePacketStr("Y Offset: ");
+                    XBeePacketFloat(acc_offset.y, 1); XBeePacketChar('\n');
+                    XBeePacketStr("Z Offset: ");
+                    XBeePacketFloat(acc_offset.z, 1);
+                    XBeePacketSend();
                     while(ms_counter() < 50);
                 }
                 if(XBee.rs == 1)
@@ -298,7 +279,8 @@ void CalibrationMenu() {
                     GetCompass(&compass);
 
                     MadgwickQuaternionUpdate(q, acc, (XYZ){0.0, 0.0, 0.0}, compass, 0.050);
-                    XBeeWriteStr("Z059Place board on a perfectly level surface\nAnd point it north\r");
+                    XBeePacketStr("ZPlace board on a perfectly level surface\nAnd point it north");
+                    XBeePacketSend();
 
                     while(ms_counter() < 20);
                 }
@@ -311,27 +293,20 @@ void CalibrationMenu() {
                 while(p_ls == XBee.ls && XBee.rs == 0) {
                     StartDelayCounter();
                     GetAcc(&acc);
+                    GetGyro(&gyro);
                     GetCompass(&compass);
-                    
-                    sr_len = 110;
-                    sr_len += FloatStrLen(pitch, 3);
-                    sr_len += FloatStrLen(roll, 3);
-                    sr_len += FloatStrLen(heading, 3);
-
-                    MadgwickQuaternionUpdate(q, acc, (XYZ){0.0, 0.0, 0.0}, compass, 0.050);
+                    MadgwickQuaternionUpdate(q, acc, gyro, compass, 0.050);
                     QuaternionToEuler(q, &roll, &pitch, &heading);
-                    XBeeWriteChar('Z');
-                    XBeeWriteChar((sr_len / 100) % 10 + '0');
-                    XBeeWriteChar((sr_len / 10) % 10 + '0');
-                    XBeeWriteChar(sr_len % 10 + '0');
-                    XBeeWriteStr("Place board on a perfectly level surface\nAnd point it north\n");
-                    XBeeWriteStr("Toggle left switch to end\n");
-                    XBeeWriteStr("Pitch: ");
-                    XBeeWriteFloat(pitch, 3); XBeeWriteChar('\n');
-                    XBeeWriteStr("Roll: ");
-                    XBeeWriteFloat(roll, 3); XBeeWriteChar('\n');
-                    XBeeWriteStr("Heading: ");
-                    XBeeWriteFloat(heading, 3); XBeeWriteChar('\r');
+                    XBeePacketChar('Z');
+                    XBeePacketStr("Place board on a perfectly level surface\nAnd point it north\n");
+                    XBeePacketStr("Toggle left switch to end\n");
+                    XBeePacketStr("Pitch: ");
+                    XBeePacketFloat(pitch, 3); XBeePacketChar('\n');
+                    XBeePacketStr("Roll: ");
+                    XBeePacketFloat(roll, 3); XBeePacketChar('\n');
+                    XBeePacketStr("Heading: ");
+                    XBeePacketFloat(heading, 3);
+                    XBeePacketSend();
                     while(ms_counter() < 50);
                 }
                 if(XBee.rs == 1)
@@ -347,22 +322,15 @@ void CalibrationMenu() {
                 while(XBee.ls == p_ls && XBee.rs == 0) {
                     StartDelayCounter();
                     
-                    sr_len = 66;
-                    sr_len += FloatStrLen(pitch_offset, 3);
-                    sr_len += FloatStrLen(roll_offset, 3);
-                    sr_len += FloatStrLen(heading_offset, 3);
-                    
-                    XBeeWriteChar('Z');
-                    XBeeWriteChar((sr_len / 100) % 10 + '0');
-                    XBeeWriteChar((sr_len / 10) % 10 + '0');
-                    XBeeWriteChar(sr_len % 10 + '0');
-                    XBeeWriteStr("Angle offset results\n");
-                    XBeeWriteStr("Pitch Offset: ");
-                    XBeeWriteFloat(pitch_offset, 3); XBeeWriteChar('\n');
-                    XBeeWriteStr("Roll Offset: ");
-                    XBeeWriteFloat(roll_offset, 3); XBeeWriteChar('\n');
-                    XBeeWriteStr("Heading Offset: ");
-                    XBeeWriteFloat(heading_offset, 3); XBeeWriteChar('\r');
+                    XBeePacketChar('Z');
+                    XBeePacketStr("Angle offset results\n");
+                    XBeePacketStr("Pitch Offset: ");
+                    XBeePacketFloat(pitch_offset, 3); XBeePacketChar('\n');
+                    XBeePacketStr("Roll Offset: ");
+                    XBeePacketFloat(roll_offset, 3); XBeePacketChar('\n');
+                    XBeePacketStr("Heading Offset: ");
+                    XBeePacketFloat(heading_offset, 3);
+                    XBeePacketSend();
                     while(ms_counter() < 25);
                 }
                 if(XBee.rs == 1)
@@ -409,32 +377,29 @@ void CalibrationMenu() {
 
                     StartDelayCounter();                
                     if(i2c_flag == false) {
-                        XBeeWriteStr("Z021No devices connected!\r");
+                        XBeePacketStr("ZNo devices connected!");
+                        XBeePacketSend();
                     } else {
-                        XBeeWriteChar('Z');
-                        XBeeWriteChar((sr_len / 100) % 10 + '0');
-                        XBeeWriteChar((sr_len / 10) % 10 + '0');
-                        XBeeWriteChar(sr_len % 10 + '0');
-
+                        XBeePacketChar('Z');
                         if(i2c_devices[0] == 1) {
-                            XBeeWriteStr("MPU6050 connected\n");
+                            XBeePacketStr("MPU6050 connected\n");
                         }
                         if(i2c_devices[1] == 1) {
-                            XBeeWriteStr("HMC5883L connected\n");
+                            XBeePacketStr("HMC5883L connected\n");
                         }
                         if(i2c_devices[2] == 1) {
-                            XBeeWriteStr("QMC5883L connected\n");
+                            XBeePacketStr("QMC5883L connected\n");
                         }
                         if(i2c_devices[3] == 1) {                    
-                            XBeeWriteStr("BMP180 connected\n");
+                            XBeePacketStr("BMP180 connected\n");
                         }
                         if(i2c_devices[4] == 1) {                    
-                            XBeeWriteStr("MS5611 connected\n");
+                            XBeePacketStr("MS5611 connected\n");
                         }
                         if(i2c_devices[5] == 1) {                    
-                            XBeeWriteStr("VL6180X connected\n");
+                            XBeePacketStr("VL6180X connected\n");
                         }
-                        XBeeWriteChar('\r');
+                        XBeePacketSend();
                     }
                     while(ms_counter() < 150);
                 }
@@ -456,34 +421,35 @@ void CalibrationMenu() {
         
         StartDelayCounter();
         
-        XBeeWriteChar('Z');
-        XBeeWriteStr("153Calibration Menu\n");
-        XBeeWriteStr("Select an Option:\n");
+        XBeePacketChar('Z');
+        XBeePacketStr("Calibration Menu\n");
+        XBeePacketStr("Select an Option:\n");
         if(cursor == 0)
-            XBeeWriteStr("->");
+            XBeePacketStr("->");
         else
-            XBeeWriteStr("  ");
-        XBeeWriteStr("Calibrate Compass\n");
+            XBeePacketStr("  ");
+        XBeePacketStr("Calibrate Compass\n");
         if(cursor == 1)
-            XBeeWriteStr("->");
+            XBeePacketStr("->");
         else
-            XBeeWriteStr("  ");
-        XBeeWriteStr("Calibrate Accelerometer\n");
+            XBeePacketStr("  ");
+        XBeePacketStr("Calibrate Accelerometer\n");
         if(cursor == 2)
-            XBeeWriteStr("->");
+            XBeePacketStr("->");
         else
-            XBeeWriteStr("  ");
-        XBeeWriteStr("Calibrate pitch and roll offsets\n");
+            XBeePacketStr("  ");
+        XBeePacketStr("Calibrate pitch and roll offsets\n");
         if(cursor == 3)
-            XBeeWriteStr("->");
+            XBeePacketStr("->");
         else
-            XBeeWriteStr("  ");
-        XBeeWriteStr("Change constants\n");
+            XBeePacketStr("  ");
+        XBeePacketStr("Change constants\n");
         if(cursor == 4)
-            XBeeWriteStr("->");
+            XBeePacketStr("->");
         else
-            XBeeWriteStr("  ");
-        XBeeWriteStr("View I2C devices\r");
+            XBeePacketStr("  ");
+        XBeePacketStr("View I2C devices");
+        XBeePacketSend();
         
         while(ms_counter() < 50);
     }
@@ -511,9 +477,9 @@ void ArmingSequence(float q[], float *gravity_mag, float *to_roll, float *to_pit
         
         MadgwickQuaternionUpdate(q, acc, (XYZ){0.0, 0.0, 0.0}, compass, 0.050);
         
-        XBeeWriteChar('B');
-        XBeeWriteInt(i);
-        XBeeWriteChar('\r');
+        XBeePacketChar('B');
+        XBeePacketInt(i);
+        XBeePacketSend();
         
         while(ms_counter() < 3);
     }
