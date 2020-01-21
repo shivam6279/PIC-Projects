@@ -410,3 +410,40 @@ unsigned char XBeePacketFloat(float a, unsigned char precision) {
     
     return len;
 }
+
+unsigned char XBeePacketFixedFloat(float a, unsigned char left, unsigned char precision) {
+    unsigned char i, len = 0;;
+    long int tens;
+
+    UART1_TX_INTERRUPT = 0;
+    
+    if(a < 0) { 
+        a *= -1; 
+        tx_buffer[tx_buffer_index++] = '-';
+        len++;
+    } else {
+        tx_buffer[tx_buffer_index++] = ' '; 
+        len++;        
+    }    
+    
+    for(i = 1, tens = 1; i < left; tens *= 10, i++);
+    
+    for(; left > 0; left--, tens /= 10) {
+        if(tens > (long int)a) {
+            tx_buffer[tx_buffer_index++] = '0'; 
+        } else {
+            tx_buffer[tx_buffer_index++] = ((long int)(a / tens) % 10) + '0';
+        }
+        len++;
+    }
+
+    tx_buffer[tx_buffer_index++] = '.';
+    len++;
+    
+    for(i = 0, tens = 10; i < precision; i++, tens *= 10, len++)
+        tx_buffer[tx_buffer_index++] = ((long int)(a * tens) % 10) + 48;
+
+    tx_buffer[tx_buffer_index] = '\0';
+    
+    return len;
+}

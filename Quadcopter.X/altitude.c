@@ -93,6 +93,7 @@ double GetTakeoffAltitude() {
     int i;
     double r = 0.0;
     
+#if ALTITUDE_BUFFER_SIZE > 0
     for(i = 0; i < 100 - ALTITUDE_BUFFER_SIZE; i++) {
         #ifdef BMP180
             StartTemperatureRead();
@@ -123,5 +124,28 @@ double GetTakeoffAltitude() {
         
         altitude_KF_update(altitude_buffer[i]);
     }
-    return r / 100.0f;
+#else
+    for(i = 0; i < 100; i++) {
+        #ifdef BMP180
+            StartTemperatureRead();
+            delay_ms(5);
+            ReadRawTemperature();
+            StartPressureRead();
+            delay_ms(oversampling_delay);
+            r += GetAltitude();
+        #endif
+        #ifdef MS5611
+            r += GetAltitude(GetPressure());
+        #endif
+    }
+    
+    r /= 100.0f;
+        
+    altitude_KF_update(r);
+    altitude_KF_update(r);
+    altitude_KF_update(r);
+    altitude_KF_update(r);
+    altitude_KF_update(r);
+#endif
+    return r;
 }

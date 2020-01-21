@@ -114,11 +114,11 @@ bool GetAcc(XYZ *acc) {
     for(i = (IMU_BUFFER_SIZE - 1); i >= 1; i--)
         acc_buffer[i] = acc_buffer[i - 1];
 
-    acc_buffer[0] = acc;
+    acc_buffer[0] = *acc;
     for(i = 1; i < IMU_BUFFER_SIZE; i++)
-        acc = VectorAdd(acc, acc_buffer[i]);
+        *acc = VectorAdd(*acc, acc_buffer[i]);
     
-    acc = VectorScale(acc, 1.0f / (float)IMU_BUFFER_SIZE);
+    *acc = VectorScale(*acc, 1.0f / (float)IMU_BUFFER_SIZE);
 #endif
 
     acc->x = (acc->x - acc_offset.x) * ACC_GRAVITY / 16384.0f * acc_gain.x;
@@ -151,11 +151,11 @@ bool GetGyro(XYZ *gyro) {
     for(i = (IMU_BUFFER_SIZE - 1); i >= 1; i--)
         gyro_buffer[i] = gyro_buffer[i - 1];
 
-    gyro_buffer[0] = gyro;
+    gyro_buffer[0] = *gyro;
     for(i = 1; i < IMU_BUFFER_SIZE; i++)
-        gyro = VectorAdd(gyro, gyro_buffer[i]);
+        *gyro = VectorAdd(*gyro, gyro_buffer[i]);
 
-    gyro = VectorScale(gyro, 1.0f / (float)IMU_BUFFER_SIZE);
+    *gyro = VectorScale(*gyro, 1.0f / (float)IMU_BUFFER_SIZE);
 #endif
     gyro->x = (gyro->x - gyro_offset.x) / GYRO_X_GAIN;
     gyro->y = (gyro->y - gyro_offset.y) / GYRO_Y_GAIN;
@@ -339,11 +339,11 @@ bool GetCompass(XYZ *compass) {
     for(i = (IMU_BUFFER_SIZE - 1); i >= 1; i--)
         compass_buffer[i] = compass_buffer[i - 1];
 
-    compass_buffer[0] = compass;
+    compass_buffer[0] = *compass;
     for(i = 1; i < IMU_BUFFER_SIZE; i++)
-        compass = VectorAdd(compass, compass_buffer[i]);
+        *compass = VectorAdd(*compass, compass_buffer[i]);
 
-    compass = VectorScale(compass, 1.0f / IMU_BUFFER_SIZE);
+    *compass = VectorScale(*compass, 1.0f / IMU_BUFFER_SIZE);
 #endif
 
     compass->x = (compass->x - compass_offset.x) * compass_gain.x;
@@ -570,6 +570,6 @@ double GetTemperature() {
 }
 
 double GetAltitude(unsigned long int pressure) {
-    return (44330.0f * (1.0f - pow((double)pressure / 101325.0f, 0.1902949f)));
+    return (44330.0 * (1.0f - pow((double)pressure / 101325.0, 0.1902949)));
 }
 #endif

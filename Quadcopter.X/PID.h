@@ -10,7 +10,7 @@ typedef struct {
 } PID;
 
 extern volatile unsigned long int esc_counter;
-extern volatile unsigned long int data_aq_counter;
+extern volatile unsigned long int gyro_aq_counter, acc_aq_counter, compass_aq_counter;
 extern volatile unsigned char altitude_timer;
 extern volatile unsigned int ToF_counter;
 extern volatile unsigned int tx_buffer_timer;

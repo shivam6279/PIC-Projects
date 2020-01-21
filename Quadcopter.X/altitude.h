@@ -3,7 +3,7 @@
 
 #include <stdbool.h>
 
-#define ALTITUDE_BUFFER_SIZE 5
+#define ALTITUDE_BUFFER_SIZE 0
 
 extern bool LoopAltitude(float*, float*, bool);
 extern double GetTakeoffAltitude();

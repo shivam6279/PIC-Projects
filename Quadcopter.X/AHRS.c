@@ -90,6 +90,37 @@ void QuaternionToEuler(float q[], float *roll, float *pitch, float *yaw) {
     *yaw = LimitAngle(*yaw - heading_offset);
 }
 
+void MultiplyQuaternion(float q1[], float q2[], float qr[]) {
+    qr[0] = q1[0]*q2[0] - q1[1]*q2[1] - q1[2]*q2[2] - q1[3]*q2[3];
+    qr[1] = q1[0]*q2[1] + q1[1]*q2[0] + q1[2]*q2[3] - q1[3]*q2[2];
+    qr[2] = q1[0]*q2[2] + q1[2]*q2[0] + q1[3]*q2[1] - q1[1]*q2[3];
+    qr[3] = q1[0]*q2[3] + q1[3]*q2[0] + q1[1]*q2[2] - q1[2]*q2[1]; 
+}
+
+XYZ GetCompensatedAcc(float q[], XYZ acc, float gravity_mag) {
+    XYZ g, acc_pure;
+    float q_conj[4], temp[4], ret[4];
+
+    g.x = 2.0f * (q[1]*q[3] - q[0]*q[2]);
+    g.y = 2.0f * (q[0]*q[1] + q[2]*q[3]);
+    g.z = q[0]*q[0] - q[1]*q[1] - q[2]*q[2] + q[3]*q[3];
+    g = VectorScale(g, gravity_mag);
+
+    acc_pure.x = acc.x - g.x;
+    acc_pure.y = acc.y - g.y;
+    acc_pure.z = acc.z - g.z;
+
+    q_conj[0] =  q[0];
+    q_conj[1] = -q[1];
+    q_conj[2] = -q[2];
+    q_conj[3] = -q[3];
+
+    MultiplyQuaternion(q, (float[4]){0.0, acc_pure.x,  acc_pure.y,  acc_pure.z}, temp);
+    MultiplyQuaternion(temp, q_conj, ret);
+
+    return (XYZ){ret[1], ret[2], ret[3]};
+}
+
 void MadgwickQuaternionUpdate(float q[], XYZ a, XYZ g, XYZ m, float deltat) {
     float recipNorm;
     float s0, s1, s2, s3;
@@ -166,6 +197,92 @@ void MadgwickQuaternionUpdate(float q[], XYZ a, XYZ g, XYZ m, float deltat) {
     qDot2 -= FUSION_BETA * s1;
     qDot3 -= FUSION_BETA * s2;
     qDot4 -= FUSION_BETA * s3;
+
+    // Integrate rate of change of quaternion to yield quaternion
+    q[0] += qDot1 * deltat;
+    q[1] += qDot2 * deltat;
+    q[2] += qDot3 * deltat;
+    q[3] += qDot4 * deltat;
+
+    // Normalise quaternion
+    recipNorm = invSqrt(q[0] * q[0] + q[1] * q[1] + q[2] * q[2] + q[3] * q[3]);
+    q[0] *= recipNorm;
+    q[1] *= recipNorm;
+    q[2] *= recipNorm;
+    q[3] *= recipNorm;
+}
+
+void MadgwickQuaternionUpdateGyro(float q[], XYZ g, float deltat) {
+    float recipNorm;
+    float qDot1, qDot2, qDot3, qDot4;
+    // Convert gyroscope degrees/sec to radians/sec
+    g.x = TO_RAD(g.x);
+    g.y = TO_RAD(g.y);
+    g.z = TO_RAD(g.z);
+
+    // Rate of change of quaternion from gyroscope
+    qDot1 = 0.5f * (-q[1] * g.x - q[2] * g.y - q[3] * g.z);
+    qDot2 = 0.5f * (q[0] * g.x + q[2] * g.z - q[3] * g.y);
+    qDot3 = 0.5f * (q[0] * g.y - q[1] * g.z + q[3] * g.x);
+    qDot4 = 0.5f * (q[0] * g.z + q[1] * g.y - q[2] * g.x);
+
+    // Integrate rate of change of quaternion to yield quaternion
+    q[0] += qDot1 * deltat;
+    q[1] += qDot2 * deltat;
+    q[2] += qDot3 * deltat;
+    q[3] += qDot4 * deltat;
+
+    // Normalise quaternion
+    recipNorm = invSqrt(q[0] * q[0] + q[1] * q[1] + q[2] * q[2] + q[3] * q[3]);
+    q[0] *= recipNorm;
+    q[1] *= recipNorm;
+    q[2] *= recipNorm;
+    q[3] *= recipNorm;
+}
+
+void MadgwickQuaternionUpdateAcc(float q[], XYZ a, float deltat) {
+	float recipNorm;
+	float s0, s1, s2, s3;
+    float qDot1, qDot2, qDot3, qDot4;
+	float _2q0, _2q1, _2q2, _2q3, _4q0, _4q1, _4q2 ,_8q1, _8q2, q0q0, q1q1, q2q2, q3q3;
+
+    // Normalise accelerometer measurement
+    recipNorm = invSqrt(a.x * a.x + a.y * a.y + a.z * a.z);
+    a.x *= recipNorm;
+    a.y *= recipNorm;
+    a.z *= recipNorm;
+    
+    _2q0 = 2.0f * q[0];
+    _2q1 = 2.0f * q[1];
+    _2q2 = 2.0f * q[2];
+    _2q3 = 2.0f * q[3];
+    _4q0 = 4.0f * q[0];
+    _4q1 = 4.0f * q[1];
+    _4q2 = 4.0f * q[2];
+    _8q1 = 8.0f * q[1];
+    _8q2 = 8.0f * q[2];
+    q0q0 = q[0] * q[0];
+    q1q1 = q[1] * q[1];
+    q2q2 = q[2] * q[2];
+    q3q3 = q[3] * q[3];
+
+    // Gradient decent algorithm corrective step
+    s0 = _4q0 * q2q2 + _2q2 * a.x + _4q0 * q1q1 - _2q1 * a.y;
+    s1 = _4q1 * q3q3 - _2q3 * a.x + 4.0f * q0q0 * q[1] - _2q0 * a.y - _4q1 + _8q1 * q1q1 + _8q1 * q2q2 + _4q1 * a.z;
+    s2 = 4.0f * q0q0 * q[2] + _2q0 * a.x + _4q2 * q3q3 - _2q3 * a.y - _4q2 + _8q2 * q1q1 + _8q2 * q2q2 + _4q2 * a.z;
+    s3 = 4.0f * q1q1 * q[3] - _2q1 * a.x + 4.0f * q2q2 * q[3] - _2q2 * a.y;
+
+    recipNorm = invSqrt(s0 * s0 + s1 * s1 + s2 * s2 + s3 * s3); // normalise step magnitude
+    s0 *= recipNorm;
+    s1 *= recipNorm;
+    s2 *= recipNorm;
+    s3 *= recipNorm;
+
+    // Apply feedback step
+    qDot1 = -FUSION_BETA * s0;
+    qDot2 = -FUSION_BETA * s1;
+    qDot3 = -FUSION_BETA * s2;
+    qDot4 = -FUSION_BETA * s3;
 
     // Integrate rate of change of quaternion to yield quaternion
     q[0] += qDot1 * deltat;
@@ -265,6 +382,10 @@ void altitude_KF_update(float altitude) {
 
 float altitude_KF_setAltitude(float alt) {
     altitude_kf_h = alt;
+}
+
+float altitude_KF_setVelocity(float vel) {
+    altitude_kf_v = vel;
 }
 
 float altitude_KF_getAltitude() {

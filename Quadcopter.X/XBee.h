@@ -34,7 +34,8 @@ extern void XBeeWriteRawFloat(float);
 
 extern void XBeePacketSend();
 extern void XBeePacketInt(int);
-extern unsigned char XBeeWPacketFloat(float, unsigned char);
+extern unsigned char XBeePacketFloat(float, unsigned char);
+extern unsigned char XBeePacketFixedFloat(float, unsigned char, unsigned char);
 extern void XBeePacketChar(char);
 extern void XBeePacketStr(const char[]);
 

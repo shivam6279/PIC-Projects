@@ -7,7 +7,7 @@
 #include <sys/attribs.h>
 
 volatile unsigned long int esc_counter = 0;
-volatile unsigned long int data_aq_counter = 0;
+volatile unsigned long int gyro_aq_counter = 0, acc_aq_counter = 0, compass_aq_counter = 0;
 volatile unsigned char altitude_timer = 0;
 volatile unsigned int ToF_counter = 0;
 volatile unsigned int tx_buffer_timer = 0;
@@ -19,7 +19,9 @@ float max_altitude_rate = MAX_ALTITUDE_RATE;
 void __ISR_AT_VECTOR(_TIMER_4_VECTOR, IPL7SRS) pid_loop_timer(void){
     IFS0bits.T4IF = 0;
     esc_counter++;
-    data_aq_counter++;
+    gyro_aq_counter++;
+    acc_aq_counter++;
+    compass_aq_counter++;
 }
 
 void __ISR_AT_VECTOR(_TIMER_7_VECTOR, IPL4SRS) general_purpose_1KHz(void) {
@@ -38,7 +40,10 @@ void __ISR_AT_VECTOR(_TIMER_7_VECTOR, IPL4SRS) general_purpose_1KHz(void) {
 
 void ResetCounters() {
     esc_counter = 0;
-    data_aq_counter = 0;
+    
+    gyro_aq_counter = 0;
+    acc_aq_counter = 0;
+    compass_aq_counter = 0;
 
     altitude_timer = 0;
     ToF_counter = 0;

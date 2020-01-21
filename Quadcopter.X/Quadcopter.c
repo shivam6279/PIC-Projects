@@ -50,21 +50,22 @@ void main() {
     Motors speed;
     PID pitch, roll, yaw, altitude, GPS;
     XYZ acc, gyro, compass;
-    XYZ acc_comp;                                                         //Tilt-compensated acceleration
+    XYZ acc_comp;                                                                   //Tilt-compensated acceleration
     float gravity_mag;
     rx XBee_rx;
     float q[4];                                                                     //Quaternion
     float take_off_altitude, temperature;                                           //Offsets
-    float temp_altitude, heading;                                                                  //yaw
+    float baro_altitude, heading;                                                   //yaw
     float take_off_roll, take_off_pitch, take_off_heading;
     float remote_magnitude, remote_angle, remote_angle_difference;                  //RC
     float altitude_setpoint;                                                        //altitude
-    int ToF_distance;                                                               //ToF data
+    int ToF_distance = -1;                                                          //ToF data
     float latitude_offset, longitude_offset, take_off_latitude, take_off_longitude; //GPS
     float GPS_bearing_difference;                                                   //GPS bearing relative to yaw
-    float IMU_loop_time;             
+    double ESC_loop_time, gyro_loop_time, acc_loop_time, compass_loop_time;             
     char loop_mode, p_loop_mode;                                                    //Stabilize/alt-hold/pos-hold
     bool kill, p_kill;
+    bool compute_acc_comp = false;
     
     //Startup initialization   
     Init();    
@@ -132,55 +133,93 @@ void main() {
         while(XBee_rx.rs == 0) {
             
             //------------------------------------------------------------IMU data acquisition---------------------------------------------------------------------------
-            if(data_aq_counter >= 500) {
-                IMU_loop_time = (float)data_aq_counter / 1000000.0f;   // Loop time in seconds: 
-                data_aq_counter = 0;                
+            if(gyro_aq_counter >= 125) {
+                gyro_loop_time = (double)gyro_aq_counter / 1000000.0;    
+                gyro_aq_counter = 0;
                 
-                GetCompass(&compass); 
-                GetAcc(&acc);
-                GetGyro(&gyro);
-
-                //Update quaternion
-                MadgwickQuaternionUpdate(q, acc, gyro, compass, IMU_loop_time);
-
+                GetGyro(&gyro);                
+                MadgwickQuaternionUpdateGyro(q, gyro, gyro_loop_time);
+                
+                if(acc_aq_counter >= 1000) {
+                    acc_loop_time = (double)acc_aq_counter / 1000000.0;
+                    acc_aq_counter = 0;
+                    
+                    GetAcc(&acc);                    
+                    MadgwickQuaternionUpdateAcc(q, acc, acc_loop_time);
+                    
+                    compute_acc_comp = true;
+                    
+                    if(ToF_connected) {
+                        if(ToF_counter >= 50) {
+                            ToF_counter = 0;
+                            ToF_distance = ToF_readRange();
+                            ToF_distance *= cos(TO_RAD(roll.error));
+                            ToF_distance *= cos(TO_RAD(pitch.error));
+                            if(ToF_valueGood() != 0)
+                                ToF_distance = -1;
+                        }
+                    }                    
+                    
+                    if(compass_aq_counter >= 5000) {
+                        compass_loop_time = (double)compass_aq_counter / 1000000.0;
+                        compass_aq_counter = 0;
+                        
+                        GetCompass(&compass);
+                        MadgwickQuaternionUpdate(q, acc, (XYZ){0, 0, 0}, compass, compass_loop_time);
+                    }
+                }
+                
                 QuaternionToEuler(q, &roll.error, &pitch.error, &heading);
                 yaw.error = LimitAngle(heading - take_off_heading);
                 
-                //Update altitude kalman filter
-                //acc_comp = RotateVectorEuler(acc, roll.error+roll_offset, pitch.error+pitch_offset, 0.0);
-                acc_comp = MultiplyVectorQuaternion(acc, q);
-                acc_comp.z -= gravity_mag;
+                roll.derivative  = gyro.x;
+                pitch.derivative = gyro.y;
+                yaw.derivative   = -gyro.z;
                 
-                //if(fabs(acc_comp.z) < 10.0f)
-                altitude_KF_propagate(acc_comp.z, IMU_loop_time);         
-
+//                PIDDifferentiateAngle(&roll,  gyro_loop_time);
+//                PIDDifferentiateAngle(&pitch, gyro_loop_time);
+//                PIDDifferentiateAngle(&yaw,   gyro_loop_time);
+                
                 if(XBee_rx.y2 > MIN_THROTTLE_INTEGRATION && !kill) {
-                    PIDIntegrateAngle(&roll,  IMU_loop_time);
-                    PIDIntegrateAngle(&pitch, IMU_loop_time);
-                    PIDIntegrateAngle(&yaw,   IMU_loop_time);
+                    PIDIntegrateAngle(&roll,  gyro_loop_time);
+                    PIDIntegrateAngle(&pitch, gyro_loop_time);
+                    PIDIntegrateAngle(&yaw,   gyro_loop_time);
                 }
                 
-                if(ToF_connected) {
-                    if(ToF_counter >= 50) {
-                        ToF_counter = 0;
-                        ToF_distance = ToF_readRange();
-                        ToF_distance *= cos(TO_RAD(roll.error));
-                        ToF_distance *= cos(TO_RAD(pitch.error));
-                        if(ToF_valueGood() != 0)
-                            ToF_distance = -1;
+                if(compute_acc_comp) {
+                    compute_acc_comp = false;
+                    
+                    //Update altitude kalman filter
+                    //acc_comp = RotateVectorEuler(acc, roll.error+roll_offset, pitch.error+pitch_offset, 0.0);
+                    
+                    if(fabs(roll.error) < 45.0 && fabs(pitch.error) < 45.0) {
+                    
+                        //acc_comp = MultiplyVectorQuaternion(acc, q);
+                        //acc_comp.z -= gravity_mag;
+                        
+                        acc_comp = GetCompensatedAcc(q, acc, gravity_mag);
+                        
+                        if(fabs(acc_comp.z) < 10.0f) {
+                            altitude_KF_propagate(acc_comp.z, acc_loop_time);                    
+                        }
+                    }
+                    
+                    if(fabs(altitude_KF_getVelocity()) > 10.0) {
+                        altitude_KF_setVelocity(0.0);  
                     }
                 }
             }
 
             //-------------------------------------------------------------Altitude acquisition--------------------------------------------------------------------------
-            if(LoopAltitude(&temp_altitude, &temperature, true)) {
-                if(fabs(temp_altitude - altitude_KF_getAltitude()) < 1.5f)
-                    altitude_KF_update(temp_altitude);                
-                altitude.error = altitude_KF_getAltitude() - take_off_altitude;                
-                
-                if(loop_mode == MODE_ALT_HOLD) {
-                    if(XBee_rx.y2 > 10 && XBee_rx.y2 < 20)  //Throttle stick in the mid position
-                        altitude.sum += (altitude.offset - altitude.error) * 0.002 * oversampling_delay;
+            if(LoopAltitude(&baro_altitude, &temperature, true)) {
+                if(fabs(baro_altitude - take_off_altitude) < 150.0) {
+                    altitude_KF_update(baro_altitude);                
+                    altitude.error = altitude_KF_getAltitude() - take_off_altitude;                
+
+                    if(loop_mode == MODE_ALT_HOLD) {
+                        if(XBee_rx.y2 > 10 && XBee_rx.y2 < 20)  //Throttle stick in the mid position
+                            altitude.sum += (altitude.offset - altitude.error) * 0.002 * oversampling_delay;
+                    }
                 }
             }
             
@@ -245,9 +284,9 @@ void main() {
             if(TxBufferEmpty() && tx_buffer_timer > 50) {
                 tx_buffer_timer = 0;
 //                XBeePacketChar('C');
-//                XBeePacketFloat((float)ToF_distance / 10.0, 2); XBeePacketChar(',');
-//                XBeePacketFloat(altitude.offset - altitude.error, 2); XBeePacketChar(',');
-//                XBeePacketFloat(altitude.derivative, 2); XBeePacketChar(',');
+//                XBeePacketFloat(roll.error, 2); XBeePacketChar(',');
+//                XBeePacketFloat(pitch.error, 2); XBeePacketChar(',');
+//                XBeePacketFloat(yaw.error, 2); XBeePacketChar(',');
 //                XBeePacketFloat(acc_comp.z, 2); XBeePacketChar(',');
 //                XBeePacketFloat(altitude.sum, 8); XBeePacketChar(',');                      
 //                XBeePacketFloat(altitude.output, 8); XBeePacketChar(',');
@@ -255,18 +294,27 @@ void main() {
 //                XBeePacketSend();
                 
                 XBeePacketChar('Z');
-                XBeePacketStr("Pitch: "); XBeePacketFloat(pitch.error, 2); XBeePacketChar('\n');
-                XBeePacketStr("Roll: "); XBeePacketFloat(roll.error, 2); XBeePacketChar('\n');
-                XBeePacketStr("Yaw: "); XBeePacketFloat(yaw.error, 2); XBeePacketChar('\n');
+                XBeePacketStr("Pitch  : "); XBeePacketFixedFloat(pitch.error, 3, 2); XBeePacketChar('\n');
+                XBeePacketStr("Roll   : "); XBeePacketFixedFloat(roll.error, 3, 2); XBeePacketChar('\n');
+                XBeePacketStr("Heading: "); XBeePacketFixedFloat(heading, 3, 2); XBeePacketChar('\n');
                 XBeePacketStr("Altitude: "); XBeePacketFloat(altitude.error, 2); XBeePacketChar('\n');
-                XBeePacketStr("Altitude speed: "); XBeePacketFloat(altitude.derivative, 2); XBeePacketChar('\n');
-                XBeePacketStr("Acc Z: "); XBeePacketFloat(acc_comp.z, 2); XBeePacketChar('\n');
+                XBeePacketStr("Altitude speed: "); XBeePacketFloat(altitude.derivative, 2); XBeePacketChar('\n');   
+                
+                XBeePacketStr("Acc X: "); XBeePacketFixedFloat(acc_comp.x, 3, 3); XBeePacketChar('\n');
+                XBeePacketStr("Acc Y: "); XBeePacketFixedFloat(acc_comp.y, 3, 3); XBeePacketChar('\n');   
+                XBeePacketStr("Acc Z: "); XBeePacketFixedFloat(acc_comp.z, 3, 3); XBeePacketChar('\n');
+                
+//                XBeePacketStr("Roll D : "); XBeePacketFixedFloat(roll.derivative, 3, 3); XBeePacketChar('\n');
+//                XBeePacketStr("Pitch D: "); XBeePacketFixedFloat(pitch.derivative, 3, 3); XBeePacketChar('\n');   
+//                XBeePacketStr("Yaw D  : "); XBeePacketFixedFloat(yaw.derivative, 3, 3); XBeePacketChar('\n');
+                
                 XBeePacketStr("ToF distance: "); XBeePacketFloat((float)ToF_distance / 10.0, 2); XBeePacketChar('\n');
                 XBeePacketSend();
             }
             
             //--------------------------------------------------------PID Output to motors----------------------------------------------------------------------------
-            if(esc_counter >= (ESC_TIME_us - 5)) {
+            if(esc_counter >= ESC_TIME_us) {
+                ESC_loop_time = (float)esc_counter / 1000000.0f;                
                 esc_counter = 0;     
                 
                 altitude.derivative = -1.0 * altitude_KF_getVelocity();
@@ -308,15 +356,7 @@ void main() {
                     pitch.offset = LimitValue(pitch.offset, -max_pitch_roll_tilt, max_pitch_roll_tilt);
                 }
 
-                //Roll/Pitch/Yaw - PID                
-                
-//                PIDDifferentiateAngle(&roll,  IMU_loop_time);
-//                PIDDifferentiateAngle(&pitch, IMU_loop_time);
-//                PIDDifferentiateAngle(&yaw,   IMU_loop_time);
-                
-                roll.derivative  = gyro.x;
-                pitch.derivative = gyro.y;
-                yaw.derivative   = -gyro.z;
+                //Roll/Pitch/Yaw - PID     
 
                 PIDOutputAngle(&roll);
                 PIDOutputAngle(&pitch);

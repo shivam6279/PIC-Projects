@@ -4,7 +4,7 @@
 #include "settings.h"
 #include <stdbool.h>
 
-#define IMU_BUFFER_SIZE 0
+#define IMU_BUFFER_SIZE 10
 
 #define ACC_GRAVITY 9.81f //m/s^2
 
@@ -17,21 +17,21 @@
 #define ACC_Z_GAIN 1.0f
 
 #define GYRO_X_OFFSET 120.0f
-#define GYRO_Y_OFFSET -2.0f
-#define GYRO_Z_OFFSET -40.0f
+#define GYRO_Y_OFFSET -20.0f
+#define GYRO_Z_OFFSET -150.0f
 
 #define GYRO_X_GAIN 98.0f
 #define GYRO_Y_GAIN 98.0f
 #define GYRO_Z_GAIN 106.0f
 
-#define COMPASS_X_MIN -3208.0f
-#define COMPASS_X_MAX 5532.0f
+#define COMPASS_X_MIN -4255.0f
+#define COMPASS_X_MAX 5930.0f
 
-#define COMPASS_Y_MIN -5006.0f
-#define COMPASS_Y_MAX 4171.0f
+#define COMPASS_Y_MIN -5655.0f
+#define COMPASS_Y_MAX 4126.0f
 
-#define COMPASS_Z_MIN -4578.0f
-#define COMPASS_Z_MAX 5545.0f
+#define COMPASS_Z_MIN -5655.0f
+#define COMPASS_Z_MAX 5406.0f
 
 #ifdef BMP180
 #define OVERSAMPLING 3  //0 - 3
