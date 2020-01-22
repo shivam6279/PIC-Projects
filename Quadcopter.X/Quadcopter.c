@@ -181,9 +181,12 @@ void main() {
 //                PIDDifferentiateAngle(&yaw,   gyro_loop_time);
                 
                 if(XBee_rx.y2 > MIN_THROTTLE_INTEGRATION && !kill) {
-                    PIDIntegrateAngle(&roll,  gyro_loop_time);
-                    PIDIntegrateAngle(&pitch, gyro_loop_time);
-                    PIDIntegrateAngle(&yaw,   gyro_loop_time);
+                    if(fabs(LimitAngle(roll.error - roll.offset)) <= ANTI_WINDUP_MAX_ANGLE)
+                        PIDIntegrateAngle(&roll,  gyro_loop_time);
+                    if(fabs(LimitAngle(pitch.error - pitch.offset)) <= ANTI_WINDUP_MAX_ANGLE)
+                        PIDIntegrateAngle(&pitch, gyro_loop_time);
+                    //if(fabs(LimitAngle(yaw.error - yaw.offset)) <= ANTI_WINDUP_MAX_ANGLE)
+                        PIDIntegrateAngle(&yaw,   gyro_loop_time);
                 }
                 
                 if(compute_acc_comp) {

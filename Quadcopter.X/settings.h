@@ -14,11 +14,14 @@
 #define MAX_YAW_RATE 180.0f         // degrees/sec
 #define MAX_ALTITUDE_RATE 0.7f      // meters/sec
 
-#define ROLLOFFSET 0.9f			// degrees
+#define ROLLOFFSET 0.9f             // degrees
 #define PITCHOFFSET -2.0f			// degrees
 #define HEADINGOFFSET 0.0f       	// degrees
 
 #define MIN_THROTTLE_INTEGRATION 3
+
+#define ANTI_WINDUP_MAX_ANGLE 7.5f  //degrees
+#define ANTI_WINDUP_MAX_BOUND 100.0f//degrees
 
 #if board_version == 1
 	#define RGBLED_RED_PIN 0
