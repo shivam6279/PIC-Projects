@@ -92,13 +92,19 @@ void main() {
     
     //Set PID gains
     SetPIDGain(&roll, &pitch, &yaw, &altitude, &GPS);
+    PIDSetIntegralParams(&roll,  ANTI_WINDUP_MAX_BOUND, ANTI_WINDUP_MAX_ANGLE);
+    PIDSetIntegralParams(&pitch, ANTI_WINDUP_MAX_BOUND, ANTI_WINDUP_MAX_ANGLE);
     delay_ms(1500);
 
     while(1) {
-        ResetPID(&roll, &pitch, &yaw, &altitude, &GPS); //Clear PID variables
+        //Clear PID variables
+        PIDReset(&roll);
+        PIDReset(&pitch);
+        PIDReset(&yaw);
+        PIDReset(&altitude);
+        PIDReset(&GPS);
         ResetQuaternion(q);                             //Reset quaternion
-        MotorsReset(&speed);        
-                            //Clear motor speeds   
+        MotorsReset(&speed);                            //Clear motor speeds   
         
         if(EEPROM_connected) {
             if(!eeprom_readPID(&roll, &pitch, &yaw, &altitude, &GPS)) {
@@ -181,12 +187,9 @@ void main() {
 //                PIDDifferentiateAngle(&yaw,   gyro_loop_time);
                 
                 if(XBee_rx.y2 > MIN_THROTTLE_INTEGRATION && !kill) {
-                    if(fabs(LimitAngle(roll.error - roll.offset)) <= ANTI_WINDUP_MAX_ANGLE)
-                        PIDIntegrateAngle(&roll,  gyro_loop_time);
-                    if(fabs(LimitAngle(pitch.error - pitch.offset)) <= ANTI_WINDUP_MAX_ANGLE)
-                        PIDIntegrateAngle(&pitch, gyro_loop_time);
-                    //if(fabs(LimitAngle(yaw.error - yaw.offset)) <= ANTI_WINDUP_MAX_ANGLE)
-                        PIDIntegrateAngle(&yaw,   gyro_loop_time);
+                    PIDIntegrateAngle(&roll,  gyro_loop_time);
+                    PIDIntegrateAngle(&pitch, gyro_loop_time);
+                    PIDIntegrateAngle(&yaw,   gyro_loop_time);
                 }
                 
                 if(compute_acc_comp) {
@@ -221,7 +224,7 @@ void main() {
 
                     if(loop_mode == MODE_ALT_HOLD) {
                         if(XBee_rx.y2 > 10 && XBee_rx.y2 < 20)  //Throttle stick in the mid position
-                            altitude.sum += (altitude.offset - altitude.error) * 0.002 * oversampling_delay;
+                            altitude.integral += (altitude.offset - altitude.error) * 0.002 * oversampling_delay;
                     }
                 }
             }
@@ -259,7 +262,7 @@ void main() {
 
                     if(loop_mode == MODE_ALT_HOLD) {
                         altitude_setpoint = (float)XBee_rx.y2 / THROTTLE_MAX * MAX_SPEED;
-                        altitude.sum = 0;
+                        altitude.integral = 0;
                         altitude.offset = altitude.error;
                     }
                     else if(loop_mode == MODE_POS_HOLD) {
@@ -331,13 +334,13 @@ void main() {
                 else if(loop_mode == MODE_ALT_HOLD) {
                     
                     if(XBee_rx.y2 > 10 && XBee_rx.y2 < 20) {  //Throttle stick in the mid position
-                        altitude.output = (altitude.p * (altitude.offset - altitude.error) + altitude.i * altitude.sum + altitude.d * altitude.derivative) + altitude_setpoint;
+                        altitude.output = (altitude.kp * (altitude.offset - altitude.error) + altitude.ki * altitude.integral + altitude.kd * altitude.derivative) + altitude_setpoint;
                     } else {
                         if(XBee_rx.y2 <= 10) {
-                            altitude.output = (altitude.d * (altitude.derivative - max_altitude_rate)) + altitude.i * altitude.sum + altitude_setpoint;
+                            altitude.output = (altitude.kd * (altitude.derivative - max_altitude_rate)) + altitude.ki * altitude.integral + altitude_setpoint;
                         }
                         else if(XBee_rx.y2 >= 20) {
-                            altitude.output = (altitude.d * (altitude.derivative + max_altitude_rate)) + altitude.i * altitude.sum + altitude_setpoint;
+                            altitude.output = (altitude.kd * (altitude.derivative + max_altitude_rate)) + altitude.ki * altitude.integral + altitude_setpoint;
                         }
                         altitude.offset = altitude.error;                
                     }
@@ -350,7 +353,7 @@ void main() {
 
                     GPS.error = DifferenceLatLon(take_off_latitude, take_off_longitude, latitude, longitude);
                     GPS_bearing_difference = LimitAngle(heading - DifferenceBearing(take_off_latitude, take_off_longitude, latitude, longitude));
-                    GPS.output = (GPS.p * GPS.error); 
+                    GPS.output = (GPS.kp * GPS.error); 
 
                     pitch.offset = -GPS.output * cos(TO_RAD(GPS_bearing_difference) + PI);
                     roll.offset  =  GPS.output * sin(TO_RAD(GPS_bearing_difference) + PI);
@@ -367,8 +370,8 @@ void main() {
                 if(XBee_rx.x2 < 3 && XBee_rx.x2 > (-3)) {
                     PIDOutputAngle(&yaw);
                 } else {
-                    yaw.output = (yaw.d * (yaw.derivative + (float)XBee_rx.x2 / REMOTE_MAX * MAX_YAW_RATE));
-                    yaw.sum = 0;
+                    yaw.output = (yaw.kd * (yaw.derivative + (float)XBee_rx.x2 / REMOTE_MAX * MAX_YAW_RATE));
+                    yaw.integral = 0;
                     yaw.offset = yaw.error;                
                 }
                 

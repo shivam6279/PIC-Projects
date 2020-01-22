@@ -43,16 +43,6 @@ void Init_10DOF(){
 #endif
 }
 
-void ResetPID(PID *roll, PID *pitch, PID *yaw, PID *altitude, PID *GPS) {
-    PIDSet(roll, roll->p, roll->i, roll->d);
-    PIDSet(pitch, pitch->p, pitch->i, pitch->d);
-    PIDSet(yaw, yaw->p, yaw->i, yaw->d);
-
-    PIDSet(altitude, altitude->p, altitude->i, altitude->d);
-
-    PIDSet(GPS, GPS->p, GPS->i, GPS->d);
-}
-
 void ResetQuaternion(float q[]){
     q[0] = 1;
     q[1] = 0;

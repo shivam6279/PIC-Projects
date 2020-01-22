@@ -87,10 +87,10 @@ bool eeprom_readPID(PID *roll, PID *pitch, PID *yaw, PID *alt, PID *gps) {
                 return false; 
             }
         }
-        roll->p  = val[0];
-        pitch->p = val[1];
-        yaw->p   = val[2];
-        alt->p   = val[3];
+        roll->kp  = val[0];
+        pitch->kp = val[1];
+        yaw->kp   = val[2];
+        alt->kp   = val[3];
 
         eeprom_readBytes(I_ADDR, str, 16);
         for(i = 0; i < 4; i++) {
@@ -99,10 +99,10 @@ bool eeprom_readPID(PID *roll, PID *pitch, PID *yaw, PID *alt, PID *gps) {
                 return false; 
             }
         }
-        roll->i  = val[0];
-        pitch->i = val[1];
-        yaw->i   = val[2];
-        alt->i   = val[3];
+        roll->ki  = val[0];
+        pitch->ki = val[1];
+        yaw->ki   = val[2];
+        alt->ki   = val[3];
 
         eeprom_readBytes(D_ADDR, str, 16);
         for(i = 0; i < 4; i++) {
@@ -111,10 +111,10 @@ bool eeprom_readPID(PID *roll, PID *pitch, PID *yaw, PID *alt, PID *gps) {
                 return false; 
             }
         }
-        roll->d  = val[0];
-        pitch->d = val[1];
-        yaw->d   = val[2];
-        alt->d   = val[3];
+        roll->kd  = val[0];
+        pitch->kd = val[1];
+        yaw->kd   = val[2];
+        alt->kd   = val[3];
 
         eeprom_readBytes(GPS_ADDR, str, 12);
         for(i = 0; i < 3; i++) {
@@ -123,9 +123,9 @@ bool eeprom_readPID(PID *roll, PID *pitch, PID *yaw, PID *alt, PID *gps) {
                 return false; 
             }
         }
-        gps->p = val[0];
-        gps->i = val[1];
-        gps->d = val[2];
+        gps->kp = val[0];
+        gps->ki = val[1];
+        gps->kd = val[2];
         
         return true;
     }    
@@ -136,30 +136,30 @@ void eeprom_writePID(PID *roll, PID *pitch, PID *yaw, PID *alt, PID *gps) {
     unsigned char str[16];
     
     //Write data
-    *(float*)(str) = roll->p;
-    *(float*)(str + 4) = pitch->p;
-    *(float*)(str + 8) = yaw->p;
-    *(float*)(str + 12) = alt->p;
+    *(float*)(str) = roll->kp;
+    *(float*)(str + 4) = pitch->kp;
+    *(float*)(str + 8) = yaw->kp;
+    *(float*)(str + 12) = alt->kp;
     eeprom_writeBytes(P_ADDR, str, 16);
     delay_ms(6);
     
-    *(float*)(str) = roll->i;
-    *(float*)(str + 4) = pitch->i;
-    *(float*)(str + 8) = yaw->i;
-    *(float*)(str + 12) = alt->i;
+    *(float*)(str) = roll->ki;
+    *(float*)(str + 4) = pitch->ki;
+    *(float*)(str + 8) = yaw->ki;
+    *(float*)(str + 12) = alt->ki;
     eeprom_writeBytes(I_ADDR, str, 16);
     delay_ms(6);
     
-    *(float*)(str) = roll->d;
-    *(float*)(str + 4) = pitch->d;
-    *(float*)(str + 8) = yaw->d;
-    *(float*)(str + 12) = alt->d;
+    *(float*)(str) = roll->kd;
+    *(float*)(str + 4) = pitch->kd;
+    *(float*)(str + 8) = yaw->kd;
+    *(float*)(str + 12) = alt->kd;
     eeprom_writeBytes(D_ADDR, str, 16);
     delay_ms(6);
 
-    *(float*)(str) = gps->p;
-    *(float*)(str + 4) = gps->i;
-    *(float*)(str + 8) = gps->d;
+    *(float*)(str) = gps->kp;
+    *(float*)(str + 4) = gps->ki;
+    *(float*)(str + 8) = gps->kd;
     eeprom_writeBytes(GPS_ADDR, str, 12);
     delay_ms(6); 
     

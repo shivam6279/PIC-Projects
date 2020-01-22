@@ -94,11 +94,28 @@ float LimitValue(float a, float min, float max) {
     return a;
 }
 
-void PIDSet(PID *x, float kp, float ki, float kd) {
-    x->p = kp; 
-    x->i = ki; 
-    x->d = kd; 
-    x->sum = 0.0f; 
+void PIDSet(PID *x, float p, float i, float d) {
+    x->kp = p; 
+    x->ki = i; 
+    x->kd = d; 
+    x->integral = 0.0f; 
+    x->derivative = 0.0f;
+    x->output = 0.0f; 
+    x->error = 0.0f;
+    x->p_error = 0.0f;
+    x->offset = 0.0f;
+    
+    x->integral_bound = 0.0f;
+    x->integral_max_diff = 0.0f;
+}
+
+void PIDSetIntegralParams(PID *x, float int_bound, float int_diff) {
+    x->integral_bound = int_bound;
+    x->integral_max_diff = int_diff;
+}
+
+void PIDReset(PID* x) {
+    x->integral = 0.0f; 
     x->derivative = 0.0f;
     x->output = 0.0f; 
     x->error = 0.0f;
@@ -107,11 +124,31 @@ void PIDSet(PID *x, float kp, float ki, float kd) {
 }
 
 void PIDIntegrate(PID *a, float deltat) {
-    a->sum += (a->error - a->offset) * deltat;
+    if(a->integral_max_diff <= 0 || fabs(a->error - a->offset) <= a->integral_max_diff) {   
+        a->integral += (a->error - a->offset) * deltat;
+    }
+    
+    if(a->integral_bound > 0.0f) {
+        if(a->integral * a->ki > a->integral_bound) {
+            a->integral = a->integral_bound / a->ki;
+        } else if(a->integral * a->ki < -a->integral_bound) {
+            a->integral = -a->integral_bound / a->ki;
+        }
+    }
 }
 
-void PIDIntegrateAngle(PID *a, float deltat) {
-    a->sum += LimitAngle(a->error - a->offset) * deltat;
+void PIDIntegrateAngle(PID *a, float deltat) {    
+    if(a->integral_max_diff <= 0 || fabs(LimitAngle(a->error - a->offset)) <= a->integral_max_diff) {   
+        a->integral += LimitAngle(a->error - a->offset) * deltat;
+    }
+    
+    if(a->integral_bound > 0.0f) {
+        if(a->integral * a->ki > a->integral_bound) {
+            a->integral = a->integral_bound / a->ki;
+        } else if(a->integral * a->ki < -a->integral_bound) {
+            a->integral = -a->integral_bound / a->ki;
+        }
+    }
 }
 
 void PIDDifferentiate(PID *a, float deltat) {
@@ -125,11 +162,11 @@ void PIDDifferentiateAngle(PID *a, float deltat) {
 }
 
 void PIDOutput(PID *a) {
-    a->output = a->p * (a->error - a->offset) + a->i * a->sum + a->d * a->derivative;
+    a->output = a->kp * (a->error - a->offset) + a->ki * a->integral + a->kd * a->derivative;
 }
 
 void PIDOutputAngle(PID *a) {
-    a->output = a->p * LimitAngle(a->error - a->offset) + a->i * a->sum + a->d * a->derivative;
+    a->output = a->kp * LimitAngle(a->error - a->offset) + a->ki * a->integral + a->kd * a->derivative;
 }
 
 void StrWriteInt(int a, volatile char str[], unsigned char n) {

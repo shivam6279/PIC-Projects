@@ -97,45 +97,45 @@ void Menu(PID *x, PID *y, PID *z, PID *a){
         switch(cursor){
             case 0:
                 if(XBee.x1 > 12) {
-                    x->p += 0.01; 
-                    y->p += 0.01;
+                    x->kp += 0.01; 
+                    y->kp += 0.01;
                 }
                 else if(XBee.x1 < (-12)) {
-                    x->p -= 0.01; 
-                    y->p -= 0.01;
+                    x->kp -= 0.01; 
+                    y->kp -= 0.01;
                 }
                 break;
             case 1:
                 if(XBee.x1 > 12) { 
-                    x->i += 0.01; 
-                    y->i += 0.01;
+                    x->ki += 0.01; 
+                    y->ki += 0.01;
                 }
                 else if(XBee.x1 < (-12)) { 
-                    x->i -= 0.01; 
-                    y->i -= 0.01;
+                    x->ki -= 0.01; 
+                    y->ki -= 0.01;
                 }
                 break;
             case 2:
                 if(XBee.x1 > 12) { 
-                    x->d += 0.001; 
-                    y->d += 0.001;
+                    x->kd += 0.001; 
+                    y->kd += 0.001;
                 }
                 else if(XBee.x1 < (-12)) { 
-                    x->d -= 0.001; 
-                    y->d -= 0.001;
+                    x->kd -= 0.001; 
+                    y->kd -= 0.001;
                 }
                 break;
             case 3:
-                if(XBee.x1 > 12) a->p += 0.2; 
-                else if(XBee.x1 < (-12)) a->p -= 0.2;
+                if(XBee.x1 > 12) a->kp += 0.2; 
+                else if(XBee.x1 < (-12)) a->kp -= 0.2;
                 break;
             case 4:
-                if(XBee.x1 > 12) a->i += 0.01; 
-                else if(XBee.x1 < (-12)) a->i -= 0.01; 
+                if(XBee.x1 > 12) a->ki += 0.01; 
+                else if(XBee.x1 < (-12)) a->ki -= 0.01; 
                 break;
             case 5:
-                if(XBee.x1 > 12) a->d += 1; 
-                else if(XBee.x1 < (-12)) a->d -= 1;
+                if(XBee.x1 > 12) a->kd += 1; 
+                else if(XBee.x1 < (-12)) a->kd -= 1;
                 break;
         }
         
@@ -158,12 +158,12 @@ void Menu(PID *x, PID *y, PID *z, PID *a){
         while(!TxBufferEmpty());
         XBeePacketChar('A');
         XBeePacketInt(cursor);          XBeePacketChar(',');
-        XBeePacketFloat(x->p, 3);       XBeePacketChar(',');
-        XBeePacketFloat(x->i, 3);       XBeePacketChar(',');
-        XBeePacketFloat(x->d, 3);       XBeePacketChar(',');
-        XBeePacketFloat(a->p, 2);       XBeePacketChar(',');
-        XBeePacketFloat(a->i, 2);       XBeePacketChar(',');
-        XBeePacketFloat(a->d, 2);       XBeePacketChar(',');
+        XBeePacketFloat(x->kp, 3);       XBeePacketChar(',');
+        XBeePacketFloat(x->ki, 3);       XBeePacketChar(',');
+        XBeePacketFloat(x->kd, 3);       XBeePacketChar(',');
+        XBeePacketFloat(a->kp, 2);       XBeePacketChar(',');
+        XBeePacketFloat(a->ki, 2);       XBeePacketChar(',');
+        XBeePacketFloat(a->kd, 2);       XBeePacketChar(',');
         XBeePacketInt(GPS_connected);   XBeePacketChar(',');
         XBeePacketInt(GPS_signal);      XBeePacketChar(',');        
         XBeePacketInt(arming_counter); 
@@ -174,7 +174,7 @@ void Menu(PID *x, PID *y, PID *z, PID *a){
     }
 //    z->p = x->p;
 //    z->i = x->i;
-    z->d = x->d;
+    z->kd = x->kd;
 }
 
 void CalibrationMenu() {

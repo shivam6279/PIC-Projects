@@ -1,11 +1,15 @@
 #ifndef _PID_H_
 #define _PID_H_
 
+#include <stdbool.h>
+
 typedef struct {
-    float p, i, d;
+    float kp, ki, kd;
     float error, p_error; 
-    float sum, derivative;
     float offset;
+    float integral, derivative;
+    float integral_bound;
+    float integral_max_diff;
     float output;
 } PID;
 
@@ -21,6 +25,8 @@ extern float LimitAngle(float);
 extern float LimitValue(float, float, float);
 extern void WriteRGBLed(unsigned int, unsigned int, unsigned int);
 extern void PIDSet(PID*, float, float, float);
+extern void PIDSetIntegralParams(PID*, float, float);
+extern void PIDReset(PID*);
 extern void PIDIntegrate(PID*, float);
 extern void PIDIntegrateAngle(PID*, float);
 extern void PIDDifferentiate(PID*, float);
