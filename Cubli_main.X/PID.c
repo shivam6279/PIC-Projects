@@ -1,11 +1,8 @@
 #include "PID.h"
-#include "settings.h"
-#include "PWM.h"
 #include "pic32.h"
 #include <math.h>
 #include "XBee.h"
 #include <sys/attribs.h>
-#include <xc.h>
 
 volatile unsigned long int esc_counter = 0;
 volatile unsigned long int gyro_aq_counter = 0, acc_aq_counter = 0, compass_aq_counter = 0;
@@ -13,11 +10,7 @@ volatile unsigned char altitude_timer = 0;
 volatile unsigned int ToF_counter = 0;
 volatile unsigned int tx_buffer_timer = 0;
 
-float max_pitch_roll_tilt = MAX_PITCH_ROLL_TILT;
-float max_yaw_rate = MAX_YAW_RATE;
-float max_altitude_rate = MAX_ALTITUDE_RATE;
-
-void __ISR_AT_VECTOR(_TIMER_4_VECTOR, IPL7SRS) pid_loop_timer(void){
+void __ISR_AT_VECTOR(_TIMER_4_VECTOR, IPL7AUTO) pid_loop_timer(void){
     IFS0bits.T4IF = 0;
     esc_counter++;
     gyro_aq_counter++;
@@ -25,7 +18,7 @@ void __ISR_AT_VECTOR(_TIMER_4_VECTOR, IPL7SRS) pid_loop_timer(void){
     compass_aq_counter++;
 }
 
-void __ISR_AT_VECTOR(_TIMER_7_VECTOR, IPL4SRS) general_purpose_1KHz(void) {
+void __ISR_AT_VECTOR(_TIMER_7_VECTOR, IPL4AUTO) general_purpose_1KHz(void) {
     IFS1bits.T7IF = 0;
     altitude_timer++;
     ToF_counter++;
@@ -52,28 +45,10 @@ void ResetCounters() {
 }
 
 
-void SetPIDGain(PID *roll, PID* pitch, PID *yaw, PID *altitude, PID *GPS) {
-#ifdef micro
+void SetPIDGain(PID *roll, PID* pitch, PID *yaw) {
     PIDSet(roll,     1.30, 1.30, 0.50);
     PIDSet(pitch,    1.30, 1.30, 0.50);
     PIDSet(yaw,      1.30, 1.30, 0.50);
-    PIDSet(altitude, 36.0, 5.00, 30.00);
-    PIDSet(GPS,      1.50, 0.05, 0.00);
-#endif
-#ifdef mini
-    PIDSet(roll,     1.0, 1.0, 0.50);
-    PIDSet(pitch,    1.0, 1.0, 0.50);
-    PIDSet(yaw,      1.0, 1.0, 0.50);
-    PIDSet(altitude, 36.0, 0.80, 0.00);
-    PIDSet(GPS,      1.50, 0.05, 0.00);
-#endif
-#ifdef big
-    PIDSet(roll,     0.30, 1.20, 0.40);
-    PIDSet(pitch,    0.30, 1.20, 0.40);
-    PIDSet(yaw,      0.40, 1.00, 0.30);
-    PIDSet(altitude, 36.0, 0.80, 0.00);
-    PIDSet(GPS,      1.50, 0.05, 0.00);
-#endif
 }
 
 float LimitAngle(float a) {
@@ -207,18 +182,4 @@ void StrWriteFloat(double a, unsigned char right, volatile char str[], unsigned 
     str[n++] = '.';
     for(i = 0, tens = 10; i < right; i++, tens *= 10, n++)
         str[n] = ((long int)(a * tens) % 10) + 48;
-}
-
-void WriteRGBLed(unsigned int r, unsigned int g, unsigned int b) {
-#if board_version == 4 || board_version == 5
-    float fr = (float)r * (float)PWM_MAX / 255.0f;
-    float fg = (float)g * (float)PWM_MAX / 255.0f;
-    float fb = (float)b * (float)PWM_MAX / 255.0f;
-    r = (unsigned int)fr;
-    g = (unsigned int)fg;
-    b = (unsigned int)fb;
-#endif
-    write_pwm(RGBLED_RED_PIN,   r); 
-    write_pwm(RGBLED_GREEN_PIN, g); 
-    write_pwm(RGBLED_BLUE_PIN,  b);
 }
