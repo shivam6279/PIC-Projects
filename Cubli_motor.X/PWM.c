@@ -6,68 +6,92 @@
 
 unsigned int PWM_MAX;
 
-void PwmInit(float freq) {
-  PTCON = 0;
-  PTCONbits.PTEN = 0;
+void PwmInit(float freq) {    
+    TRISBbits.TRISB10 = 0;
+    TRISBbits.TRISB11 = 0;
+    TRISBbits.TRISB12 = 0;
+    TRISBbits.TRISB13 = 0;
+    TRISBbits.TRISB14 = 0;
+    TRISBbits.TRISB15 = 0;
 
-  STCON = 0;
-  CHOP = 0;
+    PTCON = 0;
+    PTCONbits.PTEN = 0;
 
-  PTCONbits.PCLKDIV = 0;
+    STCON = 0;
+    CHOP = 0;
 
-  CFGCONbits.PWMAPIN1 = 1;
-  CFGCONbits.PWMAPIN2 = 1;
-  CFGCONbits.PWMAPIN3 = 1;
+    PTCONbits.PCLKDIV = 0;
 
-  PWMCON1 = 0;
-  PWMCON2 = 0;
-  PWMCON3 = 0;  
-  PWMCON7 = 0;
-  PWMCON8 = 0;
-  PWMCON9 = 0;  
+    CFGCONbits.PWMAPIN1 = 1;
+    CFGCONbits.PWMAPIN2 = 1;
+    CFGCONbits.PWMAPIN3 = 1;
 
-  IOCON1 = 0;
-  IOCON1bits.PENH = 1;
-  PDC1 = 0;
-  DTR1 = DEAD_TIME;
-  ALTDTR1 = DEAD_TIME;
+    PMD4bits.PWM1MD = 0;
+    PMD4bits.PWM2MD = 0;
+    PMD4bits.PWM3MD = 0;
+    PMD4bits.PWM4MD = 1;
+    PMD4bits.PWM5MD = 1;
+    PMD4bits.PWM6MD = 1;
+    PMD4bits.PWM7MD = 0;
+    PMD4bits.PWM8MD = 0;
+    PMD4bits.PWM9MD = 0;
+    PMD4bits.PWM10MD = 1;
+    PMD4bits.PWM11MD = 1;
+    PMD4bits.PWM12MD = 1;
 
-  IOCON2 = 0;
-  IOCON2bits.PENH = 1;
-  PDC2 = 0;
-  DTR2 = DEAD_TIME;
-  ALTDTR2 = DEAD_TIME;
 
-  IOCON3 = 0;
-  IOCON3bits.PENH = 1;
-  PDC3 = 0;
-  DTR3 = DEAD_TIME;
-  ALTDTR3 = DEAD_TIME;
+    PWMCON1 = 0;
+    PWMCON2 = 0;
+    PWMCON3 = 0;
+    
+    PWMCON1bits.ECAM = 0;
+    PWMCON2bits.ECAM = 0;
+    PWMCON3bits.ECAM = 0;   
+    
+    IOCON1 = 0;
+    IOCON1bits.PENH = 1;
+    IOCON1bits.SWAP = 1;
+    PDC1 = 0;
+    DTR1 = DEAD_TIME;
+    ALTDTR1 = DEAD_TIME;
 
-  IOCON7 = 0;
-  IOCON7bits.PENH = 1;
-  PDC7 = 0;
-  DTR7 = DEAD_TIME;
-  ALTDTR7 = DEAD_TIME;
+    IOCON2 = 0;
+    IOCON2bits.PENH = 1;
+    IOCON2bits.SWAP = 1;
+    PDC2 = 0;
+    DTR2 = DEAD_TIME;
+    ALTDTR2 = DEAD_TIME;
 
-  IOCON8 = 0;
-  IOCON8bits.PENH = 1;
-  PDC8 = 0;
-  DTR8 = DEAD_TIME;
-  ALTDTR8 = DEAD_TIME;
+    IOCON3 = 0;
+    IOCON3bits.PENH = 1;
+    IOCON3bits.SWAP = 1;
+    PDC3 = 0;
+    DTR3 = DEAD_TIME;
+    ALTDTR3 = DEAD_TIME;
+    
+    IOCON7 = 0;
+    IOCON7bits.PENH = 1;
+    PDC7 = 0;
+    DTR7 = DEAD_TIME;
+    ALTDTR7 = DEAD_TIME;
+    
+    IOCON8 = 0;
+    IOCON8bits.PENH = 1;
+    PDC8 = 0;
+    DTR8 = DEAD_TIME;
+    ALTDTR8 = DEAD_TIME;
+    
+    IOCON9 = 0;
+    IOCON9bits.PENH = 1;
+    PDC9 = 0;
+    DTR9 = DEAD_TIME;
+    ALTDTR9 = DEAD_TIME;    
 
-  IOCON9 = 0;
-  IOCON9bits.PENH = 1;
-  PDC9 = 0;
-  DTR9 = DEAD_TIME;
-  ALTDTR9 = DEAD_TIME;
-  ALTDTR9 = DEAD_TIME;
+    float temp = 120000000.0 / (freq * 1.0);
+    PWM_MAX = temp;
+    PTPERbits.PTPER = PWM_MAX;
 
-  float temp = 120000000.0 / freq;
-  PWM_MAX = temp;
-  PTPERbits.PTPER = PWM_MAX;
-
-  PTCONbits.PTEN = 1;
+    PTCONbits.PTEN = 1;
 }
 
 void WritePwm(int num, int val){

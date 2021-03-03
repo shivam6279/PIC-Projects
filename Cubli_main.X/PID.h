@@ -28,9 +28,8 @@ extern void PIDSet(PID*, float, float, float);
 extern void PIDSetIntegralParams(PID*, float, float);
 extern void PIDReset(PID*);
 extern void PIDIntegrate(PID*, float);
-extern void PIDIntegrateAngle(PID*, float);
 extern void PIDDifferentiate(PID*, float);
-extern void PIDCompute(PID*);
+extern void PIDOutput(PID *a);
 
 extern void StrWriteInt(int, volatile char[], unsigned char);
 extern void StrWriteFloat(double, unsigned char, volatile char[], unsigned char);

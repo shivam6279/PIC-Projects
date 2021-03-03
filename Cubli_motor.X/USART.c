@@ -11,7 +11,7 @@ static unsigned int rx_buffer_index = 0;
 
 volatile unsigned char rx_rdy = 0;
 
-void __ISR_AT_VECTOR(_UART3_RX_VECTOR, IPL6AUTO) UART_DIN(void) {
+void __ISR_AT_VECTOR(_UART3_RX_VECTOR, IPL7AUTO) UART_DIN(void) {
     static unsigned int r;
     do {
         r = U3RXREG & 0xFF;
@@ -63,7 +63,7 @@ void USART3_init(unsigned long int baud_rate) {
 //    U3MODEbits.RUNOVF = 1;
     
     IFS1bits.U3RXIF = 0;
-    IPC15bits.U3RXIP = 6;
+    IPC15bits.U3RXIP = 7;
     IPC15bits.U3RXIS = 0; 
     IEC1bits.U3RXIE = 1;
     

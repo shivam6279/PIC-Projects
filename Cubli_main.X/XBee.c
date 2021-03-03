@@ -1,13 +1,15 @@
 #include <xc.h>
 #include "XBee.h"
 #include "pic32.h"
-#include "MPU9250.h"
+#include "MPU6050.h"
 #include "PID.h"
 #include "USART.h"
 #include <string.h>
 #include <sys/attribs.h>
 
 volatile rx XBee;
+
+volatile unsigned char mode = 'R';
 
 volatile int safety_counter = 0;
 
@@ -23,45 +25,46 @@ void __ISR_AT_VECTOR(_UART1_RX_VECTOR, IPL6SRS) XBee_rx(void) {
     static rx XBee_temp;
 
     do {
-        XBee_rx_byte = U1RXREG & 0xFF;
-        XBee_address = XBee_rx_byte >> 5;
-
-        switch(XBee_address) {
-            case 0:
-                XBee_temp.x1 = (XBee_rx_byte & 0x1F) - 15;
-                XBee_signal_temp = 1;
-                break;
-
-            case 1:
-                XBee_temp.y1 = (XBee_rx_byte & 0x1F) - 15;
-                break;
-
-            case 2:
-                XBee_temp.x2 = (XBee_rx_byte & 0x1F) - 15;
-                break;
-
-            case 3:
-                XBee_temp.y2 = (XBee_rx_byte & 0x1F);
-                break;
-
-            case 4:
-                XBee_temp.ls = (XBee_rx_byte >> 1) & 1; 
-                XBee_temp.rs = XBee_rx_byte & 1;
-                break;
-
-            case 5: 
-                XBee_temp.d2 = (XBee_rx_byte & 0b00001100) << 2;
-                XBee_temp.d1 = (XBee_rx_byte & 0b00000011);
-                safety_counter = 0;
-                if(XBee_signal_temp) {
-                    XBee_signal_temp = 0;
-                    XBee_temp.signal = 1;
-                    XBee_temp.data_ready = 1;
-
-                    XBee = XBee_temp;
-                }
-                break;
-        }
+        mode = U1RXREG & 0xFF;
+//        XBee_rx_byte = U1RXREG & 0xFF;
+//        XBee_address = XBee_rx_byte >> 5;
+//
+//        switch(XBee_address) {
+//            case 0:
+//                XBee_temp.x1 = (XBee_rx_byte & 0x1F) - 15;
+//                XBee_signal_temp = 1;
+//                break;
+//
+//            case 1:
+//                XBee_temp.y1 = (XBee_rx_byte & 0x1F) - 15;
+//                break;
+//
+//            case 2:
+//                XBee_temp.x2 = (XBee_rx_byte & 0x1F) - 15;
+//                break;
+//
+//            case 3:
+//                XBee_temp.y2 = (XBee_rx_byte & 0x1F);
+//                break;
+//
+//            case 4:
+//                XBee_temp.ls = (XBee_rx_byte >> 1) & 1; 
+//                XBee_temp.rs = XBee_rx_byte & 1;
+//                break;
+//
+//            case 5: 
+//                XBee_temp.d2 = (XBee_rx_byte & 0b00001100) << 2;
+//                XBee_temp.d1 = (XBee_rx_byte & 0b00000011);
+//                safety_counter = 0;
+//                if(XBee_signal_temp) {
+//                    XBee_signal_temp = 0;
+//                    XBee_temp.signal = 1;
+//                    XBee_temp.data_ready = 1;
+//
+//                    XBee = XBee_temp;
+//                }
+//                break;
+//        }
     }while(U1STAbits.URXDA);
     
     IFS3bits.U1RXIF = 0; 

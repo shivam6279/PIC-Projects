@@ -9,13 +9,13 @@ void __ISR_AT_VECTOR(_TIMER_2_VECTOR, IPL4AUTO) delay_timer(void){
     delay_counter++;
 }
 
-void PICInit(){
-    TRISB = 0; 
-    TRISC = 0; 
-    TRISD = 0; 
-    TRISE = 0; 
-    TRISF = 0;
-    TRISG = 0;
+void PICInit(){    
+    TRISB = 0xFFFFFFFF; 
+    TRISC = 0xFFFFFFFF; 
+    TRISD = 0xFFFFFFFF; 
+    TRISE = 0xFFFFFFFF; 
+    TRISF = 0xFFFFFFFF;
+    TRISG = 0xFFFFFFFF;
     
     ANSELB = 0;
     ANSELE = 0;

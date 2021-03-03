@@ -6,7 +6,7 @@
 
 #include "pic32.h"
 #include "bitbang_I2C.h"
-#include "MPU9250.h"
+#include "MPU6050.h"
 #include "USART.h"
 #include "XBee.h"
 #include "AHRS.h"
@@ -15,6 +15,40 @@
 #define ANTI_WINDUP_MAX_BOUND 100
 #define ANTI_WINDUP_MAX_ANGLE 100
 
+#define DER_LPF 0.5
+
+#define UART_XBee 1
+#define UART_A 4
+#define UART_B 2
+#define UART_C 5
+
+#define A_SETPOINT 46.8
+#define B_SETPOINT -46.8
+#define C_SETPOINT -45.6
+
+#define ACC_LOOP_TIME 10000
+
+void Corner(float[4]);
+
+unsigned char get_face(int r, int p) { 
+    if(p > -15 && p < 15) {
+        if(r > -15 && r < 15){
+            return 1;
+        } else if(r > 165 || r < -165) {
+            return 2;
+        } else if(r > 75 && r < 105) {
+            return 3;
+        } else if(r < -75 && r > -105) {
+            return 4;
+        }
+    } else  if(p > 75 && p < 105) {
+        return 5;
+    } else if(p < -75 && p > -105) {
+        return 6;
+    }
+    return 0;
+} 
+
 void ResetQuaternion(float q[]){
     q[0] = 1;
     q[1] = 0;
@@ -22,12 +56,28 @@ void ResetQuaternion(float q[]){
     q[3] = 0;
 }
 
+char xbee_mode = 'S';
+bool run_motor = true;
+
 void main() { 
-    PID pitch, roll, yaw;
-    XYZ acc, gyro, compass;
-    float gravity_mag;
-    rx XBee_rx;
-    float q[4];
+    PID motorA, motorB, motorC;
+    float pre_pitch, pre_roll;
+    XYZ pre_gyro;
+    float acc_angle;
+    float pitch_angle = 0.0, roll_angle = 0.0, heading;
+    XYZ acc, gyro;
+    rx XBee_rx;    
+    unsigned char face;    
+    float acc_loop_time;    
+    bool flagA = 0, flagB = 0, flagC = 0;
+    int i;
+    float q[4];    
+    
+    float ks = 0.6;
+    float ks_a = 0.7;
+    float ks_b = 0.7;
+    float ks_c = 0.7;
+    float kv = 0.05;//0.065
     
     //Startup initialization   
     PICInit();
@@ -35,332 +85,427 @@ void main() {
 //    XBeeReset();
 //    USART1_init(111111);    
 //    timer7_init(1000.0);    // Safety timer for Xbee - 1kHz
-    SAFETY_TIMER_ON = 1;
     
-    USART2_init(115200);    
-    USART3_init(115200);    
-    USART4_init(115200);    
+    USART1_init(115200);
+    USART2_init(250000);  
+    USART4_init(250000);  
+    USART5_init(250000);  
     
     timer2_init(1000.0);    // Delay timer - 1kHz    
-//    timer4_init(1000000.0); // Loop timer - 1MHz
+    timer4_init(1000000.0); // Loop timer - 1MHz
 //    timer5_init(10.0);      // GPS timer - 10Hz
 //    timer6_init(312500.0);  // XBee tx timer - 312.5kHz
     
+    delay_ms(200);    
+    MPU6050Init();
+    
     //Set PID gains
-//    SetPIDGain(&roll, &pitch, &yaw);
-//    PIDSetIntegralParams(&roll,  ANTI_WINDUP_MAX_BOUND, ANTI_WINDUP_MAX_ANGLE);
-//    PIDSetIntegralParams(&pitch, ANTI_WINDUP_MAX_BOUND, ANTI_WINDUP_MAX_ANGLE);
-//    delay_ms(1500);
+    PIDSet(&motorA, 125, 0, 35);
+    PIDSet(&motorB, 100, 0, 20);
+    PIDSet(&motorC, 125, 0, 35);
+    motorA.offset = A_SETPOINT;
+    motorB.offset = B_SETPOINT;
+    motorC.offset = C_SETPOINT;
     
-    delay_ms(200);
+    delay_ms(1500);
+    CalibrateGyro();
+    ResetQuaternion(q);    
     
-    MPU9250Init();
-    
-    USART_send_str(2, "Start\n");    
-    
-    ResetQuaternion(q);
-    
-    while(1) {
+    for(i = 0; i < 1000; i++) {
         StartDelayCounter();
-        
-        MPU9250ReadRaw(&acc, &gyro, &compass);
-        
-        //MadgwickQuaternionUpdate(q, acc, gyro, compass, 0.05);
-        
-        //QuaternionToEuler(q, &roll.error, &pitch.error, &yaw.error);
-        
-        float heading = atan2(compass.y, compass.x) * 180.0 / 3.1415;
-        float roll = atan2(acc.x, sqrt(pow(acc.y, 2) + pow(acc.z, 2))) * 180.0 / 3.1415;
-        float pitch = atan2(acc.y, sqrt(pow(acc.x, 2) + pow(acc.z, 2))) * 180.0 / 3.1415;
-        
-        USART_write_float(2, acc.x, 4);        
-        USART_send_str(2, "\t");
-        USART_write_float(2, acc.y, 4);        
-        USART_send_str(2, "\t");
-        USART_write_float(2, acc.z, 4);        
-        USART_send_str(2, "\n");
-        
-        while(ms_counter() < 100);
+        GetAcc(&acc);
+        MadgwickQuaternionUpdateAcc(q, acc, 0.05);
+        while(ms_counter() < 5);
     }
     
-    /*
+    T4CONbits.ON = 1;
+    
+    GetAcc(&acc);
+    GetGyro(&gyro);
+    pitch_angle = atan2(-acc.y, sqrt(pow(acc.x, 2) + pow(acc.z, 2))) * 180.0 / M_PI - roll_offset;
+    
+    USART_write_int(UART_A, 0);
+    USART_send(UART_A, '\r');
+    USART_write_int(UART_B, 0);
+    USART_send(UART_B, '\r');
+    USART_write_int(UART_C, 0);
+    USART_send(UART_C, '\r');
+    
+    float p_derA = 0, p_derB = 0, p_derC = 0, pitch_acc, temp;
+    
+    StartDelayCounter();
     while(1) {
-        //Clear PID variables
-        PIDReset(&roll);
-        PIDReset(&pitch);
-        PIDReset(&yaw);
-        PIDReset(&altitude);
-        PIDReset(&GPS);
-        ResetQuaternion(q);
-        
-        ArmingSequence(q, &gravity_mag, &take_off_roll, &take_off_pitch, &take_off_heading, &take_off_altitude, &take_off_latitude, &take_off_longitude);
-        
-        loop_mode = MODE_KILL;
-        kill = 0;
-        altitude_setpoint = 0;
-        ResetCounters();        
-        LOOP_TIMER_ON = 1;
+        if(acc_aq_counter >= ACC_LOOP_TIME) {
+            acc_loop_time = (double)acc_aq_counter / 1000000.0;  
+            acc_aq_counter = 0;
             
-        XBee_rx = ReadXBee();
-        
-        //Main Loop
-        while(XBee_rx.rs == 0) {
+            pre_gyro = gyro;
+            GetGyro(&gyro);
+            GetAcc(&acc);
             
-            //------------------------------------------------------------IMU data acquisition---------------------------------------------------------------------------
-            if(gyro_aq_counter >= 125) {
-                gyro_loop_time = (double)gyro_aq_counter / 1000000.0;    
-                gyro_aq_counter = 0;
-                
-                GetGyro(&gyro);                
-                MadgwickQuaternionUpdateGyro(q, gyro, gyro_loop_time);
-                
-                if(acc_aq_counter >= 1000) {
-                    acc_loop_time = (double)acc_aq_counter / 1000000.0;
-                    acc_aq_counter = 0;
-                    
-                    GetAcc(&acc);                    
-                    MadgwickQuaternionUpdateAcc(q, acc, acc_loop_time);
-                    
-                    compute_acc_comp = true;
-                    
-                    if(ToF_connected) {
-                        if(ToF_counter >= 50) {
-                            ToF_counter = 0;
-                            ToF_distance = ToF_readRange();
-                            ToF_distance *= cos(TO_RAD(roll.error));
-                            ToF_distance *= cos(TO_RAD(pitch.error));
-                            if(ToF_valueGood() != 0)
-                                ToF_distance = -1;
-                        }
-                    }                    
-                    
-                    if(compass_aq_counter >= 5000) {
-                        compass_loop_time = (double)compass_aq_counter / 1000000.0;
-                        compass_aq_counter = 0;
-                        
-                        GetCompass(&compass);
-                        MadgwickQuaternionUpdate(q, acc, (XYZ){0, 0, 0}, compass, compass_loop_time);
-                    }
+//            roll_angle = 90;
+//            pitch_acc = atan2(acc.x, sqrt(pow(acc.y, 2) + pow(acc.z, 2))) * 180.0 / M_PI;
+//            pitch_angle = 0.05 * pitch_acc + 0.95 * (pitch_angle - gyro.z * acc_loop_time);
+            
+            MadgwickQuaternionUpdateGyro(q, gyro, acc_loop_time);
+            MadgwickQuaternionUpdateAcc(q, acc, acc_loop_time);
+            
+            pre_pitch = pitch_angle;
+            pre_roll = roll_angle;
+            QuaternionToEuler(q, &roll_angle, &pitch_angle, &heading);
+            
+            pitch_angle = 0.7*pre_pitch + 0.3*pitch_angle;
+            roll_angle = 0.7*pre_roll + 0.3*roll_angle;            
+            
+//            gyro.x = 0.5*pre_gyro.x + 0.5*gyro.x;
+//            gyro.y = 0.5*pre_gyro.y + 0.5*gyro.y;
+//            gyro.z = 0.5*pre_gyro.z + 0.5*gyro.z;
+            
+            if(fabs(motorA.offset - roll_angle) < 1.0 && fabs(pitch_angle) < 15) {
+                flagA = true;
+            } else if(fabs(motorA.offset - roll_angle) > 35.0) {
+                if(flagA) {
+                    motorA.offset = A_SETPOINT;
+                    USART_write_int(UART_A, 0);
+                    USART_send(UART_A, '\r');
+                    flagA = false;
                 }
-                
-                QuaternionToEuler(q, &roll.error, &pitch.error, &heading);
-                yaw.error = LimitAngle(heading - take_off_heading);
-                
-                roll.derivative  = gyro.x;
-                pitch.derivative = gyro.y;
-                yaw.derivative   = -gyro.z;
-                
-//                PIDDifferentiateAngle(&roll,  gyro_loop_time);
-//                PIDDifferentiateAngle(&pitch, gyro_loop_time);
-//                PIDDifferentiateAngle(&yaw,   gyro_loop_time);
-                
-                if(XBee_rx.y2 > MIN_THROTTLE_INTEGRATION && !kill) {
-                    PIDIntegrateAngle(&roll,  gyro_loop_time);
-                    PIDIntegrateAngle(&pitch, gyro_loop_time);
-                    PIDIntegrateAngle(&yaw,   gyro_loop_time);
+                motorA.integral = 0.0;
+            } 
+            
+            if(fabs(motorB.offset - pitch_angle) < 1.0 && fabs(roll_angle) < 15) {
+                flagB = true;
+            } else if(fabs(motorB.offset - pitch_angle) > 35.0) {
+                if(flagB) {
+                    motorB.offset = B_SETPOINT;
+                    USART_write_int(UART_B, 0);
+                    USART_send(UART_B, '\r');
+                    flagB = false;
                 }
-                
-                if(compute_acc_comp) {
-                    compute_acc_comp = false;
-                    
-                    //Update altitude kalman filter
-                    //acc_comp = RotateVectorEuler(acc, roll.error+roll_offset, pitch.error+pitch_offset, 0.0);
-                    
-                    if(fabs(roll.error) < 45.0 && fabs(pitch.error) < 45.0) {
-                    
-                        //acc_comp = MultiplyVectorQuaternion(acc, q);
-                        //acc_comp.z -= gravity_mag;
-                        
-                        acc_comp = GetCompensatedAcc(q, acc, gravity_mag);
-                        
-                        if(fabs(acc_comp.z) < 10.0f) {
-                            altitude_KF_propagate(acc_comp.z, acc_loop_time);                    
-                        }
-                    }
-                    
-                    if(fabs(altitude_KF_getVelocity()) > 10.0) {
-                        altitude_KF_setVelocity(0.0);  
-                    }
+                motorB.integral = 0.0;
+            } 
+            
+            if(fabs(motorC.offset - pitch_angle) < 1.0 && fabs(90 - roll_angle) < 15) {
+                flagC = true;
+            } else if(fabs(motorC.offset - pitch_angle) > 35.0) {
+                if(flagC) {
+                    motorC.offset = C_SETPOINT;
+                    USART_write_int(UART_C, 0);
+                    USART_send(UART_C, '\r');
+                    flagC = false;
                 }
-            }
-
-            //-------------------------------------------------------------Altitude acquisition--------------------------------------------------------------------------
-            if(LoopAltitude(&baro_altitude, &temperature, true)) {
-                if(fabs(baro_altitude - take_off_altitude) < 150.0) {
-                    altitude_KF_update(baro_altitude);                
-                    altitude.error = altitude_KF_getAltitude() - take_off_altitude;                
-
-                    if(loop_mode == MODE_ALT_HOLD) {
-                        if(XBee_rx.y2 > 10 && XBee_rx.y2 < 20)  //Throttle stick in the mid position
-                            altitude.integral += (altitude.offset - altitude.error) * 0.002 * oversampling_delay;
-                    }
-                }
+                motorC.integral = 0.0;
+            } 
+            
+            if(fabs(-36.0 - pitch_angle) < 5 && fabs(46.0 - roll_angle) < 5) {
+                Corner(q);
             }
             
-            //-------------------------------------------------------------------RC input--------------------------------------------------------------------------------
-            if(XBee.data_ready || !XBee.signal) {
-                XBee_rx = ReadXBee();
-                XBee.data_ready = 0;
-
-                p_kill = kill;
-                p_loop_mode = loop_mode;
-
-                if(XBee_rx.ls || !XBee_rx.signal) 
-                    kill = 1; 
-                else 
-                    kill = 0;
-
-                //Set loop mode - Stabilize, Alt-hold, Pos-hold
-                if(XBee_rx.d1 == 0 || (XBee_rx.d1 == 2 && !GPS_signal)) 
-                    loop_mode = MODE_STABILIZE;
-                else if(XBee_rx.d1 == 1) 
-                    loop_mode = MODE_ALT_HOLD;
-                else if(XBee_rx.d1 == 2 && GPS_signal) 
-                    loop_mode = MODE_POS_HOLD;
-
-                if(p_loop_mode != loop_mode || p_kill != kill) {
-                    if(kill) 
-                        WriteRGBLed(255, 255, 255);  //White
-                    else if(loop_mode == MODE_STABILIZE) 
-                        WriteRGBLed(0, 255, 0);        //Green
-                    else if(loop_mode == MODE_ALT_HOLD) 
-                        WriteRGBLed(0, 255, 255);     //Cyan
-                    else if(loop_mode == MODE_POS_HOLD) 
-                        WriteRGBLed(255, 0, 255);     //Magenta
-
-                    if(loop_mode == MODE_ALT_HOLD) {
-                        altitude_setpoint = (float)XBee_rx.y2 / THROTTLE_MAX * MAX_SPEED;
-                        altitude.integral = 0;
-                        altitude.offset = altitude.error;
-                    }
-                    else if(loop_mode == MODE_POS_HOLD) {
-                        latitude_offset = latitude;
-                        longitude_offset = longitude;
-                    }
-                    yaw.offset = yaw.error;
-                }
-
-                //Converting Remote data to a 2-D vector
-                if(loop_mode != MODE_POS_HOLD) {// If not in GPS mode
-                    remote_magnitude = sqrt((float)XBee_rx.x1 * (float)XBee_rx.x1 + (float)XBee_rx.y1 * (float)XBee_rx.y1); //Magnitude of Remote's roll and pitch
-                    if(XBee_rx.x1 == 0 && XBee_rx.y1 == 0) 
-                        remote_angle = 0;
-                    else 
-                        remote_angle = TO_DEG(-atan2((float)XBee_rx.x1, (float)XBee_rx.y1));                                //Angle with respect to pilot/starting position
-                    remote_angle_difference = LimitAngle(yaw.error - remote_angle);                                         //Remote's angle with respect to quad's current direction
-
-                    pitch.offset = max_pitch_roll_tilt * remote_magnitude / REMOTE_MAX * -cos(TO_RAD(remote_angle_difference));
-                    roll.offset  = max_pitch_roll_tilt * remote_magnitude / REMOTE_MAX *  sin(TO_RAD(remote_angle_difference));
-                }
-            }
-
-            //--------------------------------------------------------Send Data to remote-----------------------------------------------------------------------------
-            if(TxBufferEmpty() && tx_buffer_timer > 50) {
-                tx_buffer_timer = 0;
+            if(flagA) {
+                motorA.p_error = motorA.error;
+                motorA.error = -(roll_angle - motorA.offset);
                 
-                XBeePacketChar('Z');
-                XBeePacketStr("Pitch  : "); XBeePacketFixedFloat(pitch.error, 3, 2); XBeePacketChar('\n');
-                XBeePacketStr("Roll   : "); XBeePacketFixedFloat(roll.error, 3, 2); XBeePacketChar('\n');
-                XBeePacketStr("Heading: "); XBeePacketFixedFloat(heading, 3, 2); XBeePacketChar('\n');
-                XBeePacketStr("Altitude: "); XBeePacketFloat(altitude.error, 2); XBeePacketChar('\n');
-                XBeePacketStr("Altitude speed: "); XBeePacketFloat(altitude.derivative, 2); XBeePacketChar('\n');   
+//                p_derA = motorA.derivative;
+//                motorA.derivative = (1.0-DER_LPF) * ((motorA.error - motorA.p_error) / acc_loop_time) + DER_LPF * p_derA;
+                motorA.derivative = -gyro.x;              
                 
-                XBeePacketStr("Acc X: "); XBeePacketFixedFloat(acc_comp.x, 3, 3); XBeePacketChar('\n');
-                XBeePacketStr("Acc Y: "); XBeePacketFixedFloat(acc_comp.y, 3, 3); XBeePacketChar('\n');   
-                XBeePacketStr("Acc Z: "); XBeePacketFixedFloat(acc_comp.z, 3, 3); XBeePacketChar('\n');
-                
-                XBeePacketStr("ToF distance: "); XBeePacketFloat((float)ToF_distance / 10.0, 2); XBeePacketChar('\n');
-                XBeePacketSend();
+//                if(motorA.p_error * motorA.error < 0) {
+//                    motorA.integral = 0.0;
+//                }
+                PIDIntegrate(&motorA, acc_loop_time);
+
+                motorA.offset += ks_a * motorA.error * acc_loop_time;
+                motorA.offset = LimitValue(motorA.offset, 35, 55);   
             }
             
-            //--------------------------------------------------------PID Output to motors----------------------------------------------------------------------------
-            if(esc_counter >= ESC_TIME_us) {
-                ESC_loop_time = (float)esc_counter / 1000000.0f;                
-                esc_counter = 0;     
+            if(flagB) {
+                motorB.p_error = motorB.error;
+                motorB.error = -(pitch_angle - motorB.offset);
                 
-                altitude.derivative = -1.0 * altitude_KF_getVelocity();
-
-                //--Stabilize--
-                if(loop_mode == MODE_STABILIZE) {
-                    altitude.output = ((float)XBee_rx.y2 / THROTTLE_MAX * MAX_SPEED);
-                }
-
-                //--Alt-hold---
-                else if(loop_mode == MODE_ALT_HOLD) {
-                    
-                    if(XBee_rx.y2 > 10 && XBee_rx.y2 < 20) {  //Throttle stick in the mid position
-                        altitude.output = (altitude.kp * (altitude.offset - altitude.error) + altitude.ki * altitude.integral + altitude.kd * altitude.derivative) + altitude_setpoint;
-                    } else {
-                        if(XBee_rx.y2 <= 10) {
-                            altitude.output = (altitude.kd * (altitude.derivative - max_altitude_rate)) + altitude.ki * altitude.integral + altitude_setpoint;
-                        }
-                        else if(XBee_rx.y2 >= 20) {
-                            altitude.output = (altitude.kd * (altitude.derivative + max_altitude_rate)) + altitude.ki * altitude.integral + altitude_setpoint;
-                        }
-                        altitude.offset = altitude.error;                
-                    }
-                    //if(altitude_rate.output < 0.0) altitude_rate.output *= 1.2;
-                }
-
-                //--Pos-hold---
-                else if(loop_mode == MODE_POS_HOLD) {
-                    altitude.output = (float)XBee_rx.y2 / THROTTLE_MAX * MAX_SPEED;
-
-                    GPS.error = DifferenceLatLon(take_off_latitude, take_off_longitude, latitude, longitude);
-                    GPS_bearing_difference = LimitAngle(heading - DifferenceBearing(take_off_latitude, take_off_longitude, latitude, longitude));
-                    GPS.output = (GPS.kp * GPS.error); 
-
-                    pitch.offset = -GPS.output * cos(TO_RAD(GPS_bearing_difference) + PI);
-                    roll.offset  =  GPS.output * sin(TO_RAD(GPS_bearing_difference) + PI);
-
-                    roll.offset  = LimitValue(roll.offset, -max_pitch_roll_tilt, max_pitch_roll_tilt);
-                    pitch.offset = LimitValue(pitch.offset, -max_pitch_roll_tilt, max_pitch_roll_tilt);
-                }
-
-                //Roll/Pitch/Yaw - PID     
-
-                PIDOutputAngle(&roll);
-                PIDOutputAngle(&pitch);
-                    
-                if(XBee_rx.x2 < 3 && XBee_rx.x2 > (-3)) {
-                    PIDOutputAngle(&yaw);
-                } else {
-                    yaw.output = (yaw.kd * (yaw.derivative + (float)XBee_rx.x2 / REMOTE_MAX * MAX_YAW_RATE));
-                    yaw.integral = 0;
-                    yaw.offset = yaw.error;                
-                }
+//                p_derB = motorB.derivative;
+//                motorB.derivative = (1.0-DER_LPF) * ((motorB.error - motorB.p_error) / acc_loop_time) + DER_LPF * p_derB;
+                motorB.derivative = -gyro.y;         
                 
-                if(roll.error < 30 && roll.error > -30)
-                    altitude.output /= cos(TO_RAD(roll.error));
-                if(pitch.error < 30 && pitch.error > -30)
-                    altitude.output /= cos(TO_RAD(pitch.error));
+//                if(motorB.p_error * motorB.error < 0) {
+//                    motorB.integral = 0.0;
+//                }
+                PIDIntegrate(&motorB, acc_loop_time);
 
-                //Motor Output
+                motorB.offset += ks_b * motorB.error * acc_loop_time;
+                motorB.offset = LimitValue(motorB.offset, -55, -35);   
+            }
+            
+            if(flagC) {
+                motorC.p_error = motorC.error;
+                motorC.error = (pitch_angle - motorC.offset);   
                 
-                altitude.output = LimitValue(altitude.output, 0.0f, 900.0f);
+//                p_derC = motorC.derivative;
+//                motorC.derivative = (1.0-DER_LPF) * ((motorC.error - motorC.p_error) / acc_loop_time) + DER_LPF * p_derC;
+                motorC.derivative = -gyro.z;                
+                
+//                if(motorC.p_error * motorC.error < 0) {
+//                    motorC.integral = 0.0;
+//                }
+                PIDIntegrate(&motorC, acc_loop_time);
 
-                speed.upRight   = altitude.output - pitch.output + roll.output + (yaw.output * MOTOR_SPIN);
-                speed.downLeft  = altitude.output + pitch.output - roll.output + (yaw.output * MOTOR_SPIN);
-                speed.upLeft    = altitude.output - pitch.output - roll.output - (yaw.output * MOTOR_SPIN);
-                speed.downRight = altitude.output + pitch.output + roll.output - (yaw.output * MOTOR_SPIN);
-
-                LimitSpeed(&speed);
-
-                //Output to ESC's
-
-                if(!kill)
-                    WriteMotors(speed);
-                else 
-                    TurnMotorsOff();
+                motorC.offset -= ks_c * motorC.error * acc_loop_time;
+                motorC.offset = LimitValue(motorC.offset, -56, -36);   
+            }
+            
+            if(mode == 'R') {
+                run_motor = true;
+            } else if(mode == 'O') {
+                run_motor = false;
+            } else {
+                xbee_mode = mode;
+            }
+            
+            if(flagA) {
+                PIDOutput(&motorA);
+                motorA.output += kv*rpm_A;
+                motorA.output =  LimitValue(motorA.output, -800.0, 800.0);  
+                
+                if(run_motor) {
+                    USART_write_int(UART_A, motorA.output);
+                    USART_send(UART_A, '\r');                
+                }                
+            }
+            
+            if(flagB) {
+                PIDOutput(&motorB);
+                motorB.output += kv*rpm_B;
+                motorB.output = LimitValue(motorB.output, -800.0, 800.0);
+                
+                if(run_motor) {
+                    USART_write_int(UART_B, motorB.output);
+                    USART_send(UART_B, '\r');                
+                }
+            }
+            
+            if(flagC) {
+                PIDOutput(&motorC);
+                motorC.output += 0.083*rpm_C;
+                motorC.output = LimitValue(motorC.output, -800.0, 800.0); 
+                
+                if(run_motor) {
+                    USART_write_int(UART_C, motorC.output);
+                    USART_send(UART_C, '\r');  
+                }
             }
         }
-        TurnMotorsOff();
+           
+        if(ms_counter() > 25) {
+            StartDelayCounter();
+            if(xbee_mode == 'A') {
+                USART_write_float(1, pitch_angle, 4);     
+                USART_send_str(UART_XBee, ", ");
+                USART_write_float(1, roll_angle, 4);
+                USART_send_str(UART_XBee, ", ");
+                USART_write_float(1, heading, 4);
+                USART_send_str(UART_XBee, "\n");
+                
+            } else if(xbee_mode == 'G') {
+                USART_write_float(1, gyro.x, 4);     
+                USART_send_str(UART_XBee, ", ");
+                USART_write_float(1, gyro.y, 4);
+                USART_send_str(UART_XBee, ", ");
+                USART_write_float(1, gyro.z, 4);
+                USART_send_str(UART_XBee, "\n");
+                
+            } else if(xbee_mode == 'D') {
+                if(flagA) {
+                    USART_write_float(1, motorA.derivative, 4);     
+                    USART_send_str(UART_XBee, ", ");
+                    USART_write_float(1, -gyro.x, 4);
+                    USART_send_str(UART_XBee, "\n");
+                }else if(flagB) {
+                    USART_write_float(1, motorB.derivative, 4);     
+                    USART_send_str(UART_XBee, ", ");
+                    USART_write_float(1, -gyro.y, 4);
+                    USART_send_str(UART_XBee, "\n");
+                }else if(flagC) {
+                    USART_write_float(1, motorC.derivative, 4);     
+                    USART_send_str(UART_XBee, ", ");
+                    USART_write_float(1, -gyro.z, 4);
+                    USART_send_str(UART_XBee, "\n");
+                }
+                   
+            } else if(xbee_mode == 'V') {
+                USART_write_float(1, rpm_A, 4);     
+                USART_send_str(UART_XBee, ", ");
+                USART_write_float(1, rpm_B, 4);
+                USART_send_str(UART_XBee, ", ");
+                USART_write_float(1, rpm_C, 4);
+                USART_send_str(UART_XBee, "\n");
+                
+            }  else if(xbee_mode == 'P') {
+                if(flagA) {
+                    USART_write_float(1, motorA.error*motorA.kp, 4);    
+                    USART_send_str(UART_XBee, ", ");
+                    USART_write_float(1, motorA.integral*motorA.ki, 4);
+                    USART_send_str(UART_XBee, ", ");                    
+                    USART_write_float(1, motorA.derivative*motorA.kd, 4);
+                    USART_send_str(UART_XBee, ", ");
+                    USART_write_float(1, motorA.output, 4);
+                    USART_send_str(UART_XBee, "\n");
+                } else if(flagB) {
+                    USART_write_float(1, motorB.error*motorB.kp, 4);    
+                    USART_send_str(UART_XBee, ", ");
+                    USART_write_float(1, motorB.integral*motorB.ki, 4);
+                    USART_send_str(UART_XBee, ", ");                    
+                    USART_write_float(1, motorB.derivative*motorB.kd, 4);
+                    USART_send_str(UART_XBee, ", ");
+                    USART_write_float(1, motorB.output, 4);
+                    USART_send_str(UART_XBee, "\n");
+                } else if(flagC) {
+                    USART_write_float(1, motorC.error*motorC.kp, 4);    
+                    USART_send_str(UART_XBee, ", ");
+                    USART_write_float(1, motorC.integral*motorC.ki, 4);
+                    USART_send_str(UART_XBee, ", ");                    
+                    USART_write_float(1, motorC.derivative*motorC.kd, 4);
+                    USART_send_str(UART_XBee, ", ");
+                    USART_write_float(1, motorC.output, 4);
+                    USART_send_str(UART_XBee, "\n");
+                } else {
+                    USART_write_float(1, pitch_angle, 4);     
+                    USART_send_str(UART_XBee, ", ");
+                    USART_write_float(1, roll_angle, 4);
+                    USART_send_str(UART_XBee, "\n");
+                }
+                
+            } else {
+                if(flagA) {
+                    USART_write_float(1, roll_angle, 4);     
+                    USART_send_str(UART_XBee, ", ");
+                    USART_write_float(1, motorA.offset, 4);
+                    USART_send_str(UART_XBee, "\n");
+                } else if(flagB) {
+                    USART_write_float(1, pitch_angle, 4);     
+                    USART_send_str(UART_XBee, ", ");
+                    USART_write_float(1, motorB.offset, 4);
+                    USART_send_str(UART_XBee, "\n");
+                } else if(flagC) {
+                    USART_write_float(1, pitch_angle, 4);     
+                    USART_send_str(UART_XBee, ", ");
+                    USART_write_float(1, motorC.offset, 4);
+                    USART_send_str(UART_XBee, "\n");
+                } else {
+                    USART_write_float(1, pitch_angle, 4);     
+                    USART_send_str(UART_XBee, ", ");
+                    USART_write_float(1, roll_angle, 4);
+                    USART_send_str(UART_XBee, "\n");
+                }
+            }            
+        }
+    }
+}
+
+#define c30 0.86602540378443864676372317075294
+#define s30 0.5
+
+void Corner(float q[4]) {
+    PID roll, pitch;
+    float pitch_angle = 0.0, roll_angle = 0.0, heading;
+    XYZ acc, gyro; 
+    float acc_loop_time;  
+    float gyro_spin = 0, gyro_mag, gyro_mag_sp;
+    
+    float A_out, B_out, C_out;
+    
+    float ks_a = 0.05; //0.05
+    float ks_b = 0.05; //0.05
+    float ks_c = 0.05; //0.074
+    
+    PIDSet(&roll, 100, 0, 25);
+    PIDSet(&pitch, 100, 0, 25);
+    roll.offset = 46.0;
+    pitch.offset = -36.0;
+    
+    esc_counter = 0;
+    
+    while(1) {
+//        if(esc_counter > 15000000 && gyro_spin == 0) {
+//            gyro_mag_sp = 5.0;
+//            esc_counter = 0;
+//        } else if(esc_counter > 10000000 && gyro_spin > 5) {
+//            gyro_mag_sp = -5.0;
+//        }
+//        
         
-        //Finish previously started altitude measurement
-        StartDelayCounter();
-        while(ms_counter() < 100);
-        StopDelayCounter();
-        
-        LOOP_TIMER_ON = 0;        
-    }*/
+        if(acc_aq_counter >= ACC_LOOP_TIME) {
+            acc_loop_time = (double)acc_aq_counter / 1000000.0;  
+            acc_aq_counter = 0;
+
+            GetGyro(&gyro);
+            GetAcc(&acc);
+            
+//            if(gyro_mag_sp != 0) {
+//                gyro_mag = sqrt(gyro.x*gyro.x + gyro.y*gyro.y + gyro.z*gyro.z) - fabs(gyro_mag_sp);
+//                gyro_spin = gyro_mag_sp < 0 ? -gyro_mag: gyro_mag; 
+//            }
+            
+            MadgwickQuaternionUpdateGyro(q, gyro, acc_loop_time);
+            MadgwickQuaternionUpdateAcc(q, acc, acc_loop_time);
+            QuaternionToEuler(q, &roll_angle, &pitch_angle, &heading);
+            
+            if(get_face(roll_angle, pitch_angle) != 0)
+                return;
+            
+            roll.error = roll_angle - roll.offset;         
+            PIDIntegrate(&roll, acc_loop_time);
+            roll.offset -= 0.6 * roll.error * acc_loop_time;
+            roll.offset = LimitValue(roll.offset, 36, 56);
+            
+            pitch.error = pitch_angle - pitch.offset;    
+            PIDIntegrate(&pitch, acc_loop_time);
+            pitch.offset -= 0.6 * pitch.error * acc_loop_time;
+            pitch.offset = LimitValue(pitch.offset, -46, -26);
+            
+            if(mode == 'R') {
+                run_motor = true;
+            } else if(mode == 'O') {
+                run_motor = false;
+            } else {
+                xbee_mode = mode;
+            }
+            
+            A_out = 125.0 * -roll.error + 15.0 * -(gyro.x-gyro_spin) + ks_a*rpm_A;
+            A_out = LimitValue(A_out, -800.0, 800.0);
+            
+            if(run_motor) {
+                USART_write_int(UART_A, A_out);
+                USART_send(UART_A, '\r');                
+            }     
+
+            B_out = c30 * 125.0 * -pitch.error + s30 * 55.0 * roll.error + 15.0 * -(gyro.y-gyro_spin) + ks_b*rpm_B;
+            B_out = LimitValue(B_out, -800.0, 800.0);
+
+            if(run_motor) {
+                USART_write_int(UART_B, B_out);
+                USART_send(UART_B, '\r');                
+            }
+            //c30 * kp * pitch.error
+            //-s30 * kp * roll.error
+
+            C_out = c30 * 125.0 * pitch.error + s30 * 55.0 * roll.error + 20.0 * -(gyro.z-gyro_spin) + ks_c*rpm_C;
+            C_out = LimitValue(C_out, -800.0, 800.0);
+
+            if(run_motor) {
+                USART_write_int(UART_C, C_out);
+                USART_send(UART_C, '\r');  
+            }
+        }
+           
+        if(ms_counter() > 25) {
+            StartDelayCounter();
+            USART_write_float(1, pitch_angle, 4);     
+            USART_send_str(UART_XBee, ", ");
+            USART_write_float(1, pitch.offset, 4);     
+            USART_send_str(UART_XBee, ", ");
+            USART_write_float(1, roll_angle, 4);
+            USART_send_str(UART_XBee, ", ");
+            USART_write_float(1, roll.offset, 4);
+            USART_send_str(UART_XBee, "\n");      
+        }
+    }
 }

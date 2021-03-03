@@ -1,9 +1,9 @@
 #ifndef _AHRS_H_
 #define _AHRS_H_
 
-#include "MPU9250.h"
+#include "MPU6050.h"
 
-#define FUSION_BETA	1.0f
+#define FUSION_BETA	0.1f
 
 #define ROLLOFFSET 0.0
 #define PITCHOFFSET 0.0

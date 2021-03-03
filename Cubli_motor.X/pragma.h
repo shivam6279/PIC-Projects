@@ -27,5 +27,6 @@
 #pragma config FWDTEN = OFF
 #pragma config FDMTEN = OFF
 #pragma config ICESEL = ICS_PGx1
+#pragma config JTAGEN = OFF
 
 #endif

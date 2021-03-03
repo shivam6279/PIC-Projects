@@ -1,5 +1,5 @@
 #include "AHRS.h"
-#include "MPU9250.h"
+#include "MPU6050.h"
 #include "PID.h"
 #include <math.h>
 

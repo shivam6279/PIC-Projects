@@ -4,10 +4,17 @@
 #include <xc.h>
 
 extern void PICInit();
+extern void ChangeNotificationInit();
+extern void QEI_init();
 
 extern void StartDelaymsCounter();
 extern void StopDelaymsCounter();
 extern unsigned long int ms_counter();
+extern unsigned long int ms_counter2();
+extern unsigned long int ms_counter3();
+extern void reset_ms_counter();
+extern void reset_ms_counter2();
+extern void reset_ms_counter3();
 extern void delay_ms(unsigned int);
 
 extern void StartDelayusCounter();

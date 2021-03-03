@@ -13,9 +13,8 @@ volatile unsigned int tx_buffer_timer = 0;
 void __ISR_AT_VECTOR(_TIMER_4_VECTOR, IPL7AUTO) pid_loop_timer(void){
     IFS0bits.T4IF = 0;
     esc_counter++;
-    gyro_aq_counter++;
+//    gyro_aq_counter++;
     acc_aq_counter++;
-    compass_aq_counter++;
 }
 
 void __ISR_AT_VECTOR(_TIMER_7_VECTOR, IPL4AUTO) general_purpose_1KHz(void) {
@@ -101,21 +100,7 @@ void PIDReset(PID* x) {
 
 void PIDIntegrate(PID *a, float deltat) {
     if(a->integral_max_diff <= 0 || fabs(a->error - a->offset) <= a->integral_max_diff) {   
-        a->integral += (a->error - a->offset) * deltat;
-    }
-    
-    if(a->integral_bound > 0.0f) {
-        if(a->integral * a->ki > a->integral_bound) {
-            a->integral = a->integral_bound / a->ki;
-        } else if(a->integral * a->ki < -a->integral_bound) {
-            a->integral = -a->integral_bound / a->ki;
-        }
-    }
-}
-
-void PIDIntegrateAngle(PID *a, float deltat) {    
-    if(a->integral_max_diff <= 0 || fabs(LimitAngle(a->error - a->offset)) <= a->integral_max_diff) {   
-        a->integral += LimitAngle(a->error - a->offset) * deltat;
+        a->integral += a->error * deltat;
     }
     
     if(a->integral_bound > 0.0f) {
@@ -129,20 +114,11 @@ void PIDIntegrateAngle(PID *a, float deltat) {
 
 void PIDDifferentiate(PID *a, float deltat) {
     a->derivative = (a->error - a->p_error) / deltat;
-    a->p_error = a->error;
-}
-
-void PIDDifferentiateAngle(PID *a, float deltat) {
-    a->derivative = LimitAngle(a->error - a->p_error) / deltat;
-    a->p_error = a->error;
+//    a->p_error = a->error;
 }
 
 void PIDOutput(PID *a) {
-    a->output = a->kp * (a->error - a->offset) + a->ki * a->integral + a->kd * a->derivative;
-}
-
-void PIDOutputAngle(PID *a) {
-    a->output = a->kp * LimitAngle(a->error - a->offset) + a->ki * a->integral + a->kd * a->derivative;
+    a->output = a->kp * a->error + a->ki * a->integral + a->kd * a->derivative;
 }
 
 void StrWriteInt(int a, volatile char str[], unsigned char n) {

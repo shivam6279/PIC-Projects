@@ -14,6 +14,7 @@ typedef struct {
     bool data_ready;
 } rx;
 
+extern volatile unsigned char mode;
 extern volatile rx XBee, XBee_temp;
 extern volatile int safety_counter;
 
