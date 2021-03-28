@@ -67,3 +67,4 @@ Makefile
 funclist
 *.xml~
 *.i
+*.flag
