@@ -29,6 +29,12 @@ typedef struct {
     float z;
 } XYZ;
 
+extern void dmpInit();
+extern void Getdmp(float[4], XYZ*, float*, float*, float*);
+extern void GetFIFO(unsigned char*);
+extern void dmpDecode(unsigned char[42], float[4], XYZ*, float*, float*, float*);
+extern unsigned int GetFIFOCount();
+
 extern void VectorReset(XYZ *v);
 extern XYZ VectorAdd(XYZ, XYZ);
 extern XYZ VectorSubtract(XYZ, XYZ);

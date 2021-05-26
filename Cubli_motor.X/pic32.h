@@ -3,6 +3,8 @@
 
 #include <xc.h>
 
+#define LED LATAbits.LATA10
+
 extern void PICInit();
 extern void ChangeNotificationInit();
 extern void QEI_init();
@@ -20,6 +22,7 @@ extern void delay_ms(unsigned int);
 extern void StartDelayusCounter();
 extern void StopDelayusCounter();
 extern unsigned long int us_counter();
+extern void reset_us_counter();
 extern void delay_us(unsigned int);
 
 extern void timer2_init(float);

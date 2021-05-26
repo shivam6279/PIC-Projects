@@ -357,6 +357,7 @@ void USART_write_int(unsigned char port, int a) {
 void USART_write_float(unsigned char port, double a, unsigned char right) {
     unsigned char i;
     long int tens;
+    long int t;
 
     if(a < 0) {
         a *= (-1);
@@ -365,10 +366,10 @@ void USART_write_float(unsigned char port, double a, unsigned char right) {
     //else USART_send(port, '+');
     
     if(a > 1.0) {
-        for(tens = 1; tens < a; tens *= 10);
+        for(tens = 1, t = a; tens < t; tens *= 10);
         tens /= 10;
         for(; tens > 0; tens /= 10)
-            USART_send(port, ((long int)(a / tens) % 10) + 48);
+            USART_send(port, ((t / tens) % 10) + 48);
     } else {
         USART_send(port, '0');
     }

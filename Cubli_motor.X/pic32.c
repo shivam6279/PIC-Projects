@@ -180,6 +180,10 @@ unsigned long int us_counter() {
     return delay_us_counter;
 }
 
+void reset_us_counter() {
+    delay_us_counter = 0;
+}
+
 void delay_us(unsigned int x){
     StartDelayusCounter();
     while(delay_us_counter < x);

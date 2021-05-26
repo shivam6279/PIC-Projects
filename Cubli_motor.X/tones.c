@@ -3,6 +3,7 @@
 #include "pic32.h"
 #include "BLDC.h"
 #include <sys/attribs.h>
+#include "USART.h"
 
 const float tone_power = 0.015;
 unsigned char tone_phase = 1;
@@ -53,6 +54,7 @@ void MetroidSaveTheme(unsigned char id) {
         delay_ms(2000);
         StopTone();    
     }
+    play_tone = 0;
 }
 
 void PlayTone(float freq) {

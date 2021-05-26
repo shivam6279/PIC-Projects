@@ -11,9 +11,10 @@
 #define SVPWM_SIZE		360
 #define SVPWM_INCREMENT (SVPWM_SIZE / 3)
 
-#define MODE_POWER 0
-#define MODE_RPM 1
-#define MODE_POS 2
+#define MODE_OFF 0
+#define MODE_POWER 1
+#define MODE_RPM 2
+#define MODE_POS 3
 
 extern volatile float motor_zero_angle;
 extern volatile unsigned char mode;
@@ -35,5 +36,6 @@ extern float GetPosition();
 extern float GetPower();
 extern void ResetPosition();
 extern float GetRPM();
+extern float GetRPM_der();
 
 #endif

@@ -3,11 +3,13 @@
 
 #include "MPU6050.h"
 
-#define FUSION_BETA	0.05f
+#define FUSION_BETA	0.1f
 
 #define ROLLOFFSET 0.0
 #define PITCHOFFSET 0.0
 #define HEADINGOFFSET 0.0
+
+extern float LimitAngle(float);
 
 extern XYZ MultiplyVectorQuaternion(XYZ, float q[4]);
 extern XYZ RotateVectorEuler(XYZ, float, float, float);

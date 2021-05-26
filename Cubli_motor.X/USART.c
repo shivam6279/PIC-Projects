@@ -2,14 +2,15 @@
 #include <string.h>
 #include <xc.h>
 #include <sys/attribs.h>
+#include "pic32.h"
+#include "BLDC.h"
 
 //----------------------------UART3----------------------------
 
 volatile unsigned char rx_buffer[RX_BUFFER_SIZE];
-
 static unsigned int rx_buffer_index = 0;
-
 volatile unsigned char rx_rdy = 0;
+volatile unsigned char play_tone = 0;
 
 void __ISR_AT_VECTOR(_UART3_RX_VECTOR, IPL7AUTO) UART_DIN(void) {
     static unsigned int r;
@@ -18,7 +19,35 @@ void __ISR_AT_VECTOR(_UART3_RX_VECTOR, IPL7AUTO) UART_DIN(void) {
         if(r == '\r') {
             rx_buffer[rx_buffer_index] = '\0';
             rx_buffer_index = 0;
-            rx_rdy = 1;
+            
+            rx_rdy = 0;
+            if(rx_buffer[0] == 'I') {
+                LED = 1;
+                rx_rdy = 0;
+                
+            } else if(rx_buffer[0] == 'O') {
+                LED = 0;
+                rx_rdy = 0;
+                
+            } else if(rx_buffer[0] == 'P') {                
+                SetPower(0);
+                mode = MODE_POWER;
+                
+            } else if(rx_buffer[0] == 'R') {
+                ResetMotorPID() ;
+                SetRPM(0);
+                mode = MODE_RPM;
+                
+            } else if(rx_buffer[0] == 'A') {                
+                ResetPosition();
+                SetPosition(0);
+                mode = MODE_POS;
+                
+            } else if(rx_buffer[0] == 'T'){
+                play_tone = 1;
+            } else {   
+                rx_rdy = 1;
+            }
         } else {
             rx_buffer[rx_buffer_index++] = r;
         }        

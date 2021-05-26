@@ -11,7 +11,7 @@ const unsigned int SVPWM_table[SVPWM_SIZE] = {1250, 1288, 1326, 1363, 1401, 1439
 
 volatile unsigned char mode = MODE_POWER;
 
-volatile float pre_pos = 0, position = 0.0, rpm = 0.0, power = 0.0;
+volatile float pre_pos = 0, position = 0.0, rpm = 0.0, rpm_der = 0.0, power = 0.0;
 volatile float set_rpm = 0, set_pos = 0.0;
 volatile bool vel_hold = false;
 
@@ -60,32 +60,40 @@ void __ISR_AT_VECTOR(_TIMER_4_VECTOR, IPL6AUTO) FOC_loop(void){
         power = power >= 800 ? 0.4: power <= -800 ? -0.4: power/2000.0;
     }
     
-    setPhaseVoltage(power, (position - motor_zero_angle) * POLE_PAIRS + 90);  
+    if(mode != MODE_OFF) {
+        setPhaseVoltage(power, (position - motor_zero_angle) * POLE_PAIRS + 90);  
+    }
 }
 
-volatile float rpm_err, rpm_out, rpm_sum, p_rpm, rpm_der;
-#define RPM_LPF 0.75//0.99
+volatile float rpm_err, rpm_out, rpm_sum, p_rpm = 0.0;
+#define RPM_LPF 0.95
+#define RPM_DER_LPF 0.9
 
 void __ISR_AT_VECTOR(_TIMER_6_VECTOR, IPL4AUTO) RPM(void){
     IFS2bits.T6IF = 0;
-    static long int temp;
+    static long int temp = 0, p_temp;
+    static int i;
+    
+    p_temp = temp;
     temp = VEL1CNT;
     
-    p_rpm = rpm_err;
-    rpm = (1.0-RPM_LPF) * ((float)temp / ENCODER_RES * 60000.0) + RPM_LPF*rpm; 
+    p_rpm = rpm;
+    rpm = (1.0-RPM_LPF) * ((float)temp / ENCODER_RES * 60000.0) + RPM_LPF*rpm;
+    
+//    rpm_der = (1.0-RPM_LPF) * ((float)(temp-p_temp) / ENCODER_RES * 60000.0) + RPM_LPF*rpm_der;    
+    rpm_der = (1.0-RPM_DER_LPF)*100.0*(rpm-p_rpm) + RPM_DER_LPF*rpm_der;
     
     if(mode == MODE_RPM) {        
         rpm_err = set_rpm - rpm;
-        if(fabs(rpm_err) < 75) {
+        if(fabs(rpm_err/set_rpm) < 0.1) {
             rpm_sum += rpm_err * 0.001;
         } else {
             rpm_sum = 0.0;
-        }
-        rpm_der = (p_rpm - rpm);
+        }        
 //        rpm_sum = rpm_sum > 75 ? 75: rpm_sum < -75 ? -75: rpm_sum;
-        rpm_out = 0.05 * rpm_err + 0.075 * rpm_sum + 0.000 * rpm_der;
+        rpm_out = 0.003*rpm_err + 0.005*rpm_sum - 0.002*rpm_der;
         
-        if(set_rpm == 0 && rpm < 6) {
+        if(set_rpm == 0 && fabs(rpm) < 25) {
             power = 0;
         } else {
             power = rpm_out > 0.5 ? 0.5: rpm_out < -0.5 ? -0.5: rpm_out;
@@ -154,7 +162,11 @@ void ResetMotorPID() {
     pre_err = 0.0;
     sum = 0.0;
     set_pos = position;
+    
     power = 0.0;
+    
+    rpm_err = 0.0;
+    rpm_sum = 0.0;
 }
 
 void SetPower(float p) {
@@ -184,6 +196,10 @@ void ResetPosition() {
 
 float GetRPM() {
     return rpm;
+}
+
+float GetRPM_der() {
+    return rpm_der;
 }
 
 float normalizeAngle(float angle) {
