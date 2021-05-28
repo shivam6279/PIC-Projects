@@ -100,7 +100,7 @@ void main() {
     timer3_init(4500);      // us delay
     timer4_init(10000);     // FOC
     timer5_init(50);        // speaker  
-    timer6_init(1000);      // velocity
+    timer6_init(500);      // velocity
     
     EEPROM_init();
             
@@ -182,7 +182,8 @@ void main() {
     const float kt = 0.3;
     
     StartDelaymsCounter();
-    while(1) {        
+    while(1) {     
+    #if ESC == 1
         if(rx_rdy) {            
             reset_ms_counter2();           
             a = parse_rx();
@@ -196,43 +197,37 @@ void main() {
                 SetPosition(a);
             }
         }
+    #endif
         
-//        if(play_tone) {
-//            if(mode == MODE_POWER) {
-//                SetPower(0);
-//            } else if(mode == MODE_RPM) {
-//                SetRPM(0);
-//            } else if(mode == MODE_POS) {
-//                SetPosition(0);
-//            }
-//            mode_temp = mode;
-//            mode = MODE_OFF;
-//            LED = 1;
-//            MetroidSaveTheme(board_id);
-//            LED = 0;
-//            mode = mode_temp;
-//            play_tone = 0;
-//        }
+        if(play_tone) {
+            if(mode == MODE_POWER) {
+                SetPower(0);
+            } else if(mode == MODE_RPM) {
+                SetRPM(0);
+            } else if(mode == MODE_POS) {
+                SetPosition(0);
+            }
+            mode_temp = mode;
+            mode = MODE_OFF;
+            LED = 1;
+            MetroidSaveTheme(board_id);
+            LED = 0;
+            mode = mode_temp;
+            play_tone = 0;
+            StartDelaymsCounter();
+        }
         
     #if AUTO_STOP == 1
         if(ms_counter2() > 100) {
             SetPower(0);
         }
-    #endif       
-        
-    #if ESC == 0
-        if(us_counter() > 50) {            
-            StopDelayusCounter();
-            reset_us_counter();
-            rx_rdy = 1;
-        }
     #endif
+
         if(ms_counter() >= 2) {            
             float deltat = (float)ms_counter() / 1000.0;
             reset_ms_counter();
             
-        #if ESC == 0
-            
+        #if ESC == 0            
             pre_gyro = gyro;
             GetAcc(&acc);
             GetGyro(&gyro);   
@@ -269,25 +264,14 @@ void main() {
                 
                 pre_set = setpoint;
                 setpoint += kt*err*deltat;
-//                setpoint = 0.05*(setpoint - kt*err*deltat) + 0.95*pre_set;
+//                setpoint = 0.05*(setpoint + kt*err*deltat) + 0.95*pre_set;
                 setpoint = setpoint > 60 ? 60: setpoint < 30 ? 30: setpoint;
                 
                 out = kp*err + ki*sum + kd*der + ks*GetRPM();
                 out = out >= 1000.0 ? 1000.0: out <= -1000.0 ? -1000.0: out;
                 
-                out_int = out;
-                i = 0;
-                if(out_int < 0)
-                    rx_buffer[i++] = '-';
-                rx_buffer[i++] = (abs(out_int) / 1000) % 10 + '0';
-                rx_buffer[i++] = (abs(out_int) / 100) % 10 + '0';
-                rx_buffer[i++] = (abs(out_int) / 10) % 10 + '0';
-                rx_buffer[i++] = abs(out_int)  % 10 + '0';
-                rx_buffer[i] = '\0';
-                rx_rdy = 1;
-                StartDelayusCounter();
-                
-//                SetPower((int)out / 2000.0);
+                SetPower((int)out / 2000.0);
+                reset_ms_counter2();
             }
             
             USART3_write_float(roll, 2);

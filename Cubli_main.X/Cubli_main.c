@@ -36,7 +36,7 @@ void main() {
     float pitch_angle = 0.0, roll_angle = 0.0, heading;
     XYZ acc, gyro, gyro_filt, gravity;
     rx XBee_rx;    
-    unsigned char face = 0, edge = 0;    
+    unsigned char face = 0, edge = 0, corner = 0;    
     float acc_loop_time;
     
     bool flag = false;
@@ -65,18 +65,21 @@ void main() {
     MPU6050Init();
     
     //Set PID gains
-    PIDSet(&motorA, 150, 0, 25);
-    PIDSet(&motorB, 150, 0, 25);
-    PIDSet(&motorC, 150, 0, 25);
+    PIDSet(&motorA, 175, 0, 25);
+    PIDSet(&motorB, 175, 0, 25);
+    PIDSet(&motorC, 175, 0, 25);
     motorA.offset = A_SETPOINT;
     motorB.offset = B_SETPOINT;
     motorC.offset = C_SETPOINT;
     
-    delay_ms(500);
+    USART_send_str(UART_A, "0\r");
+    USART_send_str(UART_B, "0\r");
+    USART_send_str(UART_C, "0\r"); 
+    delay_ms(50);
     USART_send_str(UART_A, "T\r");
     USART_send_str(UART_B, "T\r");
     USART_send_str(UART_C, "T\r"); 
-    delay_ms(500);
+    delay_ms(1000);
     CalibrateGyro();
     ResetQuaternion(q);    
         
@@ -103,6 +106,9 @@ void main() {
     gyro_filt.x = gyro.x;
     gyro_filt.y = gyro.y;
     gyro_filt.z = gyro.z;
+    
+    XYZ ra, rb, rc;
+    float sx, sy, cx, cy;
     
     StartDelayCounter();
     while(1) {
@@ -131,22 +137,58 @@ void main() {
 
             face = get_face(pitch_angle, roll_angle);
             edge = get_edge(pitch_angle, roll_angle, 20.0);
+            corner = get_corner(pitch_angle, roll_angle, 20.0);
             
-            balance_edge(pitch_angle, roll_angle, acc_loop_time, gyro_filt, &motorA, &motorB, &motorC);            
-            if(fabs(-36.7 - pitch_angle) < 2 && fabs(46.5 - roll_angle) < 2) {
-                USART_send_str(UART_A, "I\r");
-                USART_send_str(UART_B, "I\r");
-                USART_send_str(UART_C, "I\r");  
-                Corner(q);
-                USART_send_str(UART_A, "O\r");
-                USART_send_str(UART_B, "O\r");
-                USART_send_str(UART_C, "O\r");  
-            } 
+            cx = cos(pitch_angle * M_PI / 180.0);
+            sx = sin(pitch_angle * M_PI / 180.0);
+            cy = cos(-roll_angle * M_PI / 180.0);
+            sy = sin(-roll_angle * M_PI / 180.0);
+
+            rc.x = cy;
+            rc.y = sx*sy;
+            rc.z = -cx*sy;
+            ra.x = 0;
+            ra.y = -cx;
+            ra.z = -sx;
+            rb.x = sy;
+            rb.y = -cy*sx;
+            rb.z = cx*cy;
+            
+//            balance_edge(pitch_angle, roll_angle, acc_loop_time, gyro_filt, &motorA, &motorB, &motorC);
+            balance_corner(q, acc_loop_time, gyro_filt);
+//            if(fabs(-36.7 - pitch_angle) < 2 && fabs(46.5 - roll_angle) < 2) {
+//                USART_send_str(UART_A, "I\r");
+//                USART_send_str(UART_B, "I\r");
+//                USART_send_str(UART_C, "I\r");  
+//                Corner(pitch_angle, roll_angle, acc_loop_time, gyro_filt, &motorA, &motorB, &motorC);
+//                USART_send_str(UART_A, "O\r");
+//                USART_send_str(UART_B, "O\r");
+//                USART_send_str(UART_C, "O\r");  
+//            } 
         }
                   
         if(ms_counter() > 25) {
             StartDelayCounter();
-            TransmitDebug(pitch_angle, roll_angle, heading, face, edge, gyro, motorA, motorB, motorC);           
+            USART_write_float(UART_XBee, ra.x, 2);
+            USART_send_str(UART_XBee, "\t");
+            USART_write_float(UART_XBee, ra.y, 2);
+            USART_send_str(UART_XBee, "\t");
+            USART_write_float(UART_XBee, ra.z, 2);
+            USART_send_str(UART_XBee, "\t");
+            USART_write_float(UART_XBee, rb.x, 2);
+            USART_send_str(UART_XBee, "\t");
+            USART_write_float(UART_XBee, rb.y, 2);
+            USART_send_str(UART_XBee, "\t");
+            USART_write_float(UART_XBee, rb.z, 2);
+            USART_send_str(UART_XBee, "\t");
+            USART_write_float(UART_XBee, rc.x, 2);
+            USART_send_str(UART_XBee, "\t");
+            USART_write_float(UART_XBee, rc.y, 2);
+            USART_send_str(UART_XBee, "\t");
+            USART_write_float(UART_XBee, rc.z, 2);
+            USART_send_str(UART_XBee, "\n");
+            
+//            TransmitDebug(pitch_angle, roll_angle, heading, face, edge, gyro_filt, motorA, motorB, motorC);           
         }
     }
 }

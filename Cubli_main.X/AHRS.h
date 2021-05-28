@@ -3,7 +3,7 @@
 
 #include "MPU6050.h"
 
-#define FUSION_BETA	0.05f
+#define FUSION_BETA	0.05f // 0.05f
 
 #define ROLLOFFSET 0.0
 #define PITCHOFFSET 0.0

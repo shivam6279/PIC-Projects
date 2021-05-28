@@ -23,11 +23,9 @@ void __ISR_AT_VECTOR(_UART3_RX_VECTOR, IPL7AUTO) UART_DIN(void) {
             rx_rdy = 0;
             if(rx_buffer[0] == 'I') {
                 LED = 1;
-                rx_rdy = 0;
                 
             } else if(rx_buffer[0] == 'O') {
                 LED = 0;
-                rx_rdy = 0;
                 
             } else if(rx_buffer[0] == 'P') {                
                 SetPower(0);
@@ -45,6 +43,7 @@ void __ISR_AT_VECTOR(_UART3_RX_VECTOR, IPL7AUTO) UART_DIN(void) {
                 
             } else if(rx_buffer[0] == 'T'){
                 play_tone = 1;
+                
             } else {   
                 rx_rdy = 1;
             }

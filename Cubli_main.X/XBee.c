@@ -16,55 +16,32 @@ volatile int safety_counter = 0;
 static volatile int tx_buffer_index = 0;
 static volatile bool XBee_signal_temp = 0;
 
+volatile unsigned char rx_buffer[RX_BUFFER_SIZE];
+static unsigned int rx_buffer_index = 0;
+volatile unsigned char rx_rdy = 0;
+
 static volatile char tx_buffer[XBEE_TX_BUFFER_LEN];
 
-void __ISR_AT_VECTOR(_UART1_RX_VECTOR, IPL6SRS) XBee_rx(void) {
+void __ISR_AT_VECTOR(_UART1_RX_VECTOR, IPL6AUTO) XBee_rx(void) {
     IFS3bits.U1RXIF = 0; 
 
-    static unsigned char XBee_rx_byte, XBee_address;
-    static rx XBee_temp;
+    static unsigned char r;
 
     do {
-        mode = U1RXREG & 0xFF;
-//        XBee_rx_byte = U1RXREG & 0xFF;
-//        XBee_address = XBee_rx_byte >> 5;
-//
-//        switch(XBee_address) {
-//            case 0:
-//                XBee_temp.x1 = (XBee_rx_byte & 0x1F) - 15;
-//                XBee_signal_temp = 1;
-//                break;
-//
-//            case 1:
-//                XBee_temp.y1 = (XBee_rx_byte & 0x1F) - 15;
-//                break;
-//
-//            case 2:
-//                XBee_temp.x2 = (XBee_rx_byte & 0x1F) - 15;
-//                break;
-//
-//            case 3:
-//                XBee_temp.y2 = (XBee_rx_byte & 0x1F);
-//                break;
-//
-//            case 4:
-//                XBee_temp.ls = (XBee_rx_byte >> 1) & 1; 
-//                XBee_temp.rs = XBee_rx_byte & 1;
-//                break;
-//
-//            case 5: 
-//                XBee_temp.d2 = (XBee_rx_byte & 0b00001100) << 2;
-//                XBee_temp.d1 = (XBee_rx_byte & 0b00000011);
-//                safety_counter = 0;
-//                if(XBee_signal_temp) {
-//                    XBee_signal_temp = 0;
-//                    XBee_temp.signal = 1;
-//                    XBee_temp.data_ready = 1;
-//
-//                    XBee = XBee_temp;
-//                }
-//                break;
-//        }
+        r = U1RXREG & 0xFF;
+        if(r == '\r') {
+            rx_buffer[rx_buffer_index] = '\0';
+            rx_buffer_index = 0;
+            
+            rx_rdy = 0;
+            if((rx_buffer[0] >= '0' && rx_buffer[0] <= '9') || rx_buffer[0] == '-' || rx_buffer[0] == '+') { 
+                rx_rdy = 1;
+            } else {
+                mode = rx_buffer[0];
+            }
+        } else {
+            rx_buffer[rx_buffer_index++] = r;
+        }
     }while(U1STAbits.URXDA);
     
     IFS3bits.U1RXIF = 0; 

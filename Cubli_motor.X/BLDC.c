@@ -78,7 +78,7 @@ void __ISR_AT_VECTOR(_TIMER_6_VECTOR, IPL4AUTO) RPM(void){
     temp = VEL1CNT;
     
     p_rpm = rpm;
-    rpm = (1.0-RPM_LPF) * ((float)temp / ENCODER_RES * 60000.0) + RPM_LPF*rpm;
+    rpm = (1.0-RPM_LPF) * ((float)temp / ENCODER_RES * 30000.0) + RPM_LPF*rpm;
     
 //    rpm_der = (1.0-RPM_LPF) * ((float)(temp-p_temp) / ENCODER_RES * 60000.0) + RPM_LPF*rpm_der;    
     rpm_der = (1.0-RPM_DER_LPF)*100.0*(rpm-p_rpm) + RPM_DER_LPF*rpm_der;
@@ -86,7 +86,7 @@ void __ISR_AT_VECTOR(_TIMER_6_VECTOR, IPL4AUTO) RPM(void){
     if(mode == MODE_RPM) {        
         rpm_err = set_rpm - rpm;
         if(fabs(rpm_err/set_rpm) < 0.1) {
-            rpm_sum += rpm_err * 0.001;
+            rpm_sum += rpm_err * 0.002;
         } else {
             rpm_sum = 0.0;
         }        
