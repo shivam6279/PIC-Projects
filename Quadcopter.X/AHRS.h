@@ -3,7 +3,7 @@
 
 #include "10DOF.h"
 
-#define FUSION_BETA	1.0f
+#define FUSION_BETA	0.05f//1.0f
 
 #define ALITUDE_KF_ACC_BUFFER_SIZE 10
 #define ALTITUDE_KF_Q	0.2f

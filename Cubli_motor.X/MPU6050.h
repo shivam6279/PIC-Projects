@@ -42,6 +42,7 @@ extern bool GetRawAcc(XYZ*);
 extern bool GetAcc(XYZ*);
 extern bool GetRawGyro(XYZ*);
 extern bool GetGyro(XYZ*);
+extern void GetGyroOffsets();
 
 extern XYZ acc_offset, acc_gain;
 extern XYZ gyro_offset;

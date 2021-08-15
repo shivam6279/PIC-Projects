@@ -22,6 +22,10 @@ static unsigned char edge_motor[12] = {2, 1, 2, 1, 2, 1, 2, 1, 0, 0, 0, 0};
 
 float corner_centerpoints[8][2] = {{38.0, -51.6}, {33.7, -135.4}, {36.1, 142.3}, {41.0, 47.5}, {-33.0, -51.5}, {-29.7, -135.25}, {-32.8, 142.0}, {-36.7, 47.0}};
 
+static PID roll, pitch, yaw;
+static XYZ gyro_global;
+static float rpm_sum = 0.0;
+
 signed int parse_rx_int() {
     int i;
     signed int ret;
@@ -116,13 +120,15 @@ unsigned char get_corner(float pitch_angle, float roll_angle, float offset) {
     return 0;
 }
 
-#define OFFSET_LPF 0.8
+#define OFFSET_LPF 0.93
 
-void balance_edge(float pitch_angle, float roll_angle, float loop_time, XYZ gyro, PID* motorA, PID* motorB, PID* motorC) {    
-    float ks;
-    float kv;  
+bool balance_edge(float pitch_angle, float roll_angle, float loop_time, XYZ gyro, PID* motorA, PID* motorB, PID* motorC) {    
+    float ks = 0.8;
+    float kv = 0.5;
     
     static unsigned char pre_edge = 0, pre_edge2 = 0;
+    
+    static float pre_offset;
     
     static bool balance = false;
     
@@ -173,7 +179,7 @@ void balance_edge(float pitch_angle, float roll_angle, float loop_time, XYZ gyro
         
         if(edge && !pre_edge && !balance) {
             balance = true;
-            USART_send_str(port, "I\r");
+            USART_send_str(port, "I\r");            
             motor->offset = angle_offset;
         }    
         
@@ -182,71 +188,68 @@ void balance_edge(float pitch_angle, float roll_angle, float loop_time, XYZ gyro
 
             if(edge_motor[edge2-1] == 0) {
                 rpm = rpm_A;
-                motor->derivative = -gyro.x;        
-                ks = 0.3;
-                kv = 0.5;
+                motor->derivative = -gyro.x;
 
             } else if(edge_motor[edge2-1] == 1) {
                 rpm = rpm_B;
-                motor->derivative = -gyro.y;        
-                ks = 0.3;
-                kv = 0.5;
-
+                motor->derivative = -gyro.y;
             } else {
                 rpm = rpm_C;
-                motor->derivative = -gyro.z;        
-                ks = 0.3;
-                kv = 0.5;
+                motor->derivative = -gyro.z; 
             }
 
             PIDIntegrate(motor, loop_time);
-            motor->offset += edge_angle_signs[edge2-1] * ks * motor->error * loop_time;
-//            motor->offset = OFFSET_LPF * motor->offset + (1-OFFSET_LPF) * (motor->offset + edge_angle_signs[edge2-1] * ks * motor->error * loop_time);
+            
+            pre_offset = motor->offset;
+//            motor->offset += edge_angle_signs[edge2-1] * ks * motor->error * loop_time;
+            motor->offset = (1.0 - OFFSET_LPF) * (motor->offset + edge_angle_signs[edge2-1]*ks*motor->error*loop_time) + OFFSET_LPF*pre_offset;
+            
             motor->offset = LimitValue(motor->offset, angle_offset-10.0, angle_offset+10.0);   
             PIDOutput(motor);            
             motor->output += kv*rpm; 
-            motor->output =  LimitValue(motor->output, -1000.0, 1000.0);  
+            motor->output = LimitValue(motor->output, -1000.0, 1000.0);  
 
             if(run_motor) {
                 USART_write_int(port, motor->output);
                 USART_send(port, '\r');                
-            } 
+            }            
         }
     }
     pre_edge = edge;
     pre_edge2 = edge2;
+    
+    return balance;
 }
 
-void balance_corner(float q[4], float loop_time, XYZ gyro_filt) {
-    static PID roll, pitch, yaw;
+bool balance_corner(float q[4], float loop_time, XYZ gyro_filt) {
     
     float roll_angle, pitch_angle, heading;
     float pitch_offset, roll_offset;
-    static float heading_offset;        
-    
-    XYZ gyro_global;
+    static float heading_offset;
     
     unsigned char corner, corner2;
     static unsigned char pre_corner = 0, pre_corner2 = 0;
     
     static bool balance = false;
+    static bool initial = true;
     
     float A_out, B_out, C_out;
     
-    float sx, sy, cx, cy, rpm_sum = 0.0;
+    float sx, sy, cx, cy;
     XYZ ra, rb, rc;
     
     float ks_a = 0.5;
     float ks_b = 0.5;
     float ks_c = 0.5;
     
-    float kv = 0.1;
+    float kv = 0.5;
     
-    PIDSet(&roll, 150, 0, 35); // 150 25
-    PIDSet(&pitch, 150, 0, 35);
-    PIDSet(&yaw, 100, 20, 5);
-    roll.offset = 47.0;
-    pitch.offset = -36.7;
+    if(initial) {
+        initial = false;
+        PIDSet(&roll, 150, 0, 25); // 150 35
+        PIDSet(&pitch, 150, 0, 25);
+        PIDSet(&yaw, 5, 100, 0);
+    }    
     
     QuaternionToEuler(q, &roll_angle, &pitch_angle, &heading);
     
@@ -277,11 +280,13 @@ void balance_corner(float q[4], float loop_time, XYZ gyro_filt) {
         pitch_offset = corner_centerpoints[corner2-1][0];
         roll_offset = corner_centerpoints[corner2-1][1];
         
-        if(corner && !pre_corner && !balance && corner == 8) {
+        if(corner && !pre_corner && !balance) {
             balance = true;
+            
             USART_send_str(UART_A, "I\r");
             USART_send_str(UART_B, "I\r");
             USART_send_str(UART_C, "I\r");
+            
             PIDReset(&pitch);
             PIDReset(&roll);
             PIDReset(&yaw);
@@ -293,30 +298,34 @@ void balance_corner(float q[4], float loop_time, XYZ gyro_filt) {
         }
         
         if(balance) {
+            
+            if(rx_rdy) {
+                yaw.offset = LimitValue(parse_rx_int(), -150, 150);
+                rx_rdy = 0;
+            }
 
             gyro_global = MultiplyVectorQuaternion(gyro_filt, q);
             heading = LimitAngle(heading-heading_offset);
 
             cx = cos(pitch_angle * M_PI / 180.0);
             sx = sin(pitch_angle * M_PI / 180.0);
-            cy = cos((90.0 - roll_angle) * M_PI / 180.0);
-            sy = sin((90.0 - roll_angle) * M_PI / 180.0);
+            cy = cos((roll_angle - 90.0) * M_PI / 180.0);
+            sy = sin((roll_angle - 90.0) * M_PI / 180.0);
 
-            rc.x = fabs(cy);
-            rc.y = fabs(sx*sy);
-            rc.z = fabs(cx*sy);
+            rc.x = cy;
+            rc.y = sx*sy;
+            rc.z = -cx*sy;
             ra.x = 0;
-            ra.y = fabs(cx);
-            ra.z = fabs(sx);
-            rb.x = fabs(sy);
-            rb.y = fabs(cy*sx);
-            rb.z = fabs(cx*cy);
+            ra.y = -cx;
+            ra.z = -sx;
+            rb.x = sy;
+            rb.y = -cy*sx;
+            rb.z = cx*cy;
 
             rpm_sum = 0.9*rpm_sum + 0.1*(rpm_A + rpm_B + rpm_C);
 
-            yaw.error = LimitAngle(heading - yaw.offset);
+            yaw.error = gyro_global.z - (yaw.offset + rpm_sum/50.0*fabs(ra.z)/ra.z);
             yaw.integral += yaw.error * loop_time;
-            yaw.derivative = gyro_global.z;
             PIDOutput(&yaw);
 
         //    yaw_angle += (gyro_global.z - gyro_spin - rpm_sum/50.0) * acc_loop_time;
@@ -325,28 +334,28 @@ void balance_corner(float q[4], float loop_time, XYZ gyro_filt) {
             roll.error = -(roll_angle - roll.offset);         
             PIDIntegrate(&roll, loop_time);
             roll.offset -= kv * roll.error * loop_time;
-            roll.offset = LimitValue(roll.offset, 36, 56);
+            roll.offset = LimitValue(roll.offset, roll_offset-10.0, roll_offset+10.0);
 
             pitch.error = pitch_angle - pitch.offset;    
             PIDIntegrate(&pitch, loop_time);
             pitch.offset += kv * pitch.error * loop_time;
-            pitch.offset = LimitValue(pitch.offset, -46, -26);  
+            pitch.offset = LimitValue(pitch.offset, pitch_offset-10.0, pitch_offset+10.0);  
 
-            A_out = roll.kp * ra.y*roll.error;
+            A_out = roll.kp * ra.y*-roll.error; //+
             A_out += roll.kd * -gyro_filt.x;
             A_out += ra.z*yaw.output;
             A_out += ks_a*rpm_A;
             A_out = LimitValue(A_out, -1000.0, 1000.0);
 
-            B_out = pitch.kp * rb.x*-pitch.error;
-            B_out += roll.kp * rb.y*-roll.error;
+            B_out = pitch.kp * rb.x*pitch.error; //-
+            B_out += roll.kp * rb.y*-roll.error; //-
             B_out += pitch.kd * -gyro_filt.y;
             B_out += rb.z*yaw.output;
             B_out += ks_b*rpm_B;
             B_out = LimitValue(B_out, -1000.0, 1000.0);
 
-            C_out = pitch.kp * rc.x*pitch.error;
-            C_out += roll.kp * rc.y*-roll.error;
+            C_out = pitch.kp * rc.x*pitch.error; //+
+            C_out += roll.kp * rc.y*-roll.error; //-
             C_out += pitch.kd * -gyro_filt.z;
             C_out += rc.z*yaw.output;
             C_out += ks_c*rpm_C;
@@ -364,9 +373,11 @@ void balance_corner(float q[4], float loop_time, XYZ gyro_filt) {
     }
     pre_corner = corner;
     pre_corner2 = corner2;
+    
+    return balance;
 }
 
-void TransmitDebug(float pitch_angle, float roll_angle, float heading, unsigned char face, unsigned char edge, XYZ gyro, PID motorA, PID motorB, PID motorC) {
+void TransmitDebug(float pitch_angle, float roll_angle, float heading, unsigned char face, unsigned char edge, unsigned char corner, XYZ gyro, PID motorA, PID motorB, PID motorC) {
     if(xbee_mode == 'A') {
         USART_write_float(UART_XBee, pitch_angle, 4);     
         USART_send_str(UART_XBee, ", ");
@@ -381,12 +392,18 @@ void TransmitDebug(float pitch_angle, float roll_angle, float heading, unsigned 
         USART_write_int(UART_XBee, edge); 
         USART_send_str(UART_XBee, "\n");
 
-    } else if(xbee_mode == 'G') {
+    } else if(xbee_mode == 'G') {        
         USART_write_float(UART_XBee, gyro.x, 4);     
         USART_send_str(UART_XBee, ", ");
         USART_write_float(UART_XBee, gyro.y, 4);
         USART_send_str(UART_XBee, ", ");
         USART_write_float(UART_XBee, gyro.z, 4);
+        if(corner) {
+            USART_send_str(UART_XBee, ", ");
+            USART_write_float(UART_XBee, gyro_global.z, 4);
+            USART_send_str(UART_XBee, ", ");
+            USART_write_float(UART_XBee, rpm_sum, 4);
+        }
         USART_send_str(UART_XBee, "\n");
 
     } else if(xbee_mode == 'V') {
@@ -433,7 +450,16 @@ void TransmitDebug(float pitch_angle, float roll_angle, float heading, unsigned 
         }
 
     } else {
-        if(edge == 9 || edge == 10 || edge == 11 || edge == 12) {
+        if(corner) {
+            USART_write_float(UART_XBee, pitch_angle, 4);     
+            USART_send_str(UART_XBee, ", ");
+            USART_write_float(UART_XBee, pitch.offset, 4);
+            USART_send_str(UART_XBee, ", ");
+            USART_write_float(UART_XBee, roll_angle, 4);     
+            USART_send_str(UART_XBee, ", ");
+            USART_write_float(UART_XBee, roll.offset, 4);
+            USART_send_str(UART_XBee, "\n");
+        } else if(edge == 9 || edge == 10 || edge == 11 || edge == 12) {
             USART_write_float(UART_XBee, roll_angle, 4);     
             USART_send_str(UART_XBee, ", ");
             USART_write_float(UART_XBee, motorA.offset, 4);

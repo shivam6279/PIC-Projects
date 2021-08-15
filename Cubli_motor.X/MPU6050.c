@@ -162,3 +162,18 @@ bool GetGyro(XYZ *gyro) {
     gyro->z = (gyro->z - gyro_offset.z) / GYRO_Z_GAIN;
     return true;
 }
+
+void GetGyroOffsets() {
+    XYZ gyro_avg = {0, 0, 0}, gyro;
+    unsigned int i;
+    
+    for(i = 0 ; i < 500; i++) {
+        GetRawGyro(&gyro);
+        gyro_avg.x += gyro.x;
+        gyro_avg.y += gyro.y;
+        gyro_avg.z += gyro.z;
+        delay_ms(2);
+    }
+    gyro_offset.x = gyro_avg.x / 500.0;
+    gyro_offset.y = gyro_avg.y / 500.0;
+}

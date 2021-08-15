@@ -114,6 +114,8 @@ void main() {
 //    LED = 0;
  
 #if ESC == 0
+    LED = 1;
+    GetGyroOffsets();
     ResetQuaternion(q);
     for(i = 0; i < 2000; i++) {
         StartDelaymsCounter();
@@ -124,6 +126,7 @@ void main() {
         while(ms_counter() < 1);
     }
     QuaternionToEuler(q, &roll_angle, &pitch_angle, &heading);
+    LED = 0;
 #endif  
     
 //    mode = MODE_OFF;    
@@ -169,15 +172,15 @@ void main() {
     
     float setpoint = setpoint_center, pre_set;    
     float pre_roll = 0.0, roll = 0.0, roll_acc, sum = 0.0;
-    float pre_der = 0.0, der = 0.0, out = 0.0, err = 0.0, ttt; 
+    float pre_der = 0.0, der = 0.0, der2 = 0.0, out = 0.0, err = 0.0, ttt; 
     
     GetAcc(&acc);
     GetGyro(&gyro);
     roll = atan2(acc.x, sqrt(pow(acc.y, 2) + pow(acc.z, 2))) * 180.0 / M_PI - roll_offset;    
     
     const float kp = 150.0;
-    const float ki = 10.0;
-    const float kd = 35.0;
+    const float ki = 0.0;
+    const float kd = 35.0;//35
     const float ks = 0.83;
     const float kt = 0.3;
     
@@ -232,16 +235,20 @@ void main() {
             GetAcc(&acc);
             GetGyro(&gyro);   
             
-//            MadgwickQuaternionUpdateGyro(q, gyro, deltat);
-//            MadgwickQuaternionUpdateAcc(q, acc, deltat);
-//            QuaternionToEuler(q, &roll_angle, &pitch_angle, &heading);
+            pre_roll = roll;
+            pre_der = der;
             
-            roll_acc = atan2(acc.x, sqrt(pow(acc.y, 2) + pow(acc.z, 2))) * 180.0 / M_PI - roll_offset;
-            roll = 0.05 * roll_acc + 0.95 * (roll - gyro.z * deltat);
+            MadgwickQuaternionUpdateGyro(q, gyro, deltat);
+            MadgwickQuaternionUpdateAcc(q, acc, deltat);
+            QuaternionToEuler(q, &roll_angle, &pitch_angle, &heading);
+            
+            roll_acc = atan2(acc.x, sqrt(pow(acc.y, 2) + pow(acc.z, 2))) * 180.0 / M_PI - roll_offset;            
+            roll = 0.01 * roll_acc + 0.99 * (roll - gyro.z * deltat);
+            
 //            roll = pitch_angle;
             
-//            der = 0.2 * (-gyro.z) + 0.8 * der;
-            der = -gyro.z;   
+            der = 0.5*der + 0.5*-gyro.z;   
+//            der2 = 0.95*der2 + 0.05*(der-pre_der)/(deltat);
             
             if(fabs(setpoint - roll) < 1.0) {
                 flag = true;
@@ -276,14 +283,16 @@ void main() {
             
             USART3_write_float(roll, 2);
             USART3_send_str(", ");
-            USART3_write_float(der, 2);
+            USART3_write_float(setpoint, 2);
             USART3_send('\n');
         #else
             
+        #if ESC == 1
             USART3_write_float(GetRPM(), 2);
 //            USART3_send_str(", ");
 //            USART3_write_float(GetRPM_der(), 2);
             USART3_send('\n');
+        #endif
     #endif
         }
     }

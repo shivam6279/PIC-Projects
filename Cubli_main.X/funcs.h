@@ -19,9 +19,9 @@ extern unsigned char get_face(float, float);
 extern unsigned char get_edge(float, float, float);
 extern unsigned char get_corner(float, float, float);
 
-extern void balance_edge(float, float, float, XYZ, PID*, PID*, PID*);
-extern void balance_corner(float[4], float, XYZ);
+extern bool balance_edge(float, float, float, XYZ, PID*, PID*, PID*);
+extern bool balance_corner(float[4], float, XYZ);
 
-extern void TransmitDebug(float, float, float, unsigned char, unsigned char, XYZ, PID, PID, PID);
+extern void TransmitDebug(float, float, float, unsigned char, unsigned char, unsigned char, XYZ, PID, PID, PID);
 
 #endif
