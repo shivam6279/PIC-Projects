@@ -1,5 +1,6 @@
 #include "SPI.h"
 #include "LED.h"
+#include "draw.h"
 #include <math.h>
 
 const float brightness = 0.3;
@@ -25,6 +26,9 @@ void end_frame(){
     SPI_write(255);
     SPI_write(255);
     SPI_write(255);
+    
+    SPI_write(255);
+    SPI_write(255);    
     SPI_write(255);
     SPI_write(255);
 }
@@ -52,7 +56,7 @@ void writeLEDs(struct led *buffer) {
     end_frame();
 }
 
-void writeLEDs_hue(struct led *buffer, float hue) {
+void writeLEDs_hue(struct led *buffer, double hue) {
     int i;
     
     limit_angle(&hue);

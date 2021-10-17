@@ -2,38 +2,37 @@
 
 void SPI_init(){
     unsigned char data;
-    TRISCbits.TRISC14 = 0;
-    TRISDbits.TRISD1 = 0;
+    TRISDbits.TRISD10 = 0;
+    TRISDbits.TRISD3 = 0;
     CFGCONbits.IOLOCK = 0;
-    RPC14Rbits.RPC14R = 0b0101;
+    RPD3Rbits.RPD3R = 0b1000;
     CFGCONbits.IOLOCK = 1;
     
-    SPI1CONbits.ON = 0;
-    SPI1CONbits.FRMEN = 0;
-    SPI1CONbits.SIDL = 0;
-    SPI1CONbits.MCLKSEL = 0;
-    SPI1CONbits.DISSDO = 0;
-    SPI1CONbits.MODE32 = 0;
-    SPI1CONbits.MODE16 = 0;
-    SPI1CONbits.SMP = 0;
-    SPI1CONbits.CKE = 1;
-    SPI1CONbits.SSEN = 0;
-    SPI1CONbits.CKP = 0;
-    SPI1CONbits.MSTEN = 1;    
-    SPI1CONbits.DISSDI = 1;
-    SPI1CONbits.STXISEL = 1;
+    SPI4CONbits.ON = 0;
+    SPI4CONbits.FRMEN = 0;
+    SPI4CONbits.SIDL = 0;
+    SPI4CONbits.MCLKSEL = 0;
+    SPI4CONbits.DISSDO = 0;
+    SPI4CONbits.MODE32 = 0;
+    SPI4CONbits.MODE16 = 0;
+    SPI4CONbits.SMP = 0;
+    SPI4CONbits.CKE = 1;
+    SPI4CONbits.SSEN = 0;
+    SPI4CONbits.CKP = 0;
+    SPI4CONbits.MSTEN = 1;    
+    SPI4CONbits.DISSDI = 1;
+    SPI4CONbits.STXISEL = 1;
 
-    SPI1CON2bits.AUDEN = 0;
+    SPI4CON2bits.AUDEN = 0;
 
-    SPI1BRG = 0;
+    SPI4BRG = 0;
     
-    data = SPI1BUF;
-    SPI1CONbits.ON = 1;
+    data = SPI4BUF;
+    SPI4CONbits.ON = 1;
 }
 
 void SPI_write(unsigned char data){
-    unsigned char a;
-    SPI1BUF = data;
-    while(!SPI1STATbits.SPITBE);
-    data = SPI1BUF;
+    SPI4BUF = data;
+    while(!SPI4STATbits.SPITBE);
+    data = SPI4BUF;
 }

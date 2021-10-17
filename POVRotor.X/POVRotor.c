@@ -50,41 +50,61 @@ struct led p_buffer[LED_LENGTH];
 
 unsigned long int speed_history[speed_history_size];
 unsigned int speed_history_i = 0;
-volatile unsigned long int magnet_counter = 0, speed_counter = 0, omega = 0, raw_omega = 0;
-unsigned char magnet_flag = 1;
+volatile unsigned long int magnet_counter = 0, speed_counter = 0, p_omega = 0, omega = 0, raw_omega = 0;
+volatile unsigned char magnet_flag = 1;
 
 volatile double time = 0.0;
 
-void __ISR_AT_VECTOR(_TIMER_2_VECTOR, IPL4SRS) delay_timer(void){
+void __ISR_AT_VECTOR(_TIMER_2_VECTOR, IPL4AUTO) delay_timer(void){
     IFS0bits.T2IF = 0;
     delay_counter++;
 }
 
-void __ISR_AT_VECTOR(_TIMER_3_VECTOR, IPL4SRS) speed_timer(void){
+//void __ISR_AT_VECTOR(_TIMER_3_VECTOR, IPL4AUTO) speed_timer(void){
+//    int i;
+//    IFS0bits.T3IF = 0;
+//    magnet_counter++;
+//    speed_counter++;
+//    if(PORTDbits.RD4 == 0 && magnet_flag == 1){
+//        speed_history[speed_history_i] = magnet_counter;
+//        raw_omega = magnet_counter;
+//        for(i = 0, omega = 0; i < speed_history_size; i++){
+//            omega += speed_history[i];
+//        }
+//        omega /= speed_history_size;
+//        speed_history_i = (speed_history_i + 1) % speed_history_size;
+//        
+//        magnet_counter = 0;
+//        magnet_flag = 0;
+//    }
+//    else if(PORTDbits.RD4 == 1){
+//        magnet_flag = 1;
+//    }
+//    if(speed_counter >= omega){
+//        speed_counter = 0;
+//    }
+//    
+//    time += 0.00002;
+//}
+
+void __ISR_AT_VECTOR(_TIMER_3_VECTOR, IPL4AUTO) speed_timer(void){
     int i;
     IFS0bits.T3IF = 0;
-    magnet_counter++;
+    
     speed_counter++;
-    if(PORTBbits.RB15 == 0 && magnet_flag == 1){
-        speed_history[speed_history_i] = magnet_counter;
-        raw_omega = magnet_counter;
-        for(i = 0, omega = 0; i < speed_history_size; i++){
-            omega += speed_history[i];
-        }
-        omega /= speed_history_size;
-        speed_history_i = (speed_history_i + 1) % speed_history_size;
+    
+    if(PORTDbits.RD4 == 0 && magnet_flag == 1){        
+        omega = speed_counter * 0.5 + p_omega * 0.5;
+        p_omega = omega;
         
-        magnet_counter = 0;
+        speed_counter = 0;
         magnet_flag = 0;
     }
-    else if(PORTBbits.RB15 == 1){
+    else if(PORTDbits.RD4 == 1){
         magnet_flag = 1;
     }
-    if(speed_counter >= omega){
-        speed_counter = 0;
-    }
     
-    time += 0.00003;
+    time += 0.00002;
 }
 
 long int mag(long int a){
@@ -97,10 +117,11 @@ long int mag(long int a){
 void main(){
     int i, j, k;
     double angle, angle_offset = 0.0;
-    init();
+    float rpm;
     
-    ANSELBbits.ANSB15 = 0;
-    TRISBbits.TRISB15 = 1;
+    init();    
+    TRISDbits.TRISD4 = 1;
+    
     for(i = 0; i < speed_history_size; i++){
         speed_history[i] = 0;
     }
@@ -109,50 +130,35 @@ void main(){
     
     delay_ms(200);
     SPI_init();
-    SPI1BRG = 5;
+    SPI1BRG = 2;//5
     delay_ms(200);
     
-//    TRISCbits.TRISC14 = 0;
-//    TRISDbits.TRISD1 = 0;
-//    while(1) {
-//        LATCbits.LATC14 = 0;
-//        LATDbits.LATD1 = 0;
-//        delay_ms(1000);
-//        
-//        LATCbits.LATC14 = 1;
-//        LATDbits.LATD1 = 1;
-//        delay_ms(1000);
-//    }
-    
-    for(i = 0; i < LED_LENGTH; i++){
-        buffer[i] = color_white;
+    for(j = 0; j < LED_LENGTH; j++){
+        buffer[j] = color_black;
     }
-    
-    while(1) {
-        for(i = 0; i < LED_LENGTH; i++){
-            buffer[i] = color_red;
-        }   
-        writeLEDs(buffer);
-        delay_ms(500);    
-        
-        for(i = 0; i < LED_LENGTH; i++){
-            buffer[i] = color_green;
-        }   
-        writeLEDs(buffer);
-        delay_ms(500);    
-        
-        for(i = 0; i < LED_LENGTH; i++){
-            buffer[i] = color_blue;
-        }   
-        writeLEDs(buffer);
-        delay_ms(500);            
-    }
-    
-    while(raw_omega < 1024.0){
+    rpm = 0.0;
+    do{
+        if(omega != 0.0) {
+            rpm = 50000.0 / (double)omega * 60.0;
+        }
         writeLEDs(buffer);
         delay_ms(50);
-    }
+    }while(rpm < 250);
     
+//    struct led array[3] = {color_red, color_green, color_blue};
+//    
+//    while(1) {
+//        for(j = 0; j < LED_LENGTH; j++){
+//            buffer[j] = color_black;
+//        }
+//        
+//        rpm = 50000.0 / (double)omega * 60.0;
+//        angle = 360.0 * ((double)speed_counter)/((double)omega);
+//
+//        pie(buffer, array, 3, angle);        
+//        
+//        writeLEDs(buffer);
+//    }
     
     struct led color[6] = {color_red, color_blue, color_green, color_cyan, color_magenta, color_yellow};
     
@@ -179,33 +185,36 @@ void main(){
             buffer[i] = color_black;
         }
         
-        angle = 360.0 * ((double)magnet_counter)/((double)omega);
+        angle = 360.0 * ((double)speed_counter)/((double)omega);
+        
         if(time > 360.0) time = 0.0;
+        
         polar_image(buffer, cart_image, angle);
         
         //polar_image(buffer, cart_image, angle - time * 300);
         //polar_neg_d(buffer, cosn, d_cosn, color[4], (angle + time * 25));
-        for(i = 0; i < LED_LENGTH; i++){
-            if(buffer[i].red != p_buffer[i].red || buffer[i].green != p_buffer[i].green || buffer[i].blue != p_buffer[i].blue) {
-                //writeLEDs(buffer);
-                writeLEDs_hue(buffer, 100);
-                break;
-            }
-        }
+//        for(i = 0; i < LED_LENGTH; i++){
+//            if(buffer[i].red != p_buffer[i].red || buffer[i].green != p_buffer[i].green || buffer[i].blue != p_buffer[i].blue) {
+//                //writeLEDs(buffer);
+//                writeLEDs_hue(buffer, 0);//100
+//                break;
+//            }
+//        }
+        writeLEDs_hue(buffer, 100);
     }
 }
 
 void init(){
     //IO pins
-    TRISB = 0xE040;
+    TRISB = 0;
     TRISC = 0;
     TRISD = 0;
-    TRISE = 0xF0;
+    TRISE = 0;
     TRISF = 0;
-    TRISG = 0x0180;
-    ANSELB = 0xC000;
-    ANSELE = 0xF0;
-    ANSELG = 0x0180;
+    TRISG = 0;
+    ANSELB = 0;
+    ANSELE = 0;
+    ANSELG = 0;
     
     PRECONbits.PREFEN = 3;
     PRECONbits.PFMWS = 2;

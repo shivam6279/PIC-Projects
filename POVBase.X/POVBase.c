@@ -1,161 +1,193 @@
-#define _XTAL_FREQ 20000000
+#include "pragma.h"
 #include <xc.h>
-#include <pic16f876a.h>
+#include <sys/attribs.h>
+#include <math.h>
+#include <string.h>
+#include <stdbool.h>
+#include <stdio.h>
 
-#pragma config FOSC = HS
-#pragma config WDTE = OFF
-#pragma config PWRTE = OFF
-#pragma config BOREN = OFF
-#pragma config LVP = OFF
-#pragma config CPD = OFF
-#pragma config WRT = OFF
-#pragma config CP = OFF
+#include "pic32.h"
+#include "PWM.h"
+#include "BLDC.h"
+#include "USART.h"
+#include "bitbang_I2C.h"
+#include "tones.h"
+#include "EEPROM.h"
+#include "SPI.h"
 
-#define reed_pin PORTBbits.RB1
+#define FOC_TIMER_ON T4CONbits.ON
 
-unsigned char receive, reed_flag = 1, timer_counter = 0;
-unsigned long int speed_counter = 0;
-float speed;
+#define SETPOINT_CENTER 40.0f
 
-void pwm_init(){
-    CCP2CON = 12;
-    //CCP2CON = 60;
-    PR2 = 74;
-    T2CON = 7;
-    CCPR2L = 0;
-}
+unsigned char board_id = 0;
 
-void delay_ms(unsigned int x){
-    unsigned int i;
-    for(i = 0; i < x; i++) __delay_ms(1);
-}
-
-void init(){
-    TRISB = 4;
-    TRISC = 0;
-}
-
-void timer_init(){
-    T0CS = 0;
-    T0SE = 0;
-    PSA = 1;
-    PS2 = 0;
-    PS1 = 0;
-    PS0 = 0;
-    //TMR0 = 156;
-    GIE = 1;
-    TMR0IE = 1; 
-}
-
-void timer1_init(){
-    T1CKPS0 = 0;
-    T1CKPS1 = 0;
-    T1OSCEN = 0;
-    TMR1CS = 0;
-    TMR1ON = 1;
-    TMR1L = 0x63;
-    TMR1H = 0xFF;
-    GIE = 1;
-    TMR1IE = 1; 
-}
-
-void __interrupt () ISR(){
-    if(TMR0IF){
-        TMR0IF = 0;
-        RC2 = !RC2;
-        RC3 = !RC3;
-        timer_counter++;
-        //TMR0 = 156;
-    }
-    if(TMR1IF){
-        TMR1IF = 0;
-        speed_counter++;
-        if(reed_pin == 0 && reed_flag == 1){
-            reed_flag = 0;
-            speed = 60 / (float)speed_counter * 4006.41;
-            speed_counter = 0;
+void __ISR_AT_VECTOR(_CHANGE_NOTICE_G_VECTOR, IPL3AUTO) button_cn(void){
+    IFS1bits.CNGIF = 0;
+    if(BUTTON == 0 && ms_counter3() > 250) {
+        reset_ms_counter3();
+        if(++mode > 2) {
+            mode = 0;
         }
-        else if(reed_pin == 1){
-            reed_flag = 1;
+        if(mode == 0) {
+            COIL_LED = 0;
+            MOTOR_LED = 0;
+            
+            PDC11 = 0;
+            PDC12 = PWM_MAX;
+            MotorOff();
+            
+        } else if(mode == 1) {
+            COIL_LED = 1;
+            MOTOR_LED = 0;
+            
+            PDC11 = PWM_MAX / 2;
+            PDC12 = PWM_MAX / 2;
+            MotorOff();
+            
+        } else if(mode == 2) {
+            COIL_LED = 1;
+            MOTOR_LED = 1;
+            
+            PDC11 = PWM_MAX / 2;
+            PDC12 = PWM_MAX / 2;
+            SetPower(0.025);
         }
-        TMR1L = 0x63;
-        TMR1H = 0xFF;
     }
 }
 
-inline void one() {
-    RC0 = 0;
-    RC3 = 1;
-    __delay_us(12);
-    RC3 = 0;
-    __delay_us(5);
+void ResetQuaternion(float q[]){
+    q[0] = 1;
+    q[1] = 0;
+    q[2] = 0;
+    q[3] = 0;
 }
 
-inline void zero() {
-    RC2 = 1;
-    RC3 = 0;
-    __delay_us(10);
-    RC2 = 0;
-    __delay_us(6);
-}
-
-void main(){    
-    float output, t_speed = 0.0, p_speed, sum = 0.0;
-    unsigned int pwm;
+signed int parse_rx() {
     int i;
-    init();
-    RC2 = 0;
-    RC3 = 0;
-    delay_ms(10);
-    //timer_init();
-    //timer1_init();
-    pwm_init();
-    pwm = 200;//270
-    CCP2CONbits.CCP2X = (pwm >> 1) & 1;
-    CCP2CONbits.CCP2Y = pwm & 1;
-    CCPR2L = pwm >> 2;
+    signed int ret;
+    unsigned long int tens;
+    unsigned char flag = 0;
     
-    while(1){
-        RC3 = 1;
-        __delay_us(12);
-        RC3 = 0;
-        __delay_us(5);
-        RC2 = 1;
-        __delay_us(10);
-        RC2 = 0;
-        __delay_us(6);
+    unsigned char temp_buffer[RX_BUFFER_SIZE];
+    
+    for(i = 0; rx_buffer[i] != '\0'; i++) {
+        temp_buffer[i] = rx_buffer[i];
     }
-    while(1){
-        one();
-        zero();
-        zero();
-        one();
-        one();
-        zero();
-        zero();
-        one();
-        one();
-        zero();
-        zero();
-        one();
-        one();
-        zero();
-        zero();
-        one();
+    temp_buffer[i] = '\0';
+    
+    if((temp_buffer[0] > '9' || temp_buffer[0] < '0') && temp_buffer[0] != '-') {
+        return -1;
     }
-    while(1){
-        timer_counter = 0;
-        p_speed = t_speed;
-        t_speed = speed;
-        sum += 0.005* (t_speed - 1000.0);
-        output = 1.0 * (t_speed - 1000.0) + 1.0 * sum + 1.0 * (t_speed - p_speed) / 0.005;
-        if(output < 0.0) pwm = 0;
-        else if(output > 1023.0) pwm = 1023;
-        else pwm = (unsigned int)output;
-        CCP2CONbits.CCP2X = (pwm >> 1) & 1;
-        CCP2CONbits.CCP2Y = pwm & 1;
-        CCPR2L = pwm >> 2;
-        while(timer_counter < 98);
+    
+    if(temp_buffer[0] == '-')
+        flag = 1;
+    
+    for(i = flag, tens = 1; temp_buffer[i] != '\0'; i++, tens *= 10);
+    tens /= 10;
+    
+    for(i = flag, ret = 0; temp_buffer[i] != '\0'; i++, tens /= 10) {
+        ret += (temp_buffer[i] - '0') * tens;
     }
+    
+    if(flag)
+        ret = -ret;
+    
+    return ret;
 }
 
+void main() {
+    int i; 
+    signed int a = 0;
+    int out_int = 0;
+    unsigned char mode_temp;
+    float q[4];
+    
+    PICInit();
+    
+    CNENGbits.CNIEG6 = 1;
+    IPC12bits.CNGIP = 3;
+    IPC12bits.CNGIS = 0;
+    IFS1bits.CNGIF = 0;
+    IEC1bits.CNGIE = 1;
+    CNCONGbits.ON = 1;
+    
+    QEI_init();    
+    
+    motor_mode = MODE_POWER;
+    
+    USART4_init(115200);    
+    timer2_init(1000);      // ms delay
+    timer3_init(4500);      // us delay
+    timer4_init(10000);     // FOC
+//    timer5_init(50);        // speaker  
+    timer6_init(500);       // velocity
+    
+    EEPROM_init();            
+    PwmInit();
+    
+    delay_ms(200);
+    
+//    motor_mode = MODE_OFF; 
+//    while(1) {
+//        MotorPhase(1, 0.0125);
+//        delay_ms(500);
+//        MotorPhase(2, 0.0125);
+//        delay_ms(500);
+//        MotorPhase(3, 0.0125);
+//        delay_ms(500);
+//        MotorPhase(4, 0.0125);
+//        delay_ms(500);
+//        MotorPhase(5, 0.0125);
+//        delay_ms(500);
+//        MotorPhase(6, 0.0125);
+//        delay_ms(500);
+//    }
+    
+//    setPhaseVoltage(0.0125, 0);    
+//    while(1);
+//    FOC_TIMER_ON = 1; 
+//    mode = MODE_OFF;
+//    while(1) {
+//        USART3_write_float(GetPosition(), 2);
+//        USART3_send('\n');
+//        delay_ms(150);
+//    }
+    
+//    Write_Motor_Offset(13.75);    
+    motor_zero_angle = Read_Motor_Offset();
+    
+    FOC_TIMER_ON = 1;
+    MotorOff();
+    
+    StartDelaymsCounter();
+    
+    while(1) {
+        if(ms_counter() >= 2) { 
+            float deltat = (float)ms_counter() / 1000.0;
+            reset_ms_counter();
+            USART4_write_float(GetRPM(), 2);
+            USART4_send('\n');
+        }
+    }
+    
+    while(1) {     
+        if(rx_rdy) {       
+            a = parse_rx();
+            rx_rdy = 0;
+
+            if(motor_mode == MODE_POWER) {
+                SetPower((float)a / 2000.0);
+            } else if(motor_mode == MODE_RPM) {
+                SetRPM(a);
+            } else if(motor_mode == MODE_POS) {
+                SetPosition(a);
+            }
+        }
+        if(ms_counter() >= 2) { 
+            float deltat = (float)ms_counter() / 1000.0;
+            reset_ms_counter();
+            USART4_write_float(GetRPM(), 2);
+            USART4_send('\n');
+        }
+    }
+}
