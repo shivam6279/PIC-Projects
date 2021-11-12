@@ -1,4 +1,4 @@
-#include "pragma.h"
+                         #include "pragma.h"
 #include <xc.h>
 #include <sys/attribs.h>
 #include <math.h>
@@ -20,6 +20,7 @@
 #define SETPOINT_CENTER 40.0f
 
 unsigned char board_id = 0;
+unsigned char ramp = 0;
 
 void __ISR_AT_VECTOR(_CHANGE_NOTICE_G_VECTOR, IPL3AUTO) button_cn(void){
     IFS1bits.CNGIF = 0;
@@ -34,6 +35,10 @@ void __ISR_AT_VECTOR(_CHANGE_NOTICE_G_VECTOR, IPL3AUTO) button_cn(void){
             
             PDC11 = 0;
             PDC12 = PWM_MAX;
+            
+            motor_mode = MODE_POWER;
+            ramp = 0;
+            SetRPM(0);
             MotorOff();
             
         } else if(mode == 1) {
@@ -41,7 +46,11 @@ void __ISR_AT_VECTOR(_CHANGE_NOTICE_G_VECTOR, IPL3AUTO) button_cn(void){
             MOTOR_LED = 0;
             
             PDC11 = PWM_MAX / 2;
-            PDC12 = PWM_MAX / 2;
+            PDC12 = PWM_MAX / 2;    
+            
+            motor_mode = MODE_POWER;
+            ramp = 0;
+            SetRPM(0);
             MotorOff();
             
         } else if(mode == 2) {
@@ -50,7 +59,9 @@ void __ISR_AT_VECTOR(_CHANGE_NOTICE_G_VECTOR, IPL3AUTO) button_cn(void){
             
             PDC11 = PWM_MAX / 2;
             PDC12 = PWM_MAX / 2;
-            SetPower(0.025);
+            
+            motor_mode = MODE_RPM;
+            ramp = 1;
         }
     }
 }
@@ -127,39 +138,41 @@ void main() {
     
     delay_ms(200);
     
-//    motor_mode = MODE_OFF; 
-//    while(1) {
-//        MotorPhase(1, 0.0125);
-//        delay_ms(500);
-//        MotorPhase(2, 0.0125);
-//        delay_ms(500);
-//        MotorPhase(3, 0.0125);
-//        delay_ms(500);
-//        MotorPhase(4, 0.0125);
-//        delay_ms(500);
-//        MotorPhase(5, 0.0125);
-//        delay_ms(500);
-//        MotorPhase(6, 0.0125);
-//        delay_ms(500);
-//    }
+    MotorOff();
     
-//    setPhaseVoltage(0.0125, 0);    
-//    while(1);
-//    FOC_TIMER_ON = 1; 
-//    mode = MODE_OFF;
+    while(1) {
+        setPhaseVoltage(0.0125, 0);
+        delay_ms(1000);
+        setPhaseVoltage(0.0125, 60);
+        delay_ms(1000);
+        setPhaseVoltage(0.0125, 120);
+        delay_ms(1000);
+        setPhaseVoltage(0.0125, 180);
+        delay_ms(1000);
+        setPhaseVoltage(0.0125, 240);
+        delay_ms(1000);
+        setPhaseVoltage(0.0125, 300);
+        delay_ms(1000);
+    }
+    
+//    setPhaseVoltage(0.0125, 0);
+//    motor_mode = MODE_OFF;
+//    FOC_TIMER_ON = 1;    
 //    while(1) {
-//        USART3_write_float(GetPosition(), 2);
-//        USART3_send('\n');
+//        USART4_write_float(GetPosition(), 2);
+//        USART4_send('\n');
 //        delay_ms(150);
 //    }
     
-//    Write_Motor_Offset(13.75);    
+    Write_Motor_Offset(5.18); 
     motor_zero_angle = Read_Motor_Offset();
     
-    FOC_TIMER_ON = 1;
     MotorOff();
+    FOC_TIMER_ON = 1;    
     
     StartDelaymsCounter();
+    
+    float target_rpm = 1350;
     
     while(1) {
         if(ms_counter() >= 2) { 
@@ -168,8 +181,18 @@ void main() {
             USART4_write_float(GetRPM(), 2);
             USART4_send('\n');
         }
+        
+        if(ramp) {
+            for(i = 1; i <= 1000 && ramp; i++) { 
+                SetRPM((float)i/1000.0 * target_rpm);
+                reset_ms_counter2();
+                while(ms_counter2() < 2);
+            }
+            ramp = 0;
+        }
     }
     
+    motor_mode = MODE_RPM;
     while(1) {     
         if(rx_rdy) {       
             a = parse_rx();

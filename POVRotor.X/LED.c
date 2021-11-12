@@ -14,6 +14,8 @@ struct led color_cyan = {0, 255, 255};
 struct led color_magenta = {255, 0, 255};
 struct led color_yellow = {255, 255, 0};
 
+struct led buffer[LED_LENGTH];
+
 void start_frame(){
     SPI_write(0);
     SPI_write(0);
@@ -46,11 +48,32 @@ void LED_frame(unsigned char red, unsigned char green, unsigned char blue){
     SPI_write((unsigned char)r);
 }
 
+void scaleBrightness(struct led *buffer, float min_scale) {
+    int i;
+    float r, scale;
+    
+    for(i = 0; i < LED_LENGTH/2; i++) {
+        r = (double)i + 0.75;
+        scale = r * 2.0 / (float)LED_LENGTH * (1.0 - min_scale) + min_scale;
+        buffer[LED_LENGTH / 2 - 1 - i].red   = (float)buffer[LED_LENGTH / 2 - 1 - i].red   * scale;
+        buffer[LED_LENGTH / 2 - 1 - i].green = (float)buffer[LED_LENGTH / 2 - 1 - i].green * scale;
+        buffer[LED_LENGTH / 2 - 1 - i].blue  = (float)buffer[LED_LENGTH / 2 - 1 - i].blue  * scale;
+    }
+    
+    for(i = 0; i < LED_LENGTH/2; i++) {
+        r = (double)i + 0.25;
+        scale = r * 2.0 / (float)LED_LENGTH * (1.0 - min_scale) + min_scale;
+        buffer[LED_LENGTH / 2 + i].red   = (float)buffer[LED_LENGTH / 2 + i].red   * scale;
+        buffer[LED_LENGTH / 2 + i].green = (float)buffer[LED_LENGTH / 2 + i].green * scale;
+        buffer[LED_LENGTH / 2 + i].blue  = (float)buffer[LED_LENGTH / 2 + i].blue  * scale;
+    }
+}
+
 void writeLEDs(struct led *buffer) {
     int i;
     
     start_frame();
-    for(i = 0; i < LED_LENGTH; i++){
+    for(i = 0; i < LED_LENGTH; i++){        
         LED_frame(buffer[i].red, buffer[i].green, buffer[i].blue);
     }
     end_frame();

@@ -12,6 +12,5 @@ extern unsigned char ppm_temp[];
 extern unsigned char ppm[];
 
 extern void polar_image(struct led *, struct led [size][size], double);
-extern void polar_image_test(struct led *, struct led [size2][size2], double);
 
 #endif

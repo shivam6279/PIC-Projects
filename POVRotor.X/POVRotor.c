@@ -41,10 +41,7 @@ void timer3_init(float frequency);
 void fabulous();
 void morph();
 
-unsigned long int delay_counter = 0;
-
-struct led buffer[LED_LENGTH];
-struct led p_buffer[LED_LENGTH];
+unsigned long int delay_counter = 0, gif_delay = 0;
 
 #define speed_history_size 10
 
@@ -55,37 +52,15 @@ volatile unsigned char magnet_flag = 1;
 
 volatile double time = 0.0;
 
+struct led cart_image[size][size];
+
 void __ISR_AT_VECTOR(_TIMER_2_VECTOR, IPL4AUTO) delay_timer(void){
     IFS0bits.T2IF = 0;
     delay_counter++;
+    gif_delay++;
 }
 
-//void __ISR_AT_VECTOR(_TIMER_3_VECTOR, IPL4AUTO) speed_timer(void){
-//    int i;
-//    IFS0bits.T3IF = 0;
-//    magnet_counter++;
-//    speed_counter++;
-//    if(PORTDbits.RD4 == 0 && magnet_flag == 1){
-//        speed_history[speed_history_i] = magnet_counter;
-//        raw_omega = magnet_counter;
-//        for(i = 0, omega = 0; i < speed_history_size; i++){
-//            omega += speed_history[i];
-//        }
-//        omega /= speed_history_size;
-//        speed_history_i = (speed_history_i + 1) % speed_history_size;
-//        
-//        magnet_counter = 0;
-//        magnet_flag = 0;
-//    }
-//    else if(PORTDbits.RD4 == 1){
-//        magnet_flag = 1;
-//    }
-//    if(speed_counter >= omega){
-//        speed_counter = 0;
-//    }
-//    
-//    time += 0.00002;
-//}
+#define RPM_LPF 0.9
 
 void __ISR_AT_VECTOR(_TIMER_3_VECTOR, IPL4AUTO) speed_timer(void){
     int i;
@@ -93,8 +68,12 @@ void __ISR_AT_VECTOR(_TIMER_3_VECTOR, IPL4AUTO) speed_timer(void){
     
     speed_counter++;
     
+//    if(speed_counter > omega) {
+//        speed_counter = 0;
+//    }
+    
     if(PORTDbits.RD4 == 0 && magnet_flag == 1){        
-        omega = speed_counter * 0.5 + p_omega * 0.5;
+        omega = speed_counter * (1.0-RPM_LPF) + p_omega * RPM_LPF;
         p_omega = omega;
         
         speed_counter = 0;
@@ -118,6 +97,7 @@ void main(){
     int i, j, k;
     double angle, angle_offset = 0.0;
     float rpm;
+    unsigned char gif_frame = 0, max_frames;
     
     init();    
     TRISDbits.TRISD4 = 1;
@@ -130,12 +110,42 @@ void main(){
     
     delay_ms(200);
     SPI_init();
-    SPI1BRG = 2;//5
+    SPI1BRG = 50;//5
     delay_ms(200);
+    
+//    omega = 3015;
+    
+//    while(1) {
+//        for(j = 0; j < LED_LENGTH; j++){
+//            buffer[j] = color_red;
+//        }
+//        for(j = 0; j < 250; j++){
+//            writeLEDs(buffer);
+//            delay_ms(4);
+//        }
+//        
+//        for(j = 0; j < LED_LENGTH; j++){
+//            buffer[j] = color_blue;
+//        }
+//        for(j = 0; j < 250; j++){
+//            writeLEDs(buffer);
+//            delay_ms(4);
+//        }
+//        
+//        for(j = 0; j < LED_LENGTH; j++){
+//            buffer[j] = color_green;
+//        }
+//        for(j = 0; j < 250; j++){
+//            writeLEDs(buffer);
+//            delay_ms(4);
+//        }
+//    }
+           
     
     for(j = 0; j < LED_LENGTH; j++){
         buffer[j] = color_black;
     }
+    
     rpm = 0.0;
     do{
         if(omega != 0.0) {
@@ -143,64 +153,57 @@ void main(){
         }
         writeLEDs(buffer);
         delay_ms(50);
-    }while(rpm < 250);
+    }while(rpm < 800);
     
-//    struct led array[3] = {color_red, color_green, color_blue};
-//    
-//    while(1) {
-//        for(j = 0; j < LED_LENGTH; j++){
-//            buffer[j] = color_black;
+//    for(i = 0; i < size; i++){
+//        for(j = 0; j < size; j++){
+//            cart_image[i][j] =  color_black;
 //        }
-//        
-//        rpm = 50000.0 / (double)omega * 60.0;
-//        angle = 360.0 * ((double)speed_counter)/((double)omega);
-//
-//        pie(buffer, array, 3, angle);        
-//        
-//        writeLEDs(buffer);
 //    }
     
-    struct led color[6] = {color_red, color_blue, color_green, color_cyan, color_magenta, color_yellow};
+//    for(i = 0; i < size; i++){
+//        for(j = 0; j < size; j++){
+//            cart_image[i][j].red =   ppm[i*size*3 + j*3];
+//            cart_image[i][j].green = ppm[i*size*3 + j*3 + 1];
+//            cart_image[i][j].blue =  ppm[i*size*3 + j*3 + 2];
+//        }
+//    }
     
-    struct led cart_image[144][144];
-    for(i = 0; i < 144; i++){
-        for(j = 0; j < 144; j++){
-            if(ppm[i * 144 * 3 + j * 3] == 0xaa){
-                cart_image[i][j].red = 0xFF;
-                cart_image[i][j].green = 0;
-                cart_image[i][j].blue = 0;
-            } else {
-                cart_image[i][j].red = ppm[i * 144 * 3 + j * 3];
-                cart_image[i][j].green = ppm[i * 144 * 3 + j * 3 + 1];
-                cart_image[i][j].blue = ppm[i * 144 * 3 + j * 3 + 2];
-            }
-        }
-    }
+    struct led colors[6] = {color_red, color_magenta, color_blue, color_cyan, color_green, color_yellow};
     
-    while(1){        
-        for(i = 0; i < LED_LENGTH; i++){
-            p_buffer[i] = buffer[i];
-        }
-        for(i = 0; i < LED_LENGTH; i++){
-            buffer[i] = color_black;
-        }
+    gif_delay = 0;
+    max_frames = gif_init();
+    
+    gif_get_frame(cart_image, gif_frame++);
+    gif_get_frame(cart_image, 1);
         
-        angle = 360.0 * ((double)speed_counter)/((double)omega);
+    T2CONbits.TON = 1;
+    
+    while(1){
+//        if(gif_delay > 500) {
+////            for(i = 0; i < size; i++){
+////                for(j = 0; j < size; j++){
+////                    cart_image[i][j] =  color_black;
+////                }
+////            }
+//            gif_get_frame(cart_image, gif_frame++);
+//            if(gif_frame >= max_frames) {
+//                gif_frame = 0;
+//            }
+//            gif_delay = 0;
+//        }
+        
+        angle = 360.0 * ((double)speed_counter)/((double)omega) + 180;
+        limit_angle(&angle); 
         
         if(time > 360.0) time = 0.0;
         
         polar_image(buffer, cart_image, angle);
         
-        //polar_image(buffer, cart_image, angle - time * 300);
-        //polar_neg_d(buffer, cosn, d_cosn, color[4], (angle + time * 25));
-//        for(i = 0; i < LED_LENGTH; i++){
-//            if(buffer[i].red != p_buffer[i].red || buffer[i].green != p_buffer[i].green || buffer[i].blue != p_buffer[i].blue) {
-//                //writeLEDs(buffer);
-//                writeLEDs_hue(buffer, 0);//100
-//                break;
-//            }
-//        }
-        writeLEDs_hue(buffer, 100);
+//        pie(buffer, colors, 6, angle);
+        
+        scaleBrightness(buffer, 0.5);
+        writeLEDs(buffer);
     }
 }
 

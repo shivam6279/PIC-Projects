@@ -75,7 +75,7 @@ void __ISR_AT_VECTOR(_TIMER_6_VECTOR, IPL4AUTO) RPM(void){
     static int i;
     
     p_temp = temp;
-    temp = VEL1CNT;
+    temp = -VEL1CNT;
     
     p_rpm = rpm;
     rpm = (1.0-RPM_LPF) * ((float)temp / ENCODER_RES * 30000.0) + RPM_LPF*rpm;
@@ -85,18 +85,18 @@ void __ISR_AT_VECTOR(_TIMER_6_VECTOR, IPL4AUTO) RPM(void){
     
     if(motor_mode == MODE_RPM) {        
         rpm_err = set_rpm - rpm;
-        if(fabs(rpm_err/set_rpm) < 0.1) {
+        if(fabs(rpm_err/set_rpm) < 0.25) {
             rpm_sum += rpm_err * 0.002;
         } else {
             rpm_sum = 0.0;
         }        
 //        rpm_sum = rpm_sum > 75 ? 75: rpm_sum < -75 ? -75: rpm_sum;
-        rpm_out = 0.003*rpm_err + 0.005*rpm_sum - 0.002*rpm_der;
+        rpm_out = 0.0001*rpm_err + 0.001*rpm_sum;
         
         if(set_rpm == 0 && fabs(rpm) < 25) {
             power = 0;
         } else {
-            power = rpm_out > 0.125 ? 0.125: rpm_out < -0.125 ? -0.125: rpm_out;
+            power = rpm_out > 0.05 ? 0.05: rpm_out < -0.05 ? -0.05: rpm_out;
         }
     }
 }

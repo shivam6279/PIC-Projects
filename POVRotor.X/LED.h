@@ -16,6 +16,9 @@ extern struct led color_cyan;
 extern struct led color_magenta;
 extern struct led color_yellow;
 
+extern struct led buffer[LED_LENGTH];;
+
+extern void scaleBrightness(struct led*, float);
 extern void writeLEDs(struct led*);
 extern void writeLEDs_hue(struct led*, double);
 

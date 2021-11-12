@@ -3,15 +3,16 @@
 
 #include "LED.h"
 
-#define size 144
-#define size2 1000
-#define scale 1.0
+#define size 200
 
-extern void polar_image(struct led *, struct led [size][size], double);
-extern void polar_image_test(struct led *, struct led [size2][size2], double);
+extern void polar_image(struct led *, struct led[size][size], double);
+
+extern unsigned char gif_init();
+extern unsigned char gif_get_frame(struct led image[size][size], unsigned char);
 
 extern unsigned char ppm_temp[];
 
-extern unsigned char ppm[];
+extern const unsigned char ppm[];
+extern const unsigned char gif[];
 
 #endif
