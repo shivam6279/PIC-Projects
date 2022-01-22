@@ -21,28 +21,29 @@ void pie(struct led *buffer, struct led *pie_colors, int n, double angle) {
     buffer[LED_LENGTH / 2] = color_black;
 }
 
-void polar(struct led *buffer, int (*f)(double), struct led color, double angle) {
+void polar(struct led *buffer, double (*f)(double), struct led color, double angle) {
     limit_angle(&angle);
-    int r1 = f(angle);
+    double r1 = f(angle) * LED_LENGTH/2;
     
     angle = angle + OPP_ANGLE_CORRECTION + 180.0;
     limit_angle(&angle);
-    int r2 = f(angle);
+    double r2 = f(angle) * LED_LENGTH/2;
+    
+    double t;
     
     int i;
     for (i = 0; i < LED_LENGTH; i++) {
         buffer[i] = color_black;
     }
     
-    if (r2 % 2 == 1) {
-        buffer[LED_LENGTH / 2 + r2 / 2] = color;
-    }
-    if (r1 % 2 == 0) {
-        buffer[LED_LENGTH / 2 - r1 / 2] = color;
-    }
+    t = LED_LENGTH/2 + r1;
+    buffer[(int)t] = color;
+    
+    t = LED_LENGTH/2 - r2;
+    buffer[(int)t] = color;
 }
 
-void polar_fill(struct led *buffer, int (*f)(double), struct led color, double angle) {
+void polar_fill(struct led *buffer, double (*f)(double), struct led color, double angle) {
     limit_angle(&angle);
     int r1 = f(angle);
     
@@ -67,7 +68,7 @@ void polar_fill(struct led *buffer, int (*f)(double), struct led color, double a
     }
 }
 
-void polar_neg(struct led *buffer, int (*f)(double), struct led color, double angle) {
+void polar_neg(struct led *buffer, double (*f)(double), struct led color, double angle) {
     limit_angle(&angle);
     int r = f(angle);
     int i;
@@ -93,7 +94,7 @@ void polar_neg(struct led *buffer, int (*f)(double), struct led color, double an
     }
 }
 
-void polar_neg_d(struct led *buffer, int (*f)(double), double (*g)(double), struct led color, double angle) {
+void polar_neg_d(struct led *buffer, double (*f)(double), double (*g)(double), struct led color, double angle) {
     limit_angle(&angle);
     int r = f(angle);
     double d = g(angle); 
@@ -133,18 +134,18 @@ void polar_neg_d(struct led *buffer, int (*f)(double), double (*g)(double), stru
 }
 
 
-int spiral(double angle) {
+double spiral(double angle) {
     return angle / 5.0;
 }
 
-int cardioid(double angle) {
+double cardioid(double angle) {
     double t = 1.0 - cos(angle * 3.1415 / 180.0);
-    return t * 36.0;
+    return t;
 }
 
-int cosn(double angle) {
+double cosn(double angle) {
     double t = cos(2.0 * angle * 3.1415 / 180.0);
-    return t * 36.0;
+    return t;
 }
 
 double d_cosn(double angle) {
@@ -152,11 +153,11 @@ double d_cosn(double angle) {
     return t;
 }
 
-int line(double angle) {
+double line(double angle) {
     double t;
     if(angle < 1.0 || angle > 359.0) t = 1;
     else t = 1 / sin(angle * 3.1415 / 180.0);
-    return t * 10.0;
+    return t;
 }
 
 void limit_angle(double *angle){

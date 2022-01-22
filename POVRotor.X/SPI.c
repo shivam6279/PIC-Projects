@@ -1,4 +1,6 @@
 #include "SPI.h"
+#include <xc.h>
+#include <sys/attribs.h>  
 
 void SPI_init(){
     unsigned char data;
@@ -21,11 +23,18 @@ void SPI_init(){
     SPI4CONbits.CKP = 0;
     SPI4CONbits.MSTEN = 1;    
     SPI4CONbits.DISSDI = 1;
-    SPI4CONbits.STXISEL = 1;
+    
+    SPI4CONbits.STXISEL = 0b01;    
+    SPI4CONbits.ENHBUF = 1;
 
-    SPI4CON2bits.AUDEN = 0;
+    SPI4CON2 = 0;
 
     SPI4BRG = 0;
+    
+    IFS5bits.SPI4TXIF = 0;
+    LED_TX_INTERRUPT = 0;
+    IPC41bits.SPI4TXIP = 6;
+    IPC41bits.SPI4TXIS = 0;
     
     data = SPI4BUF;
     SPI4CONbits.ON = 1;

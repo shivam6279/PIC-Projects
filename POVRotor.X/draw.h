@@ -7,14 +7,14 @@
 
 extern void limit_angle(double*);
 extern void pie(struct led *buffer, struct led *pie_colors, int n, double angle);
-extern void polar(struct led *, int (*f)(double), struct led, double);
-extern void polar_neg(struct led *, int (*f)(double), struct led, double);
-extern void polar_neg_d(struct led *,int (*f)(double), double (*g)(double), struct led, double);
-extern void polar_fill(struct led *, int (*f)(double), struct led, double);
-extern int spiral(double);
-extern int cardioid(double);
-extern int cosn(double);
+extern void polar(struct led *, double (*f)(double), struct led, double);
+extern void polar_neg(struct led *, double (*f)(double), struct led, double);
+extern void polar_neg_d(struct led *,double (*f)(double), double (*g)(double), struct led, double);
+extern void polar_fill(struct led *, double (*f)(double), struct led, double);
+extern double spiral(double);
+extern double cardioid(double);
+extern double cosn(double);
 extern double d_cosn(double);
-extern int line(double);
+extern double line(double);
 
 #endif

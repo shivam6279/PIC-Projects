@@ -2,6 +2,7 @@
 #include <math.h>
 #include <stdbool.h>
 #include <sys/attribs.h>  
+#include "pic32.h"
 #include "bitbang_i2c.h"
 #include "USART.h"
 #include "SPI.h"
@@ -34,19 +35,12 @@
 #pragma config PMDL1WAY = OFF
 #pragma config IOL1WAY = OFF
 
-void init();
 void delay_ms(unsigned int x);
-void timer2_init();
-void timer3_init(float frequency);
 void fabulous();
 void morph();
 
-unsigned long int delay_counter = 0, gif_delay = 0;
+#define RPM_TIMER_FREQ 25000
 
-#define speed_history_size 10
-
-unsigned long int speed_history[speed_history_size];
-unsigned int speed_history_i = 0;
 volatile unsigned long int magnet_counter = 0, speed_counter = 0, p_omega = 0, omega = 0, raw_omega = 0;
 volatile unsigned char magnet_flag = 1;
 
@@ -54,23 +48,14 @@ volatile double time = 0.0;
 
 struct led cart_image[size][size];
 
-void __ISR_AT_VECTOR(_TIMER_2_VECTOR, IPL4AUTO) delay_timer(void){
-    IFS0bits.T2IF = 0;
-    delay_counter++;
-    gif_delay++;
-}
+//struct led cart_image2[size][size];
 
 #define RPM_LPF 0.9
 
 void __ISR_AT_VECTOR(_TIMER_3_VECTOR, IPL4AUTO) speed_timer(void){
-    int i;
     IFS0bits.T3IF = 0;
     
     speed_counter++;
-    
-//    if(speed_counter > omega) {
-//        speed_counter = 0;
-//    }
     
     if(PORTDbits.RD4 == 0 && magnet_flag == 1){        
         omega = speed_counter * (1.0-RPM_LPF) + p_omega * RPM_LPF;
@@ -83,7 +68,21 @@ void __ISR_AT_VECTOR(_TIMER_3_VECTOR, IPL4AUTO) speed_timer(void){
         magnet_flag = 1;
     }
     
-    time += 0.00002;
+//    time += 0.00002;
+}
+
+void __ISR_AT_VECTOR(_TIMER_4_VECTOR, IPL3AUTO) LED_timer(void){
+    static double angle;
+    
+    IFS0bits.T4IF = 0;
+    if(!LED_TX_INTERRUPT) {        
+        angle = 360.0 * ((double)speed_counter)/((double)omega);
+//        if(angle > 360.0) angle -= 360.0;
+//        if(angle > 360.0) angle -= 360.0;
+        polar_image(buffer, cart_image, angle);        
+//        scaleBrightness(buffer, 0.3);
+        writeLEDs_ISR(buffer); 
+    }  
 }
 
 long int mag(long int a){
@@ -99,48 +98,47 @@ void main(){
     float rpm;
     unsigned char gif_frame = 0, max_frames;
     
-    init();    
+    PICInit();    
     TRISDbits.TRISD4 = 1;
     
-    for(i = 0; i < speed_history_size; i++){
-        speed_history[i] = 0;
-    }
-    timer2_init(); 
-    timer3_init(50000);
+    timer2_init(1000); 
+    timer3_init(RPM_TIMER_FREQ);
+    timer4_init(5000);
+    
+    timer5_init(1000000);
+    
+    RPM_TIMER_ON = 1;
     
     delay_ms(200);
     SPI_init();
-    SPI1BRG = 50;//5
     delay_ms(200);
     
-//    omega = 3015;
+    for(j = 0; j < LED_LENGTH; j++)
+        buffer[j] = color_red;
+    for(j = 0; j < 16; j++){
+        writeLEDs(buffer);
+        delay_ms(5);
+    }
+    for(j = 0; j < LED_LENGTH; j++)
+        buffer[j] = color_green;
+    for(j = 0; j < 16; j++){
+        writeLEDs(buffer);
+        delay_ms(5);
+    }
+    for(j = 0; j < LED_LENGTH; j++)
+        buffer[j] = color_blue;
+    for(j = 0; j < 16; j++){
+        writeLEDs(buffer);
+        delay_ms(5);
+    }
+    for(j = 0; j < LED_LENGTH; j++)
+        buffer[j] = color_black;
+    for(j = 0; j < 16; j++){
+        writeLEDs(buffer);
+        delay_ms(5);
+    }
     
-//    while(1) {
-//        for(j = 0; j < LED_LENGTH; j++){
-//            buffer[j] = color_red;
-//        }
-//        for(j = 0; j < 250; j++){
-//            writeLEDs(buffer);
-//            delay_ms(4);
-//        }
-//        
-//        for(j = 0; j < LED_LENGTH; j++){
-//            buffer[j] = color_blue;
-//        }
-//        for(j = 0; j < 250; j++){
-//            writeLEDs(buffer);
-//            delay_ms(4);
-//        }
-//        
-//        for(j = 0; j < LED_LENGTH; j++){
-//            buffer[j] = color_green;
-//        }
-//        for(j = 0; j < 250; j++){
-//            writeLEDs(buffer);
-//            delay_ms(4);
-//        }
-//    }
-           
+//    led_test_loop();
     
     for(j = 0; j < LED_LENGTH; j++){
         buffer[j] = color_black;
@@ -149,17 +147,17 @@ void main(){
     rpm = 0.0;
     do{
         if(omega != 0.0) {
-            rpm = 50000.0 / (double)omega * 60.0;
+            rpm = (double)RPM_TIMER_FREQ / (double)omega * 60.0;
         }
         writeLEDs(buffer);
         delay_ms(50);
     }while(rpm < 800);
     
-//    for(i = 0; i < size; i++){
-//        for(j = 0; j < size; j++){
-//            cart_image[i][j] =  color_black;
-//        }
-//    }
+    for(i = 0; i < size; i++){
+        for(j = 0; j < size; j++){
+            cart_image[i][j] =  color_black;
+        }
+    }
     
 //    for(i = 0; i < size; i++){
 //        for(j = 0; j < size; j++){
@@ -168,109 +166,42 @@ void main(){
 //            cart_image[i][j].blue =  ppm[i*size*3 + j*3 + 2];
 //        }
 //    }
-    
-    struct led colors[6] = {color_red, color_magenta, color_blue, color_cyan, color_green, color_yellow};
-    
-    gif_delay = 0;
-    max_frames = gif_init();
-    
-    gif_get_frame(cart_image, gif_frame++);
-    gif_get_frame(cart_image, 1);
         
-    T2CONbits.TON = 1;
+    StartDelayCounter();
     
-    while(1){
-//        if(gif_delay > 500) {
-////            for(i = 0; i < size; i++){
-////                for(j = 0; j < size; j++){
-////                    cart_image[i][j] =  color_black;
-////                }
-////            }
-//            gif_get_frame(cart_image, gif_frame++);
-//            if(gif_frame >= max_frames) {
-//                gif_frame = 0;
+    LED_TIMER_ON = 1;    
+    uS_TIMER_ON = 1;
+    
+//    struct led temp_color;
+//    while(1) {
+//        if(ms_counter2() > 100) {
+//            if(temp_us < 60) {
+//                temp_color = color_blue;
+//            } else if(temp_us < 70) {
+//                temp_color = color_red;
+//            } else if(temp_us < 80) {
+//                temp_color = color_green;
+//            } else {
+//                temp_color = color_white;
 //            }
-//            gif_delay = 0;
+//            for(i = 0; i < size; i++){
+//                for(j = 0; j < size; j++){
+//                    cart_image[i][j] = temp_color;
+//                }
+//            }
 //        }
-        
-        angle = 360.0 * ((double)speed_counter)/((double)omega) + 180;
-        limit_angle(&angle); 
-        
-        if(time > 360.0) time = 0.0;
-        
-        polar_image(buffer, cart_image, angle);
-        
-//        pie(buffer, colors, 6, angle);
-        
-        scaleBrightness(buffer, 0.5);
-        writeLEDs(buffer);
+//    }
+    
+    max_frames = gif_init();    
+    gif_get_frame(cart_image, 0);
+    
+    while(1) {
+        if(ms_counter2() > 10) {
+            set_ms_counter2(0);
+            gif_get_frame(cart_image, gif_frame++);
+            if(gif_frame >= max_frames) {
+                gif_frame = 0;
+            }
+        }
     }
-}
-
-void init(){
-    //IO pins
-    TRISB = 0;
-    TRISC = 0;
-    TRISD = 0;
-    TRISE = 0;
-    TRISF = 0;
-    TRISG = 0;
-    ANSELB = 0;
-    ANSELE = 0;
-    ANSELG = 0;
-    
-    PRECONbits.PREFEN = 3;
-    PRECONbits.PFMWS = 2;
-    SYSKEY = 0xAA996655;//Unlocking
-    SYSKEY = 0x556699AA;//Sequence
-    OSCCONbits.FRCDIV = 0;
-    OSCCONbits.COSC = 1;
-    OSCTUNbits.TUN = 0;
-    //SYSKEY = 0x33333333;//Locking sequence
-    
-    PRISS = 0x76543210;
-    INTCONbits.MVEC = 1;
-    
-    PB2DIVbits.ON = 1;
-    PB2DIVbits.PBDIV = 1;//PBCLK2 at 100mhz
-    
-    PB3DIVbits.ON = 1;
-    PB3DIVbits.PBDIV = 1;//PBCLK3 at 100mhz
-    
-    __asm__("ei");//Enable interrupts
-}
-
-void delay_ms(unsigned int x){
-    delay_counter = 0;
-    T2CONbits.TON = 1;
-    while(delay_counter < x);
-    T2CONbits.TON = 0;
-}
-
-void timer2_init(){
-    T2CONbits.TON = 0;
-    T2CONbits.TCKPS = 5;//1Khz
-    PR2 = 3125;
-    TMR2 = 0;
-    IPC2bits.T2IP = 4;
-    IFS0bits.T2IF = 0;
-    IEC0bits.T2IE = 1;
-    T2CONbits.TON = 0;
-}
-
-void timer3_init(float frequency){
-    float t = 100000000.0 / frequency; unsigned char pre = 0;
-    while(t > 65535){ t /= 2.0; pre++; }
-    t = (int)t;
-    while((int)t % 2 == 0 && pre < 8){ t /= 2.0; pre++; }
-    if(pre == 7){ t *= 2.0; pre--; }
-    if(pre == 8) pre = 7;
-    T3CONbits.ON = 0;
-    T3CONbits.TCKPS = pre;
-    PR3 = (int)t - 1;
-    TMR3 = 0;
-    IPC3bits.T3IP = 4;
-    IFS0bits.T3IF = 0;
-    IEC0bits.T3IE = 1;
-    T3CONbits.ON = 1;
 }

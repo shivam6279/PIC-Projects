@@ -1,4 +1,4 @@
-                         #include "pragma.h"
+#include "pragma.h"
 #include <xc.h>
 #include <sys/attribs.h>
 #include <math.h>
@@ -20,7 +20,7 @@
 #define SETPOINT_CENTER 40.0f
 
 unsigned char board_id = 0;
-unsigned char ramp = 0;
+unsigned char ramp = 0, motor_on = 0;
 
 void __ISR_AT_VECTOR(_CHANGE_NOTICE_G_VECTOR, IPL3AUTO) button_cn(void){
     IFS1bits.CNGIF = 0;
@@ -40,6 +40,7 @@ void __ISR_AT_VECTOR(_CHANGE_NOTICE_G_VECTOR, IPL3AUTO) button_cn(void){
             ramp = 0;
             SetRPM(0);
             MotorOff();
+            motor_on = 0;
             
         } else if(mode == 1) {
             COIL_LED = 1;
@@ -52,6 +53,7 @@ void __ISR_AT_VECTOR(_CHANGE_NOTICE_G_VECTOR, IPL3AUTO) button_cn(void){
             ramp = 0;
             SetRPM(0);
             MotorOff();
+            motor_on = 0;
             
         } else if(mode == 2) {
             COIL_LED = 1;
@@ -136,24 +138,23 @@ void main() {
     EEPROM_init();            
     PwmInit();
     
-    delay_ms(200);
-    
+    delay_ms(200);    
     MotorOff();
     
-    while(1) {
-        setPhaseVoltage(0.0125, 0);
-        delay_ms(1000);
-        setPhaseVoltage(0.0125, 60);
-        delay_ms(1000);
-        setPhaseVoltage(0.0125, 120);
-        delay_ms(1000);
-        setPhaseVoltage(0.0125, 180);
-        delay_ms(1000);
-        setPhaseVoltage(0.0125, 240);
-        delay_ms(1000);
-        setPhaseVoltage(0.0125, 300);
-        delay_ms(1000);
-    }
+//    while(1) {
+//        setPhaseVoltage(0.0125, 0);
+//        delay_ms(1000);
+//        setPhaseVoltage(0.0125, 60);
+//        delay_ms(1000);
+//        setPhaseVoltage(0.0125, 120);
+//        delay_ms(1000);
+//        setPhaseVoltage(0.0125, 180);
+//        delay_ms(1000);
+//        setPhaseVoltage(0.0125, 240);
+//        delay_ms(1000);
+//        setPhaseVoltage(0.0125, 300);
+//        delay_ms(1000);
+//    }
     
 //    setPhaseVoltage(0.0125, 0);
 //    motor_mode = MODE_OFF;
@@ -163,8 +164,8 @@ void main() {
 //        USART4_send('\n');
 //        delay_ms(150);
 //    }
-    
-    Write_Motor_Offset(5.18); 
+     
+    Write_Motor_Offset(45.5); 
     motor_zero_angle = Read_Motor_Offset();
     
     MotorOff();
@@ -172,7 +173,7 @@ void main() {
     
     StartDelaymsCounter();
     
-    float target_rpm = 1350;
+    float target_rpm = 1350, ramp_rpm;//1350
     
     while(1) {
         if(ms_counter() >= 2) { 
@@ -182,11 +183,38 @@ void main() {
             USART4_send('\n');
         }
         
+        if(motor_on && (target_rpm - GetRPM())/target_rpm > 0.25) {
+            COIL_LED = 0;
+            MOTOR_LED = 0;
+            
+            PDC11 = 0;
+            PDC12 = PWM_MAX;
+            
+            motor_mode = MODE_POWER;
+            ramp = 0;
+            SetRPM(0);
+            MotorOff();
+            motor_on = 0;
+        }
+        
         if(ramp) {
             for(i = 1; i <= 1000 && ramp; i++) { 
-                SetRPM((float)i/1000.0 * target_rpm);
+                ramp_rpm = (float)i/1000.0 * target_rpm;
+                SetRPM(ramp_rpm);
                 reset_ms_counter2();
-                while(ms_counter2() < 2);
+                while(ms_counter2() < 2);                
+                if(i > 200 && GetRPM() < 100) {
+                    mode = 1;
+                    MOTOR_LED = 0;
+                    motor_mode = MODE_POWER;
+                    ramp = 0;
+                    SetRPM(0);
+                    MotorOff();
+                    break;
+                }
+            }
+            if(ramp) {
+                motor_on = 1;
             }
             ramp = 0;
         }
