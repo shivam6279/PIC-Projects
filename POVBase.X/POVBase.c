@@ -203,7 +203,7 @@ void main() {
                 SetRPM(ramp_rpm);
                 reset_ms_counter2();
                 while(ms_counter2() < 2);                
-                if(i > 200 && GetRPM() < 100) {
+                if(i > 200 && (ramp_rpm - GetRPM())/ramp_rpm > 0.5) {
                     mode = 1;
                     MOTOR_LED = 0;
                     motor_mode = MODE_POWER;

@@ -1,6 +1,5 @@
 #include <xc.h>
 #include <math.h>
-#include <stdbool.h>
 #include <sys/attribs.h>  
 #include "pic32.h"
 #include "bitbang_i2c.h"
@@ -10,6 +9,10 @@
 #include "debug.h"
 #include "draw.h"
 #include "animation.h"
+#include "ICM20649.h"
+
+#pragma config FMIIEN = OFF // Ethernet RMII/MII Enable (MII Enabled)
+#pragma config FETHIO = OFF // Ethernet I/O Pin Select (Default Ethernet I/O)
 
 #pragma config FNOSC = SPLL 
 #pragma config FSOSCEN = OFF    
@@ -35,6 +38,9 @@
 #pragma config PMDL1WAY = OFF
 #pragma config IOL1WAY = OFF
 
+#define TOP_MOTOR 5 //CCW
+#define BOTTOM_MOTOR 4 //CW
+
 void delay_ms(unsigned int x);
 void fabulous();
 void morph();
@@ -46,32 +52,34 @@ volatile unsigned char magnet_flag = 1;
 
 volatile double time = 0.0;
 
-struct led cart_image[size][size];
-
-//struct led cart_image2[size][size];
+struct led cart_image[size][size*2];
 
 #define RPM_LPF 0.9
 
-void __ISR_AT_VECTOR(_TIMER_3_VECTOR, IPL4AUTO) speed_timer(void){
+//void __ISR_AT_VECTOR(_TIMER_3_VECTOR, IPL4AUTO) speed_timer(void){
+//    IFS0bits.T3IF = 0;
+//    
+//    speed_counter++;
+//    magnet_counter++;
+//    
+//    if(PORTDbits.RD4 == 0 && magnet_flag == 1){        
+////        omega = (float)((float)speed_counter * (1.0-RPM_LPF) + (float)p_omega * RPM_LPF);
+//        omega = speed_counter;
+//        p_omega = omega;
+//        
+//        speed_counter = 0;
+//        magnet_counter = 0;
+//        magnet_flag = 0;
+//    }
+//    else if(PORTDbits.RD4 == 1 && magnet_counter > 500){        
+//        magnet_flag = 1;
+//    }
+//    
+////    time += 0.00002;
+//}
+
+void __ISR_AT_VECTOR(_TIMER_3_VECTOR, IPL4AUTO) pwm_timer(void){
     IFS0bits.T3IF = 0;
-    
-    speed_counter++;
-    magnet_counter++;
-    
-    if(PORTDbits.RD4 == 0 && magnet_flag == 1){        
-//        omega = (float)((float)speed_counter * (1.0-RPM_LPF) + (float)p_omega * RPM_LPF);
-        omega = speed_counter;
-        p_omega = omega;
-        
-        speed_counter = 0;
-        magnet_counter = 0;
-        magnet_flag = 0;
-    }
-    else if(PORTDbits.RD4 == 1 && magnet_counter > 500){        
-        magnet_flag = 1;
-    }
-    
-//    time += 0.00002;
 }
 
 void __ISR_AT_VECTOR(_TIMER_4_VECTOR, IPL3AUTO) LED_timer(void){
@@ -82,7 +90,7 @@ void __ISR_AT_VECTOR(_TIMER_4_VECTOR, IPL3AUTO) LED_timer(void){
         angle = 360.0 * ((double)speed_counter)/((double)omega);
 //        if(angle > 360.0) angle -= 360.0;
 //        if(angle > 360.0) angle -= 360.0;
-        polar_image(buffer, cart_image, angle);        
+//        polar_image(buffer, cart_image, angle);        
         scaleBrightness(buffer, 0.3);
         writeLEDs_ISR(buffer); 
     }  
@@ -98,51 +106,99 @@ long int mag(long int a){
 void main(){
     int i, j, k;
     double angle, angle_offset = 0.0;
-    float rpm;
+    float rpm, temp;
     unsigned char gif_frame = 0, max_frames;
-    struct led temp_color;
+    XYZ gyro;
     
-    PICInit();    
-    TRISDbits.TRISD4 = 1;
+    PICInit();
+    TRISBbits.TRISB6 = 1;
     
     timer2_init(1000); 
-    timer3_init(RPM_TIMER_FREQ);
-    timer4_init(5000);
-    
+//    timer3_init(RPM_TIMER_FREQ);
+    timer4_init(5000);    
     timer5_init(1000000);
     
-    RPM_TIMER_ON = 1;
+    pwm_init(10000);
+    
+//    RPM_TIMER_ON = 1;
     
     delay_ms(200);
     SPI_init();
     delay_ms(200);
     
-    for(j = 0; j < LED_LENGTH; j++)
+    ICM20649Init();
+    
+//    while(1) {
+//        GetGyro(&gyro);
+//        
+//        for(j = 0; j < LED_LENGTH; j++){
+//            buffer[j] = color_black;
+//            
+//            temp = fabs(gyro.z * 255.0/1000.0);
+//            if(temp > 255) {
+//                temp = 255;
+//            }
+//            
+//            if(gyro.z > 0) {
+//                buffer[j].red = temp;
+//            } else {                
+//                buffer[j].blue = temp;
+//            }
+//        }
+//        writeLEDs(buffer);
+//        delay_ms(25);
+//    }
+    
+    for(j = 0; j < LED_LENGTH; j++){
         buffer[j] = color_red;
-    for(j = 0; j < 16; j++){
-        writeLEDs(buffer);
-        delay_ms(5);
     }
-    for(j = 0; j < LED_LENGTH; j++)
-        buffer[j] = color_green;
-    for(j = 0; j < 16; j++){
+    for(j = 0; j < 100; j++){
         writeLEDs(buffer);
-        delay_ms(5);
+        delay_ms(4);
     }
-    for(j = 0; j < LED_LENGTH; j++)
+
+    for(j = 0; j < LED_LENGTH; j++){
         buffer[j] = color_blue;
-    for(j = 0; j < 16; j++){
-        writeLEDs(buffer);
-        delay_ms(5);
     }
-    for(j = 0; j < LED_LENGTH; j++)
-        buffer[j] = color_black;
-    for(j = 0; j < 16; j++){
+    for(j = 0; j < 100; j++){
         writeLEDs(buffer);
-        delay_ms(5);
+        delay_ms(4);
+    }
+
+    for(j = 0; j < LED_LENGTH; j++){
+        buffer[j] = color_green;
+    }
+    for(j = 0; j < 100; j++){
+        writeLEDs(buffer);
+        delay_ms(4);
+    }   
+    
+    for(j = 0; j < LED_LENGTH; j++){
+        buffer[j] = color_black;
+    }
+    for(j = 0; j < 5; j++){
+        writeLEDs(buffer);
+        delay_ms(4);
+    }   
+    while(1) {
+        if(!PORTBbits.RB6) {
+            write_pwm(TOP_MOTOR, 255);    
+            write_pwm(BOTTOM_MOTOR, 0);
+            delay_ms(3000);
+            write_pwm(TOP_MOTOR, 0); 
+            write_pwm(BOTTOM_MOTOR, 0); 
+        }
+        delay_ms(10);
     }
     
-//    led_test_loop();
+//    write_pwm(TOP_MOTOR, 190);    
+//    write_pwm(BOTTOM_MOTOR, 190);
+//    delay_ms(1000);
+//    write_pwm(TOP_MOTOR, 0); 
+//    write_pwm(BOTTOM_MOTOR, 0); 
+    
+    fabulous();
+    led_test_loop();
     
     for(j = 0; j < LED_LENGTH; j++){
         buffer[j] = color_black;
@@ -188,7 +244,7 @@ void main(){
     
     for(i = 0; i < size; i++){
         for(j = 0; j < size; j++){
-            cart_image[i][j] =  color_black;
+//            cart_image[i][j] =  color_black;
         }
     }
     
@@ -225,12 +281,12 @@ void main(){
 //    }
     
     max_frames = gif_init();    
-    gif_get_frame(cart_image, 0);
+//    gif_get_frame(cart_image, 0);
     
     while(1) {
         if(ms_counter2() > 100) {
             set_ms_counter2(0);
-            gif_get_frame(cart_image, gif_frame++);
+//            gif_get_frame(cart_image, gif_frame++);
             if(gif_frame >= max_frames) {
                 gif_frame = 0;
             }

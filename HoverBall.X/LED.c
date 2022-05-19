@@ -6,7 +6,7 @@
 #include "pic32.h"
 #include <sys/attribs.h>  
 
-#define LED_BRIGTHNESS 0.3
+#define LED_BRIGTHNESS 0.1
 static unsigned char br_byte = 0b11100000 | (unsigned char)((float)LED_BRIGTHNESS*31);
 
 static const int led_length_2 = LED_LENGTH / 2;
@@ -30,7 +30,7 @@ void __ISR_AT_VECTOR(_SPI4_TX_VECTOR, IPL6AUTO) APA102_TX(void) {
     IFS5bits.SPI4TXIF = 0;
     if(LED_tx_buffer_index) {
         for(i = 0; i < 16; i++) {
-            SPI4BUF = LED_tx_buffer[LED_tx_buffer_index++];
+            SPI1BUF = LED_tx_buffer[LED_tx_buffer_index++];
             if(LED_tx_buffer_index == BUFFER_LENGTH) {
                 LED_tx_buffer_index = 0;
                 LED_TX_INTERRUPT = 0;
@@ -196,6 +196,66 @@ void led_test_loop() {
         for(j = 0; j < 250; j++){
             writeLEDs(buffer);
             delay_ms(4);
+        }
+    }   
+}
+
+void fabulous() {
+    int i, j, d = 3;
+    while(1) {
+        for(i = 0; i < 256; i++) {
+            for(j = 0; j < LED_LENGTH; j++){
+                buffer[j].red = 255;
+                buffer[j].blue = i;
+                buffer[j].green = 0;
+            }
+            writeLEDs(buffer);
+            delay_ms(d);
+        }
+        for(i = 255; i >= 0; i--) {
+            for(j = 0; j < LED_LENGTH; j++){
+                buffer[j].red = i;
+                buffer[j].blue = 255;
+                buffer[j].green = 0;
+            }
+            writeLEDs(buffer);
+            delay_ms(d);
+        }
+        for(i = 0; i < 256; i++) {
+            for(j = 0; j < LED_LENGTH; j++){
+                buffer[j].red = 0;
+                buffer[j].blue = 255;
+                buffer[j].green = i;
+            }
+            writeLEDs(buffer);
+            delay_ms(d);
+        }
+        for(i = 255; i >= 0; i--) {
+            for(j = 0; j < LED_LENGTH; j++){
+                buffer[j].red = 0;
+                buffer[j].blue = i;
+                buffer[j].green = 255;
+            }
+            writeLEDs(buffer);
+            delay_ms(d);
+        }
+        for(i = 0; i < 256; i++) {
+            for(j = 0; j < LED_LENGTH; j++){
+                buffer[j].red = i;
+                buffer[j].blue = 0;
+                buffer[j].green = 255;
+            }
+            writeLEDs(buffer);
+            delay_ms(d);
+        }
+        for(i = 255; i >= 0; i--) {
+            for(j = 0; j < LED_LENGTH; j++){
+                buffer[j].red = 255;
+                buffer[j].blue = 0;
+                buffer[j].green = i;
+            }
+            writeLEDs(buffer);
+            delay_ms(d);
         }
     }   
 }
