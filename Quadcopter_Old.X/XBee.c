@@ -18,14 +18,14 @@ static volatile bool XBee_signal_temp = 0;
 
 static volatile char tx_buffer[XBEE_TX_BUFFER_LEN];
 
-void __ISR_AT_VECTOR(_UART4_RX_VECTOR, IPL6SRS) XBee_rx(void) {
-    IFS5bits.U4RXIF = 0; 
+void __ISR_AT_VECTOR(_UART1_RX_VECTOR, IPL6SRS) XBee_rx(void) {
+    IFS3bits.U1RXIF = 0; 
 
     static unsigned char XBee_rx_byte, XBee_address;
     static rx XBee_temp;
 
     do {
-        XBee_rx_byte = U4RXREG & 0xFF;
+        XBee_rx_byte = U1RXREG & 0xFF;
         XBee_address = XBee_rx_byte >> 5;
 
         switch(XBee_address) {
@@ -64,21 +64,21 @@ void __ISR_AT_VECTOR(_UART4_RX_VECTOR, IPL6SRS) XBee_rx(void) {
                 }
                 break;
         }
-    }while(U4STAbits.URXDA);
+    }while(U1STAbits.URXDA);
     
-    IFS5bits.U4RXIF = 0; 
+    IFS3bits.U1RXIF = 0; 
 }
 
-void __ISR_AT_VECTOR(_UART4_TX_VECTOR, IPL6SRS) XBee_tx(void) {
+void __ISR_AT_VECTOR(_UART1_TX_VECTOR, IPL6SRS) XBee_tx(void) {
     static int i;
 
-    IFS5bits.U4TXIF = 0;
+    IFS3bits.U1TXIF = 0;
 
-    if(tx_buffer_index && !U4STAbits.UTXBF) {
-        U4TXREG = tx_buffer[0];
+    if(tx_buffer_index && !U1STAbits.UTXBF) {
+        U1TXREG = tx_buffer[0];
         if(tx_buffer_index == 1) {
             tx_buffer_index = 0;
-            XBEE_TX_INTERRUPT = 0;
+            UART1_TX_INTERRUPT = 0;
         } else {
             for(i = 0; i < tx_buffer_index; i++)
                 tx_buffer[i] = tx_buffer[i + 1];
@@ -158,27 +158,27 @@ void SendCalibrationData() {
         delay_ms(35);
     }
     ComputeCompassOffsetGain(compass_min, compass_max);
-#if USE_EEPROM == 1
+#if (board_version == 4 || board_version == 5) && USE_EEPROM == 1
     eeprom_writeCalibration(compass_min, compass_max);
 #endif
 }
 
 void XBeeFillBuffer() {
     int i;
-    while(!U4STAbits.UTXBF && tx_buffer_index > 0) {
-        U4TXREG = tx_buffer[0];
+    while(!U1STAbits.UTXBF && tx_buffer_index > 0) {
+        U1TXREG = tx_buffer[0];
         for(i = 0; i < tx_buffer_index; i++)
             tx_buffer[i] = tx_buffer[i + 1];
         tx_buffer_index--;
     }
     if(tx_buffer_index) {
-        IFS5bits.U4TXIF = 0;
-        XBEE_TX_INTERRUPT = 1;
+        IFS3bits.U1TXIF = 0;
+        UART1_TX_INTERRUPT = 1;
     }
 }
 
 void XBeeClearBuffer() {
-    XBEE_TX_INTERRUPT = 0;
+    UART1_TX_INTERRUPT = 0;
     tx_buffer[0] = '\0';
     tx_buffer_index = 0;
 }
@@ -190,7 +190,7 @@ bool TxBufferEmpty() {
 }
 
 void XBeeWriteChar(char a) {
-    XBEE_TX_INTERRUPT = 0;
+    UART1_TX_INTERRUPT = 0;
 
     tx_buffer[tx_buffer_index++] = a;
     tx_buffer[tx_buffer_index] = '\0';
@@ -201,7 +201,7 @@ void XBeeWriteChar(char a) {
 void XBeeWriteStr(const char str[]) {
     unsigned int i;
 
-    XBEE_TX_INTERRUPT = 0;
+    UART1_TX_INTERRUPT = 0;
     
     for(i = 0; str[i] != '\0'; i++, tx_buffer_index++) 
         tx_buffer[tx_buffer_index] = str[i];
@@ -214,7 +214,7 @@ void XBeeWriteStr(const char str[]) {
 void XBeeWriteInt(int a) {
     long int tens;
 
-    XBEE_TX_INTERRUPT = 0;
+    UART1_TX_INTERRUPT = 0;
     
     if(a < 0) { 
         a *= -1; 
@@ -240,7 +240,7 @@ unsigned char XBeeWriteFloat(float a, unsigned char precision) {
     unsigned char i, len = 0;;
     long int tens;
 
-    XBEE_TX_INTERRUPT = 0;
+    UART1_TX_INTERRUPT = 0;
     
     if(a < 0) { 
         a *= -1; 
@@ -297,7 +297,7 @@ unsigned char FloatStrLen(float a, unsigned char precision) {
 }
 
 void XBeeWriteRawInt(int a) {
-    XBEE_TX_INTERRUPT = 0;
+    UART1_TX_INTERRUPT = 0;
 
     *(int*)(tx_buffer + tx_buffer_index) = a;
     tx_buffer_index += 2;
@@ -308,7 +308,7 @@ void XBeeWriteRawInt(int a) {
 }
 
 void XBeeWriteRawFloat(float a) {
-    XBEE_TX_INTERRUPT = 0;
+    UART1_TX_INTERRUPT = 0;
 
     *(float*)(tx_buffer + tx_buffer_index) = a;
     tx_buffer_index += 4;
@@ -323,7 +323,7 @@ void XBeePacketSend() {
     int i;
     tx_buffer_index += 4;
     
-    XBEE_TX_INTERRUPT = 0;
+    UART1_TX_INTERRUPT = 0;
     
     for(i = tx_buffer_index; i >= 4; i--) {
         tx_buffer[i] = tx_buffer[i-4];
@@ -337,7 +337,7 @@ void XBeePacketSend() {
 }
 
 void XBeePacketChar(char a) {
-    XBEE_TX_INTERRUPT = 0;
+    UART1_TX_INTERRUPT = 0;
 
     tx_buffer[tx_buffer_index++] = a;
     tx_buffer[tx_buffer_index] = '\0';
@@ -346,7 +346,7 @@ void XBeePacketChar(char a) {
 void XBeePacketStr(const char str[]) {
     unsigned int i;
 
-    XBEE_TX_INTERRUPT = 0;
+    UART1_TX_INTERRUPT = 0;
     
     for(i = 0; str[i] != '\0'; i++, tx_buffer_index++) 
         tx_buffer[tx_buffer_index] = str[i];
@@ -357,7 +357,7 @@ void XBeePacketStr(const char str[]) {
 void XBeePacketInt(int a) {
     long int tens;
 
-    XBEE_TX_INTERRUPT = 0;
+    UART1_TX_INTERRUPT = 0;
     
     if(a < 0) { 
         a *= -1; 
@@ -381,7 +381,7 @@ unsigned char XBeePacketFloat(float a, unsigned char precision) {
     unsigned char i, len = 0;;
     long int tens;
 
-    XBEE_TX_INTERRUPT = 0;
+    UART1_TX_INTERRUPT = 0;
     
     if(a < 0) { 
         a *= -1; 
@@ -415,7 +415,7 @@ unsigned char XBeePacketFixedFloat(float a, unsigned char left, unsigned char pr
     unsigned char i, len = 0;;
     long int tens;
 
-    XBEE_TX_INTERRUPT = 0;
+    UART1_TX_INTERRUPT = 0;
     
     if(a < 0) { 
         a *= -1; 

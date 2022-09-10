@@ -12,6 +12,7 @@
 #include "3x3Matrix.h"
 #include "altitude.h"
 #include "USART.h"
+#include "SPI.h"
 #include "XBee.h"
 #include "PID.h"
 #include "motor.h"
@@ -21,25 +22,6 @@
 #include "menu.h"
 #include "ToF.h"
 #include "EEPROM.h"
-
-#ifdef micro
-#warning "--------------------------------Building for Micro quad!--------------------------------"
-#endif
-#ifdef mini
-#warning "---------------------------------Building for Mini quad!--------------------------------"
-#endif
-#ifdef big
-#warning "---------------------------------Building for Big quad!---------------------------------"
-#endif
-#if board_version == 1
-#warning "---------------------------------Building for board_v1!---------------------------------"
-#elif board_version == 2
-#warning "---------------------------------Building for board_v2!---------------------------------"
-#elif board_version == 3
-#warning "---------------------------------Building for board_v3!---------------------------------"
-#elif board_version == 4
-#warning "---------------------------------Building for board_v4!---------------------------------"
-#endif
 
 #define MODE_KILL 0
 #define MODE_STABILIZE 1
@@ -70,7 +52,7 @@ void main() {
     //Startup initialization   
     Init();    
     
-    WriteRGBLed(255, 0, 0);                            //Red
+    Write_Onboard_LEDs(255, 0, 0);                            //Red
     
     delay_ms(200);
     
@@ -252,13 +234,13 @@ void main() {
 
                 if(p_loop_mode != loop_mode || p_kill != kill) {
                     if(kill) 
-                        WriteRGBLed(255, 255, 255);  //White
+                        Write_Onboard_LEDs(255, 255, 255);  //White
                     else if(loop_mode == MODE_STABILIZE) 
-                        WriteRGBLed(0, 255, 0);        //Green
+                        Write_Onboard_LEDs(0, 255, 0);        //Green
                     else if(loop_mode == MODE_ALT_HOLD) 
-                        WriteRGBLed(0, 255, 255);     //Cyan
+                        Write_Onboard_LEDs(0, 255, 255);     //Cyan
                     else if(loop_mode == MODE_POS_HOLD) 
-                        WriteRGBLed(255, 0, 255);     //Magenta
+                        Write_Onboard_LEDs(255, 0, 255);     //Magenta
 
                     if(loop_mode == MODE_ALT_HOLD) {
                         altitude_setpoint = (float)XBee_rx.y2 / THROTTLE_MAX * MAX_SPEED;
@@ -289,32 +271,14 @@ void main() {
             //--------------------------------------------------------Send Data to remote-----------------------------------------------------------------------------
             if(TxBufferEmpty() && tx_buffer_timer > 50) {
                 tx_buffer_timer = 0;
-//                XBeePacketChar('C');
-//                XBeePacketFloat(roll.error, 2); XBeePacketChar(',');
-//                XBeePacketFloat(pitch.error, 2); XBeePacketChar(',');
-//                XBeePacketFloat(yaw.error, 2); XBeePacketChar(',');
-//                XBeePacketFloat(acc_comp.z, 2); XBeePacketChar(',');
-//                XBeePacketFloat(altitude.sum, 8); XBeePacketChar(',');                      
-//                XBeePacketFloat(altitude.output, 8); XBeePacketChar(',');
-//                XBeePacketInt(loop_mode);
-//                XBeePacketSend();
-                
-                XBeePacketChar('Z');
-                XBeePacketStr("Pitch  : "); XBeePacketFixedFloat(pitch.error, 3, 2); XBeePacketChar('\n');
-                XBeePacketStr("Roll   : "); XBeePacketFixedFloat(roll.error, 3, 2); XBeePacketChar('\n');
-                XBeePacketStr("Heading: "); XBeePacketFixedFloat(heading, 3, 2); XBeePacketChar('\n');
-                XBeePacketStr("Altitude: "); XBeePacketFloat(altitude.error, 2); XBeePacketChar('\n');
-                XBeePacketStr("Altitude speed: "); XBeePacketFloat(altitude.derivative, 2); XBeePacketChar('\n');   
-                
-                XBeePacketStr("Acc X: "); XBeePacketFixedFloat(acc_comp.x, 3, 3); XBeePacketChar('\n');
-                XBeePacketStr("Acc Y: "); XBeePacketFixedFloat(acc_comp.y, 3, 3); XBeePacketChar('\n');   
-                XBeePacketStr("Acc Z: "); XBeePacketFixedFloat(acc_comp.z, 3, 3); XBeePacketChar('\n');
-                
-//                XBeePacketStr("Roll D : "); XBeePacketFixedFloat(roll.derivative, 3, 3); XBeePacketChar('\n');
-//                XBeePacketStr("Pitch D: "); XBeePacketFixedFloat(pitch.derivative, 3, 3); XBeePacketChar('\n');   
-//                XBeePacketStr("Yaw D  : "); XBeePacketFixedFloat(yaw.derivative, 3, 3); XBeePacketChar('\n');
-                
-                XBeePacketStr("ToF distance: "); XBeePacketFloat((float)ToF_distance / 10.0, 2); XBeePacketChar('\n');
+                XBeePacketChar('C');
+                XBeePacketFloat(roll.error, 2); XBeePacketChar(',');
+                XBeePacketFloat(pitch.error, 2); XBeePacketChar(',');
+                XBeePacketFloat(yaw.error, 2); XBeePacketChar(',');
+                XBeePacketFloat(altitude.error, 2); XBeePacketChar(',');
+                XBeePacketFloat(0, 8); XBeePacketChar(',');                      
+                XBeePacketFloat(0, 8); XBeePacketChar(',');
+                XBeePacketInt(loop_mode);
                 XBeePacketSend();
             }
             

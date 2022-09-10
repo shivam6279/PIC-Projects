@@ -1,7 +1,6 @@
 #include "menu.h"
 #include "PID.h"
 #include "USART.h"
-#include "SPI.h"
 #include <stdbool.h>
 #include "XBee.h"
 #include "pic32.h"
@@ -78,8 +77,8 @@ void Menu(PID *x, PID *y, PID *z, PID *a){
         //-------------------------------------------------------------------LED stuff------------------------------------------------------------------------------
         
         HSVtoRGB(hue, 1.0, 1.0, &r, &g, &b);
-        Write_Onboard_LEDs(r, g, b);
-        hue += 1.2;
+        WriteRGBLed(r, g, b);
+        hue += 2;
         if(hue >= 360)
             hue = 0;
         
@@ -142,11 +141,10 @@ void Menu(PID *x, PID *y, PID *z, PID *a){
                 break;
         }
         
-        if(XBee.ls && !XBee.rs && XBee.y2 < 2 && XBee.x2 > 13) {
+        if(XBee.ls && !XBee.rs && XBee.y2 < 2 && XBee.x2 > 13) 
             arming_counter++;
-        } else { 
+        else 
             arming_counter = 0;
-        }
         
         if(!XBee.rs && XBee.y2 > 29 && XBee.x2 > 13) {
             cal_counter++;
@@ -154,9 +152,8 @@ void Menu(PID *x, PID *y, PID *z, PID *a){
                 CalibrationMenu();
                 cal_counter = 0;
             }
-        } else {
+        } else 
             cal_counter = 0;
-        }
         
         StartDelayCounter();
         
@@ -466,7 +463,7 @@ void ArmingSequence(float q[], float *gravity_mag, float *to_roll, float *to_pit
     XYZ acc, gyro, compass;
     XYZ gravity;
     
-    Write_Onboard_LEDs(255, 200, 0); //Yellow
+    WriteRGBLed(255, 200, 0); //Yellow
     
     delay_ms(100);
     

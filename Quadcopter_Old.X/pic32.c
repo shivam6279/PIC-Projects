@@ -17,9 +17,6 @@ void PICInit(){
     TRISF = 0;
     ANSELB = 0;
     
-    TRISBbits.TRISB13 = 1;
-    ANSELBbits.ANSB13 = 1;
-    
     PMCON = 0;
     PMAEN = 0;
     
@@ -29,6 +26,11 @@ void PICInit(){
     I2C5CONbits.ON = 0;
     
     RPF4Rbits.RPF4R = 0;
+    
+#if board_version == 1 || board_version == 2 || board_version == 3
+    LATBbits.LATB15 = 0;
+    TRISBbits.TRISB15 = 1;
+#endif
     
     PRECONbits.PREFEN = 3;
     PRECONbits.PFMWS = 2;

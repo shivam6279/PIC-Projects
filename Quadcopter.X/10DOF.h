@@ -116,6 +116,7 @@ extern unsigned long int ReadRawTemperature();
 extern long int ComputePressure(unsigned long int, unsigned long int);
 extern double ComputeTemperature(unsigned long int);
 extern double GetAltitude(unsigned long int);
+extern long int GetPressure();
 #endif
 
 extern XYZ acc_offset, acc_gain;

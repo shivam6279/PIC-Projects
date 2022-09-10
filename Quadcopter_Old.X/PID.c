@@ -53,11 +53,27 @@ void ResetCounters() {
 
 
 void SetPIDGain(PID *roll, PID* pitch, PID *yaw, PID *altitude, PID *GPS) {
+#ifdef micro
     PIDSet(roll,     1.30, 1.30, 0.50);
     PIDSet(pitch,    1.30, 1.30, 0.50);
     PIDSet(yaw,      1.30, 1.30, 0.50);
     PIDSet(altitude, 36.0, 5.00, 30.00);
     PIDSet(GPS,      1.50, 0.05, 0.00);
+#endif
+#ifdef mini
+    PIDSet(roll,     1.0, 1.0, 0.50);
+    PIDSet(pitch,    1.0, 1.0, 0.50);
+    PIDSet(yaw,      1.0, 1.0, 0.50);
+    PIDSet(altitude, 36.0, 0.80, 0.00);
+    PIDSet(GPS,      1.50, 0.05, 0.00);
+#endif
+#ifdef big
+    PIDSet(roll,     0.30, 1.20, 0.40);
+    PIDSet(pitch,    0.30, 1.20, 0.40);
+    PIDSet(yaw,      0.40, 1.00, 0.30);
+    PIDSet(altitude, 36.0, 0.80, 0.00);
+    PIDSet(GPS,      1.50, 0.05, 0.00);
+#endif
 }
 
 float LimitAngle(float a) {
@@ -194,14 +210,14 @@ void StrWriteFloat(double a, unsigned char right, volatile char str[], unsigned 
 }
 
 void WriteRGBLed(unsigned int r, unsigned int g, unsigned int b) {
-
+#if board_version == 4 || board_version == 5
     float fr = (float)r * (float)PWM_MAX / 255.0f;
     float fg = (float)g * (float)PWM_MAX / 255.0f;
     float fb = (float)b * (float)PWM_MAX / 255.0f;
     r = (unsigned int)fr;
     g = (unsigned int)fg;
     b = (unsigned int)fb;
-    
+#endif
     write_pwm(RGBLED_RED_PIN,   r); 
     write_pwm(RGBLED_GREEN_PIN, g); 
     write_pwm(RGBLED_BLUE_PIN,  b);

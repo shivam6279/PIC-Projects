@@ -8,13 +8,12 @@
 #include "XBee.h"
 #include "ToF.h"
 #include "settings.h"
-#include "SPI.h"
 
 void Init() {
     PICInit();
     
     XBeeReset();
-    USART4_init(111111);    // XBee
+    USART1_init(111111);    // XBee
     timer7_init(1000.0);    // Safety timer for Xbee - 1kHz
     SAFETY_TIMER_ON = 1;
     
@@ -26,8 +25,6 @@ void Init() {
     USART5_init(9600);      // GPS
     
     pwm_init(ESC_FREQ);
-    
-    SPI_init();
 }
 
 void Init_10DOF(){
