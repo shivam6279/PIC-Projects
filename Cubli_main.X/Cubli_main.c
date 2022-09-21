@@ -52,15 +52,15 @@ void main() {
 //    USART1_init(111111);    
 //    timer7_init(1000.0);    // Safety timer for Xbee - 1kHz
     
-    USART1_init(115200);
-    USART2_init(250000);  
-    USART4_init(250000);  
-    USART5_init(250000);  
-    
     timer2_init(1000.0);    // Delay timer - 1kHz    
     timer4_init(1000000.0); // Loop timer - 1MHz
 //    timer5_init(10.0);      // GPS timer - 10Hz
 //    timer6_init(312500.0);  // XBee tx timer - 312.5kHz
+    
+    USART1_init(115200);
+    USART2_init(250000);  
+    USART4_init(250000);  
+    USART5_init(250000);  
     
     delay_ms(200);    
     MPU6050Init();

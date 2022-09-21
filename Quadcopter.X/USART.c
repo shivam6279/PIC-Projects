@@ -84,8 +84,8 @@ void USART4_write_float(double a, unsigned char right) {
     } 
     //else USART4_send('+');
     
-    if(a > 1.0) {
-        for(tens = 1; tens < a; tens *= 10);
+    if(a >= 1.0) {
+        for(tens = 1; tens <= a; tens *= 10);
         tens /= 10;
         for(; tens > 0; tens /= 10)
             USART4_send(((long int)(a / tens) % 10) + 48);

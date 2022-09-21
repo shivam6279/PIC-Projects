@@ -10,6 +10,7 @@
 #include "AHRS.h"
 #include "altitude.h"
 #include "EEPROM.h"
+#include "10DOF.h"
 #include "bitbang_I2C.h"
 #include <xc.h>
 #include <math.h>
@@ -151,6 +152,7 @@ void Menu(PID *x, PID *y, PID *z, PID *a){
         if(!XBee.rs && XBee.y2 > 29 && XBee.x2 > 13) {
             cal_counter++;
             if(cal_counter >= 20) {
+                Write_Onboard_LEDs(0, 255, 100);
                 CalibrationMenu();
                 cal_counter = 0;
             }
@@ -349,34 +351,30 @@ void CalibrationMenu() {
 
                     bool i2c_devices[6] = {0, 0, 0, 0, 0, 0};
                     bool i2c_flag = false;
-
-                    if(I2C_CheckAddress(MPU6050_ADDR)) {
+                    
+                    if(I2C_CheckAddress(EEPROM_ADDRESS)) {
                         i2c_flag = true;
                         i2c_devices[0] = 1;
-                        sr_len += 18;
+                        sr_len += 17;
                     }
-                    if(I2C_CheckAddress(HMC5883_ADDR)) {
+                    if(I2C_CheckAddress(MPU6050_ADDR)) {
                         i2c_flag = true;
                         i2c_devices[1] = 1;
-                        sr_len += 19;
+                        sr_len += 18;
                     }
-                    if(I2C_CheckAddress(QMC5883L_ADDR)) {
+                    if(I2C_CheckAddress(LIS3MDL_ADDR)) {
                         i2c_flag = true;
                         i2c_devices[2] = 1;
                         sr_len += 19;
                     }
-                    if(I2C_CheckAddress(BMP180_ADDR)) {
+                    if(I2C_CheckAddress(BMP390_ADDR)) {
                         i2c_flag = true;
                         i2c_devices[3] = 1;
                         sr_len += 17;
                     }
-                    if(I2C_CheckAddress(MS5611_ADDR)) {
-                        i2c_devices[4] = 1;
-                        sr_len += 17;
-                    }
                     if(I2C_CheckAddress(VL6180X_ADDRESS)) {
                         i2c_flag = true;
-                        i2c_devices[5] = 1;
+                        i2c_devices[4] = 1;
                         sr_len += 18;
                     } 
 
@@ -387,21 +385,18 @@ void CalibrationMenu() {
                     } else {
                         XBeePacketChar('Z');
                         if(i2c_devices[0] == 1) {
-                            XBeePacketStr("MPU6050 connected\n");
+                            XBeePacketStr("EEPROM connected\n");
                         }
                         if(i2c_devices[1] == 1) {
-                            XBeePacketStr("HMC5883L connected\n");
+                            XBeePacketStr("MPU6050 connected\n");
                         }
                         if(i2c_devices[2] == 1) {
-                            XBeePacketStr("QMC5883L connected\n");
+                            XBeePacketStr("LIS3MDL connected\n");
                         }
                         if(i2c_devices[3] == 1) {                    
-                            XBeePacketStr("BMP180 connected\n");
+                            XBeePacketStr("BMP390 connected\n");
                         }
                         if(i2c_devices[4] == 1) {                    
-                            XBeePacketStr("MS5611 connected\n");
-                        }
-                        if(i2c_devices[5] == 1) {                    
                             XBeePacketStr("VL6180X connected\n");
                         }
                         XBeePacketSend();
@@ -462,17 +457,25 @@ void CalibrationMenu() {
 
 void ArmingSequence(float q[], float *gravity_mag, float *to_roll, float *to_pitch, float *to_heading, float *to_altitude, float *to_latitude, float *to_longitude) {         
     int i;
-    const int ITERATIONS = 1000;
-    XYZ acc, gyro, compass;
+    const int ITERATIONS = 700;
+    XYZ acc = {0.0, 0.0, 0.0}, gyro = {0.0, 0.0, 0.0}, compass = {0.0, 0.0, 0.0};
     XYZ gravity;
+    
+    q[0] = 1;
+    q[1] = 0;
+    q[2] = 0;
+    q[3] = 0;
     
     Write_Onboard_LEDs(255, 200, 0); //Yellow
     
     delay_ms(100);
     
-    for(i = 0, VectorReset(&gravity), VectorReset(&gyro_offset); i < ITERATIONS; i++) {
+    VectorReset(&gravity);
+    VectorReset(&gyro_offset);
+                
+    for(i = 0; i < ITERATIONS; i++) {
         StartDelayCounter();
-
+        
         GetAcc(&acc);
         GetRawGyro(&gyro);
         GetCompass(&compass);
@@ -480,13 +483,13 @@ void ArmingSequence(float q[], float *gravity_mag, float *to_roll, float *to_pit
         gravity = VectorAdd(gravity, acc);
         gyro_offset = VectorAdd(gyro_offset, gyro);
         
-        MadgwickQuaternionUpdate(q, acc, (XYZ){0.0, 0.0, 0.0}, compass, 0.050);
+        MadgwickQuaternionUpdate(q, acc, (XYZ){0.0, 0.0, 0.0}, compass, 0.1);
         
         XBeePacketChar('B');
         XBeePacketInt(i);
         XBeePacketSend();
         
-        while(ms_counter() < 3);
+        while(ms_counter() < 5);
     }
     StopDelayCounter();
     
@@ -499,10 +502,10 @@ void ArmingSequence(float q[], float *gravity_mag, float *to_roll, float *to_pit
     QuaternionToEuler(q, to_roll, to_pitch, to_heading);
 
     //Read take-off altitude
-    altitude_KF_reset();
-    *to_altitude = GetTakeoffAltitude();
-    altitude_KF_setAltitude(*to_altitude);
-    altitude_KF_update(*to_altitude);
+//    altitude_KF_reset();
+//    *to_altitude = GetTakeoffAltitude();
+//    altitude_KF_setAltitude(*to_altitude);
+//    altitude_KF_update(*to_altitude);
     
     if(GPS_signal) { 
         *to_latitude = latitude; 

@@ -3,6 +3,7 @@
 #include "GPS.h"
 #include "PID.h"
 #include <math.h>
+#include "settings.h"
 
 float roll_offset = ROLLOFFSET;
 float pitch_offset = PITCHOFFSET;
@@ -81,8 +82,8 @@ void QuaternionToEuler(float q[], float *roll, float *pitch, float *yaw) {
     float q2_2 = q[2] * q[2];
 
     //Converting quaternion to Euler angles
-    *roll = 180.0f + TO_DEG(atan2(q[2]*q[3] + q[0]*q[1], 0.5f - (q[1]*q[1] + q2_2)));
-    *pitch = TO_DEG(asin(2.0f * (q[1]*q[3] - q[0]*q[2])));
+    *pitch = TO_DEG(atan2(q[2]*q[3] + q[0]*q[1], 0.5f - (q[1]*q[1] + q2_2)));
+    *roll = -TO_DEG(asin(2.0f * (q[1]*q[3] - q[0]*q[2])));
     *yaw = TO_DEG(atan2((q[1]*q[2] + q[0]*q[3]), 0.5f - (q2_2 + q[3]*q[3])));
     
     *roll = LimitAngle(*roll - roll_offset);

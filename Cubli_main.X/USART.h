@@ -22,6 +22,6 @@ extern float parse_rx(volatile char*);
 extern volatile unsigned char rx_buffer[RX_BUFFER_SIZE];
 extern volatile unsigned char rx_rdy;
 
-volatile float rpm_A, rpm_B, rpm_C;
+extern volatile float rpm_A, rpm_B, rpm_C;
 
 #endif

@@ -3,6 +3,7 @@
 #include "XBee.h"
 #include "PID.h"
 #include "pic32.h"
+#include "SPI.h"
 
 void LimitSpeed(Motors *x){
     x->upRight   = LimitValue(x->upRight,   0.0f, MAX_SPEED);
@@ -19,17 +20,25 @@ void MotorsReset(Motors *x) {
 }
 
 void CalibrateESC() {
-    WriteRGBLed(0, 0, 255);   
+    unsigned char i;
+    for(i = 0; i < 5; i++) {
+        Write_Onboard_LEDs(0, 0, 255);
+        delay_ms(1);
+    }
     delay_ms(5000); 
-    WriteRGBLed(0, 255, 255); 
+    for(i = 0; i < 5; i++) {
+        Write_Onboard_LEDs(0, 255, 255);
+        delay_ms(1);
+    }
 
     write_pwm(MOTOR_UPRIGHT_PIN,   MOTOR_MAX);
     write_pwm(MOTOR_DOWNLEFT_PIN,  MOTOR_MAX);
     write_pwm(MOTOR_UPLEFT_PIN,    MOTOR_MAX);
     write_pwm(MOTOR_DOWNRIGHT_PIN, MOTOR_MAX);
 
-     while(XBee.y2 > 5)
+     while(XBee.y2 > 5)  {
         delay_ms(10);
+     }
     
     TurnMotorsOff();
 }

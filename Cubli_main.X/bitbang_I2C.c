@@ -185,7 +185,7 @@ void I2C_SendNak() {
     I2C_DelaySettle();  
 }
 
-void inline I2C_DelayFull() {
+inline void I2C_DelayFull() {
     Nop();Nop();Nop();Nop();Nop();Nop();
     Nop();Nop();Nop();Nop();Nop();Nop();
     Nop();Nop();Nop();Nop();Nop();Nop();
@@ -220,7 +220,7 @@ void inline I2C_DelayFull() {
     Nop();Nop();Nop();Nop();Nop();Nop();
 }
 
-void inline I2C_DelayHalf() {
+inline void I2C_DelayHalf() {
     Nop();Nop();Nop();Nop();Nop();Nop();
     Nop();Nop();Nop();Nop();Nop();Nop();
     Nop();Nop();Nop();Nop();Nop();Nop();
@@ -239,7 +239,7 @@ void inline I2C_DelayHalf() {
     Nop();Nop();Nop();Nop();Nop();Nop();
 }
 
-void inline I2C_DelaySettle() {
+inline void I2C_DelaySettle() {
     Nop();Nop();Nop();Nop();Nop();
     Nop();Nop();Nop();Nop();Nop();
 }

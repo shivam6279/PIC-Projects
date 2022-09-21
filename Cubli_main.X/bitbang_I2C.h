@@ -25,8 +25,8 @@ extern void I2C_Stop();
 extern void I2C_Clock();
 extern unsigned char I2C_ReadBit();
 
-extern void inline I2C_DelayHalf();
-extern void inline I2C_DelayFull();
-extern void inline I2C_DelaySettle();
+static inline void I2C_DelayHalf();
+static inline void I2C_DelayFull();
+static inline void I2C_DelaySettle();
 
 #endif

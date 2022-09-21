@@ -31,11 +31,11 @@
 void main() {    
     Motors speed;
     PID pitch, roll, yaw, altitude, GPS;
-    XYZ acc, gyro, compass;
+    XYZ acc = {0.0, 0.0, 0.0}, gyro = {0.0, 0.0, 0.0}, compass = {0.0, 0.0, 0.0};
     XYZ acc_comp;                                                                   //Tilt-compensated acceleration
     float gravity_mag;
     rx XBee_rx;
-    float q[4];                                                                     //Quaternion
+    float q[4] = {1.0,0.0,0.0,0.0};                                                         //Quaternion
     float take_off_altitude, temperature;                                           //Offsets
     float baro_altitude, heading;                                                   //yaw
     float take_off_roll, take_off_pitch, take_off_heading;
@@ -49,26 +49,31 @@ void main() {
     bool kill, p_kill;
     bool compute_acc_comp = false;
     
+    int i, j, k;
+    
     //Startup initialization   
     Init();    
     
-    Write_Onboard_LEDs(255, 0, 0);                            //Red
-    
-    delay_ms(200);
+    for(i = 0; i < 40; i++) {
+        Write_Onboard_LEDs(255, 0, 0);  //Red
+        delay_ms(5);
+    }
     
     bool EEPROM_connected = I2C_CheckAddress(EEPROM_ADDRESS);
     bool MPU6050_connected = I2C_CheckAddress(MPU6050_ADDR);
-    bool compass_connected = I2C_CheckAddress(HMC5883_ADDR) | I2C_CheckAddress(QMC5883L_ADDR);
+    bool compass_connected = I2C_CheckAddress(LIS3MDL_ADDR);
     bool ToF_connected = I2C_CheckAddress(VL6180X_ADDRESS);
     
     if(ToF_connected) 
         VL6180_init();
     
-    Init_10DOF();    
+    Init_10DOF();
+    
     //Calibrate ESC
     if(XBee.y2 > 29 && XBee.x2 > 13) {
         CalibrateESC();
     }
+    
     TurnMotorsOff();
     delay_ms(100);
     
@@ -77,7 +82,28 @@ void main() {
     PIDSetIntegralParams(&roll,  ANTI_WINDUP_MAX_BOUND, ANTI_WINDUP_MAX_ANGLE);
     PIDSetIntegralParams(&pitch, ANTI_WINDUP_MAX_BOUND, ANTI_WINDUP_MAX_ANGLE);
     delay_ms(1500);
-
+    
+//    while(1) {
+//        GetAcc(&acc);
+//        GetGyro(&gyro);
+//        GetCompass(&compass);
+//        
+//        heading = TO_DEG(atan2(compass.y, compass.x));
+//        
+//        MadgwickQuaternionUpdate(q, acc, gyro, compass, 0.010);
+//        QuaternionToEuler(q, &roll.error, &pitch.error, &yaw.error);
+//        
+//        USART4_write_float(roll.error, 2);
+//        USART4_send(',');
+//        USART4_write_float(pitch.error, 2);
+//        USART4_send(',');
+//        USART4_write_float(yaw.error, 2);
+//        USART4_send(',');
+//        USART4_write_float(heading, 2);
+//        USART4_send('\n');
+//        delay_ms(10);
+//    }
+    
     while(1) {
         //Clear PID variables
         PIDReset(&roll);
@@ -88,6 +114,7 @@ void main() {
         ResetQuaternion(q);                             //Reset quaternion
         MotorsReset(&speed);                            //Clear motor speeds   
         
+#if USE_EEPROM
         if(EEPROM_connected) {
             if(!eeprom_readPID(&roll, &pitch, &yaw, &altitude, &GPS)) {
                 SetPIDGain(&roll, &pitch, &yaw, &altitude, &GPS);
@@ -95,14 +122,16 @@ void main() {
             eeprom_readCalibration();
             eeprom_readOffsets();
         }
+#endif  
         
         // Wait to be armed
         Menu(&roll, &pitch, &yaw, &altitude);
-        
+
+#if USE_EEPROM   
         if(EEPROM_connected) {
             eeprom_writePID(&roll, &pitch, &yaw, &altitude, &GPS);
         }
-        
+#endif
         // Arm motors
         // Set up quaternion - save parameters at take off
         // Heading, altitude, latitude, longitude
@@ -113,15 +142,15 @@ void main() {
         kill = 0;
         altitude_setpoint = 0;
         ResetCounters();        
-        LOOP_TIMER_ON = 1;
-            
+        LOOP_TIMER_ON = 1;        
+        
         XBee_rx = ReadXBee();
         
         //Main Loop
         while(XBee_rx.rs == 0) {
             
             //------------------------------------------------------------IMU data acquisition---------------------------------------------------------------------------
-            if(gyro_aq_counter >= 125) {
+            if(gyro_aq_counter >= 500) {
                 gyro_loop_time = (double)gyro_aq_counter / 1000000.0;    
                 gyro_aq_counter = 0;
                 
@@ -160,9 +189,9 @@ void main() {
                 QuaternionToEuler(q, &roll.error, &pitch.error, &heading);
                 yaw.error = LimitAngle(heading - take_off_heading);
                 
-                roll.derivative  = gyro.x;
-                pitch.derivative = gyro.y;
-                yaw.derivative   = -gyro.z;
+                roll.derivative  = gyro.y;
+                pitch.derivative = gyro.x;
+                yaw.derivative   = gyro.z;
                 
 //                PIDDifferentiateAngle(&roll,  gyro_loop_time);
 //                PIDDifferentiateAngle(&pitch, gyro_loop_time);
@@ -174,7 +203,7 @@ void main() {
                     PIDIntegrateAngle(&yaw,   gyro_loop_time);
                 }
                 
-                if(compute_acc_comp) {
+                /*if(compute_acc_comp) {
                     compute_acc_comp = false;
                     
                     //Update altitude kalman filter
@@ -195,21 +224,21 @@ void main() {
                     if(fabs(altitude_KF_getVelocity()) > 10.0) {
                         altitude_KF_setVelocity(0.0);  
                     }
-                }
+                }*/
             }
 
             //-------------------------------------------------------------Altitude acquisition--------------------------------------------------------------------------
-            if(LoopAltitude(&baro_altitude, &temperature, true)) {
-                if(fabs(baro_altitude - take_off_altitude) < 150.0) {
-                    altitude_KF_update(baro_altitude);                
-                    altitude.error = altitude_KF_getAltitude() - take_off_altitude;                
-
-                    if(loop_mode == MODE_ALT_HOLD) {
-                        if(XBee_rx.y2 > 10 && XBee_rx.y2 < 20)  //Throttle stick in the mid position
-                            altitude.integral += (altitude.offset - altitude.error) * 0.002 * oversampling_delay;
-                    }
-                }
-            }
+//            if(LoopAltitude(&baro_altitude, &temperature, true)) {
+//                if(fabs(baro_altitude - take_off_altitude) < 150.0) {
+//                    altitude_KF_update(baro_altitude);                
+//                    altitude.error = altitude_KF_getAltitude() - take_off_altitude;                
+//
+//                    if(loop_mode == MODE_ALT_HOLD) {
+//                        if(XBee_rx.y2 > 10 && XBee_rx.y2 < 20)  //Throttle stick in the mid position
+//                            altitude.integral += (altitude.offset - altitude.error) * 0.002 * oversampling_delay;
+//                    }
+//                }
+//            }
             
             //-------------------------------------------------------------------RC input--------------------------------------------------------------------------------
             if(XBee.data_ready || !XBee.signal) {
@@ -219,11 +248,11 @@ void main() {
                 p_kill = kill;
                 p_loop_mode = loop_mode;
 
-                if(XBee_rx.ls || !XBee_rx.signal) 
+                if(XBee_rx.ls || !XBee_rx.signal) {
                     kill = 1; 
-                else 
+                } else {
                     kill = 0;
-
+                }
                 //Set loop mode - Stabilize, Alt-hold, Pos-hold
                 if(XBee_rx.d1 == 0 || (XBee_rx.d1 == 2 && !GPS_signal)) 
                     loop_mode = MODE_STABILIZE;
@@ -272,12 +301,12 @@ void main() {
             if(TxBufferEmpty() && tx_buffer_timer > 50) {
                 tx_buffer_timer = 0;
                 XBeePacketChar('C');
-                XBeePacketFloat(roll.error, 2); XBeePacketChar(',');
                 XBeePacketFloat(pitch.error, 2); XBeePacketChar(',');
+                XBeePacketFloat(roll.error, 2); XBeePacketChar(',');
                 XBeePacketFloat(yaw.error, 2); XBeePacketChar(',');
-                XBeePacketFloat(altitude.error, 2); XBeePacketChar(',');
-                XBeePacketFloat(0, 8); XBeePacketChar(',');                      
-                XBeePacketFloat(0, 8); XBeePacketChar(',');
+                XBeePacketFloat(q[0], 2); XBeePacketChar(',');
+                XBeePacketFloat(q[1], 2); XBeePacketChar(',');                      
+                XBeePacketFloat(q[2], 2); XBeePacketChar(',');
                 XBeePacketInt(loop_mode);
                 XBeePacketSend();
             }
@@ -348,10 +377,10 @@ void main() {
                 
                 altitude.output = LimitValue(altitude.output, 0.0f, 900.0f);
 
-                speed.upRight   = altitude.output - pitch.output + roll.output + (yaw.output * MOTOR_SPIN);
-                speed.downLeft  = altitude.output + pitch.output - roll.output + (yaw.output * MOTOR_SPIN);
-                speed.upLeft    = altitude.output - pitch.output - roll.output - (yaw.output * MOTOR_SPIN);
-                speed.downRight = altitude.output + pitch.output + roll.output - (yaw.output * MOTOR_SPIN);
+                speed.upRight   = altitude.output - pitch.output + roll.output - (yaw.output * MOTOR_SPIN);
+                speed.downLeft  = altitude.output + pitch.output - roll.output - (yaw.output * MOTOR_SPIN);
+                speed.upLeft    = altitude.output - pitch.output - roll.output + (yaw.output * MOTOR_SPIN);
+                speed.downRight = altitude.output + pitch.output + roll.output + (yaw.output * MOTOR_SPIN);
 
                 LimitSpeed(&speed);
 

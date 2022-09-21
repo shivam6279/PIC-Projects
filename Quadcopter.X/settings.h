@@ -9,8 +9,8 @@
 #define MAX_YAW_RATE 225.0f         // degrees/sec
 #define MAX_ALTITUDE_RATE 0.7f      // meters/sec
 
-#define ROLLOFFSET 0.9f             // degrees
-#define PITCHOFFSET -2.0f			// degrees
+#define ROLLOFFSET 0.0f             // degrees
+#define PITCHOFFSET 0.0f			// degrees
 #define HEADINGOFFSET 0.0f       	// degrees
 
 #define MIN_THROTTLE_INTEGRATION 3
@@ -18,9 +18,9 @@
 #define ANTI_WINDUP_MAX_ANGLE 7.5f  //degrees
 #define ANTI_WINDUP_MAX_BOUND 100.0f//degrees
 
-#define RGBLED_RED_PIN 5		//RB14 - OC9
-#define RGBLED_GREEN_PIN 9		//RB15 - OC5
-#define RGBLED_BLUE_PIN 8		//RB7  - OC8
+#define RGBLED_RED_PIN 6		//RB10 - OC6
+#define RGBLED_GREEN_PIN 2		//RG9 - OC2
+#define RGBLED_BLUE_PIN 4		//RG7  - OC4
 
 #define MOTOR_UPLEFT_PIN 5		//RB8  - OC5
 #define MOTOR_UPRIGHT_PIN 3		//RB9  - OC3
@@ -42,10 +42,6 @@
 
 #define USE_EEPROM 0
 #define MOTOR_SPIN 1.0f
-
-//IMU
-#define QMC5883	//HMC5883 or QMC5883
-#define MS5611	//BMP180 or MS5611
 
 #define PI 3.1415926535897931f
 

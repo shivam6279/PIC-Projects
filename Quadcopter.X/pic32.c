@@ -10,12 +10,16 @@ void __ISR_AT_VECTOR(_TIMER_2_VECTOR, IPL4SRS) delay_timer(void){
 }
 
 void PICInit(){
-    TRISB = 0; 
-    TRISC = 0; 
-    TRISD = 0; 
-    TRISE = 0; 
-    TRISF = 0;
+    TRISB = 0xFFFF; 
+    TRISC = 0xFFFF; 
+    TRISD = 0xFFFF; 
+    TRISE = 0xFFFF; 
+    TRISF = 0xFFFF;
     ANSELB = 0;
+    
+//    CNPUDbits.CNPUD3 = 1;
+//    CNPUDbits.CNPUD4 = 1;
+//    CNPUDbits.CNPUD5 = 1;
     
     TRISBbits.TRISB13 = 1;
     ANSELBbits.ANSB13 = 1;

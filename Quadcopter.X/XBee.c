@@ -137,25 +137,25 @@ void SendCalibrationData() {
         if(compass_avg.y < compass_min.y) compass_min.y = compass_avg.y;
         if(compass_avg.z < compass_min.z) compass_min.z = compass_avg.z;
         
-        XBeePacketChar('D');        
-        XBeePacketInt(acc.x); XBeePacketChar(',');
-        XBeePacketInt(acc.y); XBeePacketChar(',');
-        XBeePacketInt(acc.z); XBeePacketChar(',');
-        XBeePacketInt(gyro.x); XBeePacketChar(',');
-        XBeePacketInt(gyro.y); XBeePacketChar(',');
-        XBeePacketInt(gyro.z); XBeePacketChar(',');        
-        XBeePacketInt(compass.x); XBeePacketChar(',');
-        XBeePacketInt(compass.y); XBeePacketChar(',');
-        XBeePacketInt(compass.z); XBeePacketChar(',');
-        XBeePacketInt(compass_max.x); XBeePacketChar(',');
-        XBeePacketInt(compass_max.y); XBeePacketChar(',');
-        XBeePacketInt(compass_max.z); XBeePacketChar(',');
-        XBeePacketInt(compass_min.x); XBeePacketChar(',');
-        XBeePacketInt(compass_min.y); XBeePacketChar(',');
+        XBeePacketChar('Z');        
+//        XBeePacketInt(acc.x); XBeePacketChar(',');
+//        XBeePacketInt(acc.y); XBeePacketChar(',');
+//        XBeePacketInt(acc.z); XBeePacketChar(',');
+//        XBeePacketInt(gyro.x); XBeePacketChar(',');
+//        XBeePacketInt(gyro.y); XBeePacketChar(',');
+//        XBeePacketInt(gyro.z); XBeePacketChar(',');        
+        XBeePacketInt(compass.x); XBeePacketChar('\n');
+        XBeePacketInt(compass.y); XBeePacketChar('\n');
+        XBeePacketInt(compass.z); XBeePacketChar('\n');
+        XBeePacketInt(compass_max.x); XBeePacketChar('\n');
+        XBeePacketInt(compass_max.y); XBeePacketChar('\n');
+        XBeePacketInt(compass_max.z); XBeePacketChar('\n');
+        XBeePacketInt(compass_min.x); XBeePacketChar('\n');
+        XBeePacketInt(compass_min.y); XBeePacketChar('\n');
         XBeePacketInt(compass_min.z);
         XBeePacketSend();
     
-        delay_ms(35);
+        delay_ms(50);
     }
     ComputeCompassOffsetGain(compass_min, compass_max);
 #if USE_EEPROM == 1

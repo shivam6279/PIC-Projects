@@ -65,15 +65,15 @@ void pwm_init(float freq) {
     OC5RS = 0;
     OC5CON = 0b1110;   
 
+    OC6CON = 0;  
+    OC6R = 0;
+    OC6RS = 0;
+    OC6CON = 0b1110;   
+
     OC8CON = 0;  
     OC8R = 0;
     OC8RS = 0;
-    OC8CON = 0b1110;   
-
-    OC9CON = 0;  
-    OC9R = 0;
-    OC9RS = 0;
-    OC9CON = 0b1110;
+    OC8CON = 0b1110;
 
     T3CONbits.TCKPS = pre & 0b111;
     PR3 = PWM_MAX;
