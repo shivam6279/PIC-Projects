@@ -23,13 +23,13 @@
 #define GYRO_Z_GAIN 32.5f
 
 #define COMPASS_X_MIN -800.0f
-#define COMPASS_X_MAX 1100.0f
+#define COMPASS_X_MAX 1200.0f
 
-#define COMPASS_Y_MIN -400.0f
-#define COMPASS_Y_MAX 1900.0f
+#define COMPASS_Y_MIN -200.0f
+#define COMPASS_Y_MAX 2000.0f
 
 #define COMPASS_Z_MIN -1200.0f
-#define COMPASS_Z_MAX 1200.0f
+#define COMPASS_Z_MAX 1000.0f
 
 #define ACC_LPF 0.5
 #define GYRO_LPF 0.5

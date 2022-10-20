@@ -27,6 +27,7 @@
 #define MODE_STABILIZE 1
 #define MODE_ALT_HOLD 2
 #define MODE_POS_HOLD 3
+#define MODE_ACRO 4
 
 void main() {    
     Motors speed;
@@ -86,21 +87,21 @@ void main() {
 //    while(1) {
 //        GetAcc(&acc);
 //        GetGyro(&gyro);
-//        GetCompass(&compass);
+//        GetRawCompass(&compass);
 //        
-//        heading = TO_DEG(atan2(compass.y, compass.x));
+////        heading = TO_DEG(atan2(compass.y, compass.x));        
+////        MadgwickQuaternionUpdate(q, acc, gyro, compass, 0.010);
+////        QuaternionToEuler(q, &roll.error, &pitch.error, &yaw.error);
 //        
-//        MadgwickQuaternionUpdate(q, acc, gyro, compass, 0.010);
-//        QuaternionToEuler(q, &roll.error, &pitch.error, &yaw.error);
-//        
-//        USART4_write_float(roll.error, 2);
+////        USART4_write_float(heading, 2);
+////        USART4_send(',');
+//        USART4_write_float(compass.x, 2);
 //        USART4_send(',');
-//        USART4_write_float(pitch.error, 2);
+//        USART4_write_float(compass.y, 2);
 //        USART4_send(',');
-//        USART4_write_float(yaw.error, 2);
-//        USART4_send(',');
-//        USART4_write_float(heading, 2);
+//        USART4_write_float(compass.z, 2);
 //        USART4_send('\n');
+//        
 //        delay_ms(10);
 //    }
     
@@ -286,14 +287,15 @@ void main() {
                 //Converting Remote data to a 2-D vector
                 if(loop_mode != MODE_POS_HOLD) {// If not in GPS mode
                     remote_magnitude = sqrt((float)XBee_rx.x1 * (float)XBee_rx.x1 + (float)XBee_rx.y1 * (float)XBee_rx.y1); //Magnitude of Remote's roll and pitch
-                    if(XBee_rx.x1 == 0 && XBee_rx.y1 == 0) 
+                    if(XBee_rx.x1 == 0 && XBee_rx.y1 == 0) {
                         remote_angle = 0;
-                    else 
+                    } else { 
                         remote_angle = TO_DEG(-atan2((float)XBee_rx.x1, (float)XBee_rx.y1));                                //Angle with respect to pilot/starting position
+                    }
                     remote_angle_difference = LimitAngle(yaw.error - remote_angle);                                         //Remote's angle with respect to quad's current direction
-
+//                    remote_angle_difference = LimitAngle(remote_angle); 
                     pitch.offset = max_pitch_roll_tilt * remote_magnitude / REMOTE_MAX * -cos(TO_RAD(remote_angle_difference));
-                    roll.offset  = max_pitch_roll_tilt * remote_magnitude / REMOTE_MAX *  sin(TO_RAD(remote_angle_difference));
+                    roll.offset  = max_pitch_roll_tilt * remote_magnitude / REMOTE_MAX * sin(TO_RAD(remote_angle_difference));
                 }
             }
 
@@ -304,9 +306,9 @@ void main() {
                 XBeePacketFloat(pitch.error, 2); XBeePacketChar(',');
                 XBeePacketFloat(roll.error, 2); XBeePacketChar(',');
                 XBeePacketFloat(yaw.error, 2); XBeePacketChar(',');
-                XBeePacketFloat(q[0], 2); XBeePacketChar(',');
-                XBeePacketFloat(q[1], 2); XBeePacketChar(',');                      
-                XBeePacketFloat(q[2], 2); XBeePacketChar(',');
+                XBeePacketFloat(heading, 2); XBeePacketChar(',');
+                XBeePacketFloat(roll.derivative, 2); XBeePacketChar(',');                      
+                XBeePacketFloat(yaw.derivative, 2); XBeePacketChar(',');
                 XBeePacketInt(loop_mode);
                 XBeePacketSend();
             }
@@ -356,22 +358,27 @@ void main() {
                 }
 
                 //Roll/Pitch/Yaw - PID     
-
-                PIDOutputAngle(&roll);
-                PIDOutputAngle(&pitch);
+                
+                roll.output = roll.kp * LimitAngle(roll.error - roll.offset) + roll.ki * roll.integral + roll.kd * roll.derivative;
+                pitch.output = pitch.kp * LimitAngle(pitch.error - pitch.offset) + pitch.ki * pitch.integral + pitch.kd * pitch.derivative;                
+//                roll.output = roll.kd * (roll.derivative - roll.offset*5.0);
+//                pitch.output = pitch.kd * (pitch.derivative - pitch.offset*5.0);
                     
-                if(XBee_rx.x2 < 3 && XBee_rx.x2 > (-3)) {
-                    PIDOutputAngle(&yaw);
+                if(XBee_rx.x2 == 0) {
+                    yaw.output = yaw.kp * LimitAngle(yaw.error - yaw.offset) + yaw.ki * yaw.integral + yaw.kd * yaw.derivative;   
+//                    yaw.output = yaw.kd * yaw.derivative;
                 } else {
                     yaw.output = (yaw.kd * (yaw.derivative + (float)XBee_rx.x2 / REMOTE_MAX * MAX_YAW_RATE));
                     yaw.integral = 0;
                     yaw.offset = yaw.error;                
                 }
                 
-                if(roll.error < 30 && roll.error > -30)
+                if(roll.error < 30 && roll.error > -30) {
                     altitude.output /= cos(TO_RAD(roll.error));
-                if(pitch.error < 30 && pitch.error > -30)
+                }
+                if(pitch.error < 30 && pitch.error > -30) {
                     altitude.output /= cos(TO_RAD(pitch.error));
+                }
 
                 //Motor Output
                 
@@ -386,10 +393,11 @@ void main() {
 
                 //Output to ESC's
 
-                if(!kill)
+                if(!kill) {
                     WriteMotors(speed);
-                else 
+                } else { 
                     TurnMotorsOff();
+                }
             }
         }
         TurnMotorsOff();
@@ -399,7 +407,6 @@ void main() {
         while(!LoopAltitude(&altitude.error, &temperature, false) && ms_counter() < 100);
         StopDelayCounter();
         
-        LOOP_TIMER_ON = 0;
-        
+        LOOP_TIMER_ON = 0;        
     }
 }

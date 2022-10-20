@@ -53,9 +53,9 @@ void ResetCounters() {
 
 
 void SetPIDGain(PID *roll, PID* pitch, PID *yaw, PID *altitude, PID *GPS) {
-    PIDSet(roll,     1.30, 1.30, 0.50);
-    PIDSet(pitch,    1.30, 1.30, 0.50);
-    PIDSet(yaw,      1.30, 1.30, 0.50);
+    PIDSet(roll,     1.30, 1.30, 0.60);
+    PIDSet(pitch,    1.30, 1.30, 0.60);
+    PIDSet(yaw,      1.30, 1.30, 0.70);
     PIDSet(altitude, 36.0, 5.00, 30.00);
     PIDSet(GPS,      1.50, 0.05, 0.00);
 }
