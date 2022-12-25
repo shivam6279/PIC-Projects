@@ -22,12 +22,12 @@ void MotorsReset(Motors *x) {
 void CalibrateESC() {
     unsigned char i;
     for(i = 0; i < 5; i++) {
-        Write_Onboard_LEDs(0, 0, 255);
+        WriteRGBLed(0, 0, 255);
         delay_ms(1);
     }
     delay_ms(5000); 
     for(i = 0; i < 5; i++) {
-        Write_Onboard_LEDs(0, 255, 255);
+        WriteRGBLed(0, 255, 255);
         delay_ms(1);
     }
 

@@ -56,7 +56,7 @@ void main() {
     Init();    
     
     for(i = 0; i < 40; i++) {
-        Write_Onboard_LEDs(255, 0, 0);  //Red
+        WriteRGBLed(255, 0, 0);  //Red
         delay_ms(5);
     }
     
@@ -65,10 +65,13 @@ void main() {
     bool compass_connected = I2C_CheckAddress(LIS3MDL_ADDR);
     bool ToF_connected = I2C_CheckAddress(VL6180X_ADDRESS);
     
-    if(ToF_connected) 
+    if(ToF_connected) {
         VL6180_init();
+    }
     
     Init_10DOF();
+    
+    delay_ms(500);
     
     //Calibrate ESC
     if(XBee.y2 > 29 && XBee.x2 > 13) {
@@ -83,18 +86,18 @@ void main() {
     PIDSetIntegralParams(&roll,  ANTI_WINDUP_MAX_BOUND, ANTI_WINDUP_MAX_ANGLE);
     PIDSetIntegralParams(&pitch, ANTI_WINDUP_MAX_BOUND, ANTI_WINDUP_MAX_ANGLE);
     delay_ms(1500);
-    
+        
 //    while(1) {
-//        GetAcc(&acc);
-//        GetGyro(&gyro);
-//        GetRawCompass(&compass);
+//        GetRawAcc(&acc);
+//        GetRawGyro(&gyro);
+//        GetCompass(&compass);
 //        
-////        heading = TO_DEG(atan2(compass.y, compass.x));        
+//        heading = TO_DEG(atan2(compass.y, compass.x));        
 ////        MadgwickQuaternionUpdate(q, acc, gyro, compass, 0.010);
 ////        QuaternionToEuler(q, &roll.error, &pitch.error, &yaw.error);
 //        
-////        USART4_write_float(heading, 2);
-////        USART4_send(',');
+//        USART4_write_float(heading, 2);
+//        USART4_send(',');
 //        USART4_write_float(compass.x, 2);
 //        USART4_send(',');
 //        USART4_write_float(compass.y, 2);
@@ -182,8 +185,8 @@ void main() {
                         compass_loop_time = (double)compass_aq_counter / 1000000.0;
                         compass_aq_counter = 0;
                         
-                        GetCompass(&compass);
-                        MadgwickQuaternionUpdate(q, acc, (XYZ){0, 0, 0}, compass, compass_loop_time);
+//                        GetCompass(&compass);
+//                        MadgwickQuaternionUpdate(q, acc, (XYZ){0, 0, 0}, compass, compass_loop_time);
                     }
                 }
                 
@@ -263,15 +266,16 @@ void main() {
                     loop_mode = MODE_POS_HOLD;
 
                 if(p_loop_mode != loop_mode || p_kill != kill) {
-                    if(kill) 
-                        Write_Onboard_LEDs(255, 255, 255);  //White
-                    else if(loop_mode == MODE_STABILIZE) 
-                        Write_Onboard_LEDs(0, 255, 0);        //Green
-                    else if(loop_mode == MODE_ALT_HOLD) 
-                        Write_Onboard_LEDs(0, 255, 255);     //Cyan
-                    else if(loop_mode == MODE_POS_HOLD) 
-                        Write_Onboard_LEDs(255, 0, 255);     //Magenta
-
+                    if(kill) {
+                        WriteRGBLed(255, 255, 255);  //White
+                    } else if(loop_mode == MODE_STABILIZE) {
+                        WriteRGBLed(0, 255, 0);        //Green
+                    } else if(loop_mode == MODE_ALT_HOLD) {
+                        WriteRGBLed(0, 255, 255);     //Cyan
+                    } else if(loop_mode == MODE_POS_HOLD) { 
+                        WriteRGBLed(255, 0, 255);     //Magenta
+                    }
+        
                     if(loop_mode == MODE_ALT_HOLD) {
                         altitude_setpoint = (float)XBee_rx.y2 / THROTTLE_MAX * MAX_SPEED;
                         altitude.integral = 0;
@@ -307,7 +311,7 @@ void main() {
                 XBeePacketFloat(roll.error, 2); XBeePacketChar(',');
                 XBeePacketFloat(yaw.error, 2); XBeePacketChar(',');
                 XBeePacketFloat(heading, 2); XBeePacketChar(',');
-                XBeePacketFloat(roll.derivative, 2); XBeePacketChar(',');                      
+                XBeePacketFloat(TO_DEG(atan2(compass.y, compass.x)), 2); XBeePacketChar(',');                      
                 XBeePacketFloat(yaw.derivative, 2); XBeePacketChar(',');
                 XBeePacketInt(loop_mode);
                 XBeePacketSend();

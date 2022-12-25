@@ -18,6 +18,12 @@
 
 #include "settings.h"
 
+#define HEADER_ID1 0x1A
+#define HEADER_ID2 0x0A
+
+#define FOOTER_ID1 0x2B
+#define FOOTER_ID2 0xF1
+
 void speaker_tone(float);
 void adc_init();
 void get_adc_values();

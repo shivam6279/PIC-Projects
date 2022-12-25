@@ -79,7 +79,7 @@ void Menu(PID *x, PID *y, PID *z, PID *a){
         //-------------------------------------------------------------------LED stuff------------------------------------------------------------------------------
         
         HSVtoRGB(hue, 1.0, 1.0, &r, &g, &b);
-        Write_Onboard_LEDs(r, g, b);
+        WriteRGBLed(r, g, b);
         hue += 1.2;
         if(hue >= 360)
             hue = 0;
@@ -457,7 +457,7 @@ void CalibrationMenu() {
 
 void ArmingSequence(float q[], float *gravity_mag, float *to_roll, float *to_pitch, float *to_heading, float *to_altitude, float *to_latitude, float *to_longitude) {         
     int i;
-    const int ITERATIONS = 700;
+    const int ITERATIONS = 1500;
     XYZ acc = {0.0, 0.0, 0.0}, gyro = {0.0, 0.0, 0.0}, compass = {0.0, 0.0, 0.0};
     XYZ gravity;
     
@@ -466,7 +466,7 @@ void ArmingSequence(float q[], float *gravity_mag, float *to_roll, float *to_pit
     q[2] = 0;
     q[3] = 0;
     
-    Write_Onboard_LEDs(255, 200, 0); //Yellow
+    WriteRGBLed(255, 200, 0); //Yellow
     
     delay_ms(100);
     
@@ -489,7 +489,7 @@ void ArmingSequence(float q[], float *gravity_mag, float *to_roll, float *to_pit
         XBeePacketInt(i);
         XBeePacketSend();
         
-        while(ms_counter() < 5);
+        while(ms_counter() < 2);
     }
     StopDelayCounter();
     

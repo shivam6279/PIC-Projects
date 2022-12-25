@@ -158,8 +158,9 @@ bool I2C_GetAck() {
     SCL_TRIS = 1; 
     I2C_DelayFull();
     
-    if(SDA_PORT)
+    if(SDA_PORT) {
         ack = false;
+    }
     
     I2C_DelayHalf(); 
     SCL_TRIS = 0;

@@ -14,22 +14,22 @@
 #define ACC_Y_GAIN 1.0f
 #define ACC_Z_GAIN 1.0f
 
-#define GYRO_X_OFFSET 120.0f
-#define GYRO_Y_OFFSET -20.0f
-#define GYRO_Z_OFFSET -150.0f
+#define GYRO_X_OFFSET 21.0f
+#define GYRO_Y_OFFSET -29.0f
+#define GYRO_Z_OFFSET 4.0f
 
 #define GYRO_X_GAIN 32.5f
 #define GYRO_Y_GAIN 32.5f
 #define GYRO_Z_GAIN 32.5f
 
-#define COMPASS_X_MIN -800.0f
-#define COMPASS_X_MAX 1200.0f
+#define COMPASS_X_MIN -600.0f
+#define COMPASS_X_MAX 800.0f
 
-#define COMPASS_Y_MIN -200.0f
-#define COMPASS_Y_MAX 2000.0f
+#define COMPASS_Y_MIN -400.0f
+#define COMPASS_Y_MAX 1100.0f
 
-#define COMPASS_Z_MIN -1200.0f
-#define COMPASS_Z_MAX 1000.0f
+#define COMPASS_Z_MIN -1400.0f
+#define COMPASS_Z_MAX 80.0f
 
 #define ACC_LPF 0.5
 #define GYRO_LPF 0.5
