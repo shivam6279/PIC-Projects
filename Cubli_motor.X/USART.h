@@ -12,5 +12,6 @@ extern void USART3_write_float(double a, unsigned char right);
 extern volatile unsigned char rx_buffer[RX_BUFFER_SIZE];
 extern volatile unsigned char rx_rdy;
 extern volatile unsigned char play_tone;
+extern volatile unsigned char auto_stop;
 
 #endif

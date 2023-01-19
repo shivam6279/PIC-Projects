@@ -11,6 +11,7 @@ volatile unsigned char rx_buffer[RX_BUFFER_SIZE];
 static unsigned int rx_buffer_index = 0;
 volatile unsigned char rx_rdy = 0;
 volatile unsigned char play_tone = 0;
+volatile unsigned char auto_stop = 1;
 
 void __ISR_AT_VECTOR(_UART3_RX_VECTOR, IPL7AUTO) UART_DIN(void) {
     static unsigned int r;
@@ -43,6 +44,9 @@ void __ISR_AT_VECTOR(_UART3_RX_VECTOR, IPL7AUTO) UART_DIN(void) {
                 
             } else if(rx_buffer[0] == 'T'){
                 play_tone = 1;
+                
+            } else if(rx_buffer[0] == 'D'){
+                auto_stop ^= 0x01;
                 
             } else {   
                 rx_rdy = 1;

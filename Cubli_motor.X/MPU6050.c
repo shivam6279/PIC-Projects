@@ -3,6 +3,7 @@
 #include "EEPROM.h"
 #include <stdbool.h>
 #include <math.h>
+#include "pic32.h"
 
 XYZ acc_offset, acc_gain;
 XYZ gyro_offset;

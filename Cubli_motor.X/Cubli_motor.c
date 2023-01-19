@@ -34,7 +34,6 @@
 
 #define SETPOINT_CENTER 40.0f
 
-#define AUTO_STOP 1
 #define ESC 1
 
 unsigned char board_id = 0;
@@ -220,11 +219,11 @@ void main() {
             StartDelaymsCounter();
         }
         
-    #if AUTO_STOP == 1
-        if(ms_counter2() > 100) {
-            SetPower(0);
+        if(auto_stop) {
+            if(ms_counter2() > 100) {
+                SetPower(0);
+            }
         }
-    #endif
 
         if(ms_counter() >= 2) {            
             float deltat = (float)ms_counter() / 1000.0;

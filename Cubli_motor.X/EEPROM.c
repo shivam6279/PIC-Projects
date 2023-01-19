@@ -1,6 +1,7 @@
 #include "EEPROM.h"
 #include <xc.h>
 #include "MPU6050.h"
+#include "pic32.h"
 
 #define EEKEY1 0xEDB7
 #define EEKEY2 0x1248

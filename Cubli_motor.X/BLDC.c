@@ -15,9 +15,9 @@ volatile float pre_pos = 0, position = 0.0, rpm = 0.0, rpm_der = 0.0, power = 0.
 volatile float set_rpm = 0, set_pos = 0.0;
 volatile bool vel_hold = false;
 
-float kp = 3.0;
+float kp = 15.0;
 float ki = 1.0;
-float kd = 15.0;
+float kd = 5.0;
 float pre_err = 0.0, err, sum = 0;
 
 volatile float motor_zero_angle = 0.0;
@@ -56,7 +56,10 @@ void __ISR_AT_VECTOR(_TIMER_4_VECTOR, IPL6AUTO) FOC_loop(void){
             sum = 0;
         pre_err = err;
         
-        power = kp*err + ki*sum + kd*-rpm;
+        power = kp*err + ki*sum;
+        if((rpm > 4 || rpm < -4) && (err < 5 || err > -5)) {
+            power -= kd*rpm;
+        }
         power = power >= 800 ? 0.4: power <= -800 ? -0.4: power/2000.0;
     }
     
