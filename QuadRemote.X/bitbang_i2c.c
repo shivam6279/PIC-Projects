@@ -273,17 +273,17 @@ void i2c5_sendnak(){
     i2c_delaysettle();  
 }
 
-inline i2c_delayfull(){
+void i2c_delayfull(){
     Nop();Nop();Nop();Nop();Nop();Nop();
     Nop();Nop();Nop();Nop();Nop();Nop();
     Nop();Nop();Nop();Nop();Nop();Nop();
     Nop();Nop();Nop();Nop();Nop();Nop();
     
 }
-inline i2c_delayhalf(){
+void i2c_delayhalf(){
     Nop();Nop();Nop();Nop();Nop();Nop();
     Nop();Nop();Nop();Nop();Nop();Nop();
 }
-inline i2c_delaysettle(){
+void i2c_delaysettle(){
     Nop();Nop();Nop();Nop();Nop();
 }

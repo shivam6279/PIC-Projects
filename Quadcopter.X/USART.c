@@ -69,9 +69,10 @@ void USART4_write_int(int a) {
     //else USART4_send('+');
 
     for(tens = 1; tens <= a; tens *= 10);
-    tens /= 10;
-    for(; tens > 0; tens /= 10)
+    if(a != 0) tens /= 10;
+    for(; tens > 0; tens /= 10) {
         USART4_send(((a / tens) % 10) + 48);
+    }
 }
 
 void USART4_write_float(double a, unsigned char right) {

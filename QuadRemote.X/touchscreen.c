@@ -2,6 +2,8 @@
 #include "settings.h"
 #include <xc.h>
 
+int ts_x, ts_y;
+
 void GetTouchscreen() {
     int i;
     //Set Y resistors as outputs

@@ -37,8 +37,8 @@ extern void i2c5_stop();
 extern void i2c5_clock();
 extern unsigned char i2c5_readbit();
 
-extern inline i2c_delayhalf();
-extern inline i2c_delayfull();
-extern inline i2c_delaysettle();
+extern void i2c_delayhalf();
+extern void i2c_delayfull();
+extern void i2c_delaysettle();
 
 #endif

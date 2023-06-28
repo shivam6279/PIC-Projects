@@ -2,6 +2,12 @@
 #include "bitbang_i2c.h"
 #include <math.h>
 
+XYZ acc, acc_buffer[MAX_BUFFER_SIZE];
+XYZ gyro, gyro_buffer[MAX_BUFFER_SIZE];
+XYZ compass, compass_buffer[MAX_BUFFER_SIZE];
+
+unsigned char buffer_size;
+
 void MPU6050_write(unsigned char address, unsigned char data){
     i2c5_write_registers(0xD0, (unsigned char[2]){address, data}, 2);
 }

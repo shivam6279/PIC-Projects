@@ -32,10 +32,10 @@ extern float get_acc_x_angle();
 extern float get_acc_y_angle();
 extern float get_compensated_heading(float sinx, float cosx, float siny, float cosy);
 
-XYZ acc, acc_buffer[MAX_BUFFER_SIZE];
-XYZ gyro, gyro_buffer[MAX_BUFFER_SIZE];
-XYZ compass, compass_buffer[MAX_BUFFER_SIZE];
+extern XYZ acc, acc_buffer[MAX_BUFFER_SIZE];
+extern XYZ gyro, gyro_buffer[MAX_BUFFER_SIZE];
+extern XYZ compass, compass_buffer[MAX_BUFFER_SIZE];
 
-unsigned char buffer_size;
+extern unsigned char buffer_size;
 
 #endif

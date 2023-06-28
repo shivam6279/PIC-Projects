@@ -1,5 +1,6 @@
 #include "draw.h"
 #include "ili9341.h"
+#include "SPI.h"
 #include <string.h>
 
 void DrawPixel(unsigned int x, unsigned int y, unsigned int color){

@@ -21,7 +21,7 @@ extern struct led buffer[LED_LENGTH];;
 
 extern void scaleBrightness(struct led*, float);
 extern void writeLEDs(struct led*);
-extern inline void writeLEDs_ISR(struct led*);
+extern void writeLEDs_ISR(struct led*);
 extern void writeLEDs_hue(struct led*, double);
 
 extern void led_test_loop();

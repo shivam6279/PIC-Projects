@@ -21,6 +21,7 @@
 #include "init.h"
 #include "menu.h"
 #include "ToF.h"
+#include "TF_Luna.h"
 #include "EEPROM.h"
 
 #define MODE_KILL 0
@@ -36,13 +37,14 @@ void main() {
     XYZ acc_comp;                                                                   //Tilt-compensated acceleration
     float gravity_mag;
     rx XBee_rx;
-    float q[4] = {1.0,0.0,0.0,0.0};                                                         //Quaternion
+    float q[4] = {1.0,0.0,0.0,0.0};                                                 //Quaternion
     float take_off_altitude, temperature;                                           //Offsets
-    float baro_altitude, heading;                                                   //yaw
+    float heading;                                                                  //yaw
     float take_off_roll, take_off_pitch, take_off_heading;
     float remote_magnitude, remote_angle, remote_angle_difference;                  //RC
     float altitude_setpoint;                                                        //altitude
     int ToF_distance = -1;                                                          //ToF data
+    int TF_dist, TF_flux;                               
     float latitude_offset, longitude_offset, take_off_latitude, take_off_longitude; //GPS
     float GPS_bearing_difference;                                                   //GPS bearing relative to yaw
     double ESC_loop_time, gyro_loop_time, acc_loop_time, compass_loop_time;             
@@ -154,14 +156,14 @@ void main() {
         while(XBee_rx.rs == 0) {
             
             //------------------------------------------------------------IMU data acquisition---------------------------------------------------------------------------
-            if(gyro_aq_counter >= 500) {
+            if(gyro_aq_counter >= 2500) {
                 gyro_loop_time = (double)gyro_aq_counter / 1000000.0;    
                 gyro_aq_counter = 0;
                 
                 GetGyro(&gyro);                
                 MadgwickQuaternionUpdateGyro(q, gyro, gyro_loop_time);
                 
-                if(acc_aq_counter >= 1000) {
+                if(acc_aq_counter >= 2500) {
                     acc_loop_time = (double)acc_aq_counter / 1000000.0;
                     acc_aq_counter = 0;
                     
@@ -170,7 +172,12 @@ void main() {
                     
                     compute_acc_comp = true;
                     
-                    if(ToF_connected) {
+                    if(ToF_counter >= 15) {
+                        ToF_counter = 0;
+                        TF_luna_getData(&TF_dist, &TF_flux);
+                    }
+                    
+                    /*if(ToF_connected) {
                         if(ToF_counter >= 50) {
                             ToF_counter = 0;
                             ToF_distance = ToF_readRange();
@@ -179,7 +186,7 @@ void main() {
                             if(ToF_valueGood() != 0)
                                 ToF_distance = -1;
                         }
-                    }                    
+                    }*/                
                     
                     if(compass_aq_counter >= 5000) {
                         compass_loop_time = (double)compass_aq_counter / 1000000.0;
@@ -306,15 +313,15 @@ void main() {
             //--------------------------------------------------------Send Data to remote-----------------------------------------------------------------------------
             if(TxBufferEmpty() && tx_buffer_timer > 50) {
                 tx_buffer_timer = 0;
-                XBeePacketChar('C');
-                XBeePacketFloat(pitch.error, 2); XBeePacketChar(',');
-                XBeePacketFloat(roll.error, 2); XBeePacketChar(',');
-                XBeePacketFloat(yaw.error, 2); XBeePacketChar(',');
-                XBeePacketFloat(heading, 2); XBeePacketChar(',');
-                XBeePacketFloat(TO_DEG(atan2(compass.y, compass.x)), 2); XBeePacketChar(',');                      
-                XBeePacketFloat(yaw.derivative, 2); XBeePacketChar(',');
-                XBeePacketInt(loop_mode);
-                XBeePacketSend();
+//                XBeePacketChar('C');
+//                XBeePacketFloat(pitch.error, 2); XBeePacketChar(',');
+//                XBeePacketFloat(roll.error, 2); XBeePacketChar(',');
+//                XBeePacketFloat(yaw.error, 2); XBeePacketChar(',');
+//                XBeePacketFloat(heading, 2); XBeePacketChar(',');
+//                XBeePacketFloat(TO_DEG(atan2(compass.y, compass.x)), 2); XBeePacketChar(',');                      
+//                XBeePacketFloat(yaw.derivative, 2); XBeePacketChar(',');
+//                XBeePacketInt(loop_mode);
+//                XBeePacketSend();
             }
             
             //--------------------------------------------------------PID Output to motors----------------------------------------------------------------------------

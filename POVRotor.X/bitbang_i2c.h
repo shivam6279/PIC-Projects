@@ -34,9 +34,9 @@ void i2c5_stop();
 void i2c5_clock();
 unsigned char i2c5_readbit();
 
-inline i2c_delayhalf();
-inline i2c_delayfull();
-inline i2c_delaysettle();
+inline void i2c_delayhalf();
+inline void i2c_delayfull();
+inline void i2c_delaysettle();
 
 void i2c3_write_registers(unsigned char address, unsigned char *data, unsigned int num){
     i2c3_start();
@@ -310,18 +310,18 @@ void i2c5_sendnak(){
     i2c_delaysettle();  
 }
 
-inline i2c_delayfull(){
+inline void i2c_delayfull(){
     Nop();Nop();Nop();Nop();Nop();Nop();
     Nop();Nop();Nop();Nop();Nop();Nop();
     Nop();Nop();Nop();Nop();Nop();Nop();
     Nop();Nop();Nop();Nop();Nop();Nop();
     
 }
-inline i2c_delayhalf(){
+inline void i2c_delayhalf(){
     Nop();Nop();Nop();Nop();Nop();Nop();
     Nop();Nop();Nop();Nop();Nop();Nop();
 }
-inline i2c_delaysettle(){
+inline void i2c_delaysettle(){
     Nop();Nop();Nop();Nop();Nop();
 }
 

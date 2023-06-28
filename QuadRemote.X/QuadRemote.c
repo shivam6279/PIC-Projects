@@ -98,6 +98,7 @@ void main() {
     pre_d2 = dial2;
     
     while(1) {
+        /*
         if(rx_data_rdy && rx_signal) {
             for(i = 0; i < 1024 && rx_buffer_global != '\0'; i++) {
                 rx_buffer[i] = rx_buffer_global[i];
@@ -300,7 +301,7 @@ void main() {
             FillRect(0, 8, 250, 9 * 8, 0xFFFF);
             DrawDisplayBounds();
             rx_signal_flag = 0;
-        }
+        }*/
         
         if(pre_d1 != dial1 || pre_d2 != dial2) {
             write_pwm(1, 255);
@@ -328,7 +329,7 @@ void __ISR_AT_VECTOR(_UART1_RX_VECTOR, IPL6SRS) Xbee(void) {
 //            rx_buffer_global[buffer_counter++] = receive1;
 //        }
 //    }while(U1STAbits.URXDA);
-    static temp_rx_len;
+    static int temp_rx_len;
     do {
         receive1 = U1RXREG & 0xFF;
         if(receive1 == '\f') {
