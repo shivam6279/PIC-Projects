@@ -5,7 +5,7 @@
 #include <sys/attribs.h>
 #include "USART.h"
 
-const float tone_power = 0.015;
+const float tone_power = 0.05;//0.015
 unsigned char tone_phase = 1;
 
 void __ISR_AT_VECTOR(_TIMER_5_VECTOR, IPL3AUTO) tone(void){

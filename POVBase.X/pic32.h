@@ -8,7 +8,7 @@
 
 #define BUTTON PORTGbits.RG6
 
-volatile unsigned char mode;
+extern volatile unsigned char mode;
 
 extern void PICInit();
 extern void ChangeNotificationInit();

@@ -148,7 +148,7 @@ void timer3_init(float frequency){
     T3CONbits.TCKPS = pre & 0b111;
     PR3 = t;
     TMR3 = 0;
-    IPC3bits.T3IP = 4;
+    IPC3bits.T3IP = 7;
     IFS0bits.T3IF = 0;
     IEC0bits.T3IE = 1;
 }

@@ -19,12 +19,12 @@
 extern volatile float motor_zero_angle;
 extern volatile unsigned char motor_mode;
 
-extern inline void MotorPhase(signed char, float);
+extern void MotorPhase(signed char, float);
 extern void MotorOff();
-extern inline unsigned char GetHallPhase();
+extern unsigned char GetHallPhase();
 extern unsigned char TestPhase(int, int);
 
-extern inline void setPhaseVoltage(float, float);
+extern void setPhaseVoltage(float, float);
 extern float normalizeAngle(float);
 
 extern void ResetMotorPID();

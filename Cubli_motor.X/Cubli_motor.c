@@ -287,6 +287,7 @@ void main() {
         #else
             
         #if ESC == 1
+//            USART3_send_str("test\n");
             USART3_write_float(GetRPM(), 2);
 //            USART3_send_str(", ");
 //            USART3_write_float(GetRPM_der(), 2);

@@ -69,6 +69,8 @@ volatile float rpm_err, rpm_out, rpm_sum, p_rpm = 0.0;
 #define RPM_LPF 0.95
 #define RPM_DER_LPF 0.9
 
+#define RPM_PWR_LIMIT 0.1 //0.05
+
 void __ISR_AT_VECTOR(_TIMER_6_VECTOR, IPL4AUTO) RPM(void){
     IFS2bits.T6IF = 0;
     static long int temp = 0, p_temp;
@@ -84,19 +86,21 @@ void __ISR_AT_VECTOR(_TIMER_6_VECTOR, IPL4AUTO) RPM(void){
     rpm_der = (1.0-RPM_DER_LPF)*100.0*(rpm-p_rpm) + RPM_DER_LPF*rpm_der;
     
     if(motor_mode == MODE_RPM) {        
+        
         rpm_err = set_rpm - rpm;
-        if(fabs(rpm_err/set_rpm) < 0.25) {
+        if(fabs(rpm_err/set_rpm) < 0.5) {
             rpm_sum += rpm_err / 500.0;
         } else {
             rpm_sum = 0.0;
         }        
 //        rpm_sum = rpm_sum > 75 ? 75: rpm_sum < -75 ? -75: rpm_sum;
-        rpm_out = 0.0001*rpm_err + 0.001*rpm_sum;
+        rpm_out = 0.4*rpm_err + 1.0*rpm_sum + 0.03*rpm_der;
+        rpm_out /= 1000;
         
         if(set_rpm == 0 && fabs(rpm) < 25) {
             power = 0;
         } else {
-            power = rpm_out > 0.05 ? 0.05: rpm_out < -0.05 ? -0.05: rpm_out;
+            power = rpm_out > RPM_PWR_LIMIT ? RPM_PWR_LIMIT: rpm_out < -RPM_PWR_LIMIT ? -RPM_PWR_LIMIT: rpm_out;
         }
     }
 }

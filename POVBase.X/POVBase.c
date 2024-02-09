@@ -143,17 +143,17 @@ void main() {
     
 //    while(1) {
 //        setPhaseVoltage(0.0125, 0);
-//        delay_ms(1000);
+//        delay_ms(100);
 //        setPhaseVoltage(0.0125, 60);
-//        delay_ms(1000);
+//        delay_ms(100);
 //        setPhaseVoltage(0.0125, 120);
-//        delay_ms(1000);
+//        delay_ms(100);
 //        setPhaseVoltage(0.0125, 180);
-//        delay_ms(1000);
+//        delay_ms(100);
 //        setPhaseVoltage(0.0125, 240);
-//        delay_ms(1000);
+//        delay_ms(100);
 //        setPhaseVoltage(0.0125, 300);
-//        delay_ms(1000);
+//        delay_ms(100);
 //    }
     
 //    setPhaseVoltage(0.0125, 0);
@@ -173,7 +173,7 @@ void main() {
     
     StartDelaymsCounter();
     
-    float target_rpm = 1350, ramp_rpm;//1350
+    float target_rpm = 1500, ramp_rpm;
     
     while(1) {
         if(ms_counter() >= 2) { 
@@ -183,7 +183,7 @@ void main() {
             USART4_send('\n');
         }
         
-        if(motor_on && (target_rpm - GetRPM())/target_rpm > 0.25) {
+        if(motor_on && (target_rpm - GetRPM())/target_rpm > 0.15) {
             COIL_LED = 0;
             MOTOR_LED = 0;
             
@@ -238,6 +238,8 @@ void main() {
             float deltat = (float)ms_counter() / 1000.0;
             reset_ms_counter();
             USART4_write_float(GetRPM(), 2);
+//            USART4_send(',');
+//            USART4_write_float(GetRPM_der(), 2);
             USART4_send('\n');
         }
     }

@@ -3,8 +3,8 @@
 
 #include "LED.h"
 
-#define SCALE_FACTOR 1
-#define size 200
+#define SCALE_FACTOR 1.0
+#define size 275
 
 extern void polar_image(struct led *, struct led[size][size], double);
 

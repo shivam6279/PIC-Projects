@@ -9,8 +9,8 @@ unsigned int PWM_MAX;
 void PwmInit() {
     float freq1 = 24000;
     float freq2 = 145000;    
-    
-    float temp = 120000000.0 / 118000;
+    //118000
+    float temp = 120000000.0 / 50000;
     PWM_MAX = temp;
     
     TRISBbits.TRISB10 = 0;
