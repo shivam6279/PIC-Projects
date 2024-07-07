@@ -96,8 +96,12 @@ unsigned char DecodeString(char str[], float arr[]) {
     static char temp[20];
 
     for(c = 1, index = 0; str[c] != '\0'; c++) {
-        for(temp_c = 0; str[c] != ',' && str[c] != '\0'; c++, temp_c++)
+        for(temp_c = 0; str[c] != ',' && str[c] != '\0'; c++, temp_c++) {
+//            if(!((str[c] >= '0' && str[c] <= '9') ||  str[c] == '.' ||  str[c] == '-' || str[c] == '+')) {
+//                return 0;
+//            }
             temp[temp_c] = str[c];
+        }
         temp[temp_c] = '\0';
         arr[index++] = StrToFloat(temp);
         if(str[c] == '\0')
@@ -135,12 +139,13 @@ float StrToFloat(char str[]) {
     static signed char c, left, right;
     static float ret, tens;
     
-    if(str[0] == '-' || str[0] == '+')
+    if(str[0] == '-' || str[0] == '+') {
         c = 1;
-    else
+    } else {
         c = 0;
+    }
     
-    for(left = 0; str[left] != '.' && str[left ] != '\0'; left++);
+    for(left = 0; str[left] != '.' && str[left] != '\0'; left++);
     
     right = left + 1;
     left--;

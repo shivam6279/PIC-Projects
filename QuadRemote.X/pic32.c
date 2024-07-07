@@ -1,9 +1,10 @@
 #include "pic32.h"
 #include <xc.h>
+#include <sys/attribs.h>
 
-unsigned long int delay_counter = 0;
+volatile unsigned long int delay_counter = 0;
 
-static unsigned int PWM_MAX;
+unsigned int PWM_MAX;
 
 void pwm_init(float freq) {
     float f = 100000000.0 / freq; 
@@ -54,7 +55,7 @@ void write_pwm(int num, unsigned char val) {
         f_val = 0;
     }
     else if (f_val >= PWM_MAX) {
-        f_val = PWM_MAX;
+        f_val = PWM_MAX - 1;
     }
     switch(num) {
         case 1:
