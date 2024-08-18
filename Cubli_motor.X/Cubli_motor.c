@@ -78,7 +78,7 @@ signed int parse_rx() {
     return ret;
 }
 
-void main() {
+int main() {
     int i;
     XYZ acc, pre_gyro, gyro;    
     float roll_offset;
@@ -94,24 +94,27 @@ void main() {
     QEI_init();
     mode = MODE_POWER;
     
-    USART3_init(250000);    
+    USART3_init(115200);    
     timer2_init(1000);      // ms delay
     timer3_init(4500);      // us delay
     timer4_init(10000);     // FOC
     timer5_init(50);        // speaker  
-    timer6_init(500);      // velocity
+    timer6_init(500);       // velocity
     
-    EEPROM_init();
+//    EEPROM_init();
             
     PwmInit(24000);    
-    delay_ms(200);    
-    MPU6050Init();
+    delay_ms(200);
+//    MPU6050Init();
     
-    board_id = EEPROM_read(ID_ADDR);    
-//    LED = 1;
-//    MetroidSaveTheme(board_id);
-//    LED = 0;
- 
+    MotorOff();
+    
+    board_id = 1;//EEPROM_read(ID_ADDR);
+    
+    LED0 = 1;
+    MetroidSaveTheme(board_id);
+    LED0 = 0;
+    
 #if ESC == 0
     LED = 1;
     GetGyroOffsets();
@@ -128,23 +131,15 @@ void main() {
     LED = 0;
 #endif  
     
-//    mode = MODE_OFF;    
+//    mode = MODE_OFF;
 //    while(1) {
-//        MotorPhase(1, 0.075);
-//        delay_ms(500);
-//        MotorPhase(2, 0.075);
-//        delay_ms(500);
-//        MotorPhase(3, 0.075);
-//        delay_ms(500);
-//        MotorPhase(4, 0.075);
-//        delay_ms(500);
-//        MotorPhase(5, 0.075);
-//        delay_ms(500);
-//        MotorPhase(6, 0.075);
-//        delay_ms(500);
+//        for(i = 1; i <= 6; i++) {
+//            MotorPhase(i, 0.02);
+//            delay_ms(100);
+//        }
 //    }
     
-//    setPhaseVoltage(0.075, 0);    
+//    setPhaseVoltage(0.03, 0); 
 //    FOC_TIMER_ON = 1; 
 //    mode = MODE_OFF;
 //    while(1) {
@@ -153,15 +148,21 @@ void main() {
 //        delay_ms(150);
 //    }
     
-//    Write_Motor_Offset(15);
+//    Write_Motor_Offset(0.0);
 //    Write_Roll_Offset(1.2);
 //    Write_Roll_Setpoint(42.2);
 //    CalibrateGyro();
     
     motor_zero_angle = Read_Motor_Offset();
-    setpoint_center = Read_Roll_Setpoint();
-    roll_offset = Read_Roll_Offset();
-    gyro_offset = ReadGyroCalibration();
+    
+    FOC_TIMER_ON = 1;
+    mode = MODE_POWER;
+    SetPower(0.5);
+    while(1);
+    
+//    setpoint_center = Read_Roll_Setpoint();
+//    roll_offset = Read_Roll_Offset();
+//    gyro_offset = ReadGyroCalibration();
     
     ResetMotorPID();
     FOC_TIMER_ON = 1;
@@ -173,9 +174,9 @@ void main() {
     float pre_roll = 0.0, roll = 0.0, roll_acc, sum = 0.0;
     float pre_der = 0.0, der = 0.0, der2 = 0.0, out = 0.0, err = 0.0, ttt; 
     
-    GetAcc(&acc);
-    GetGyro(&gyro);
-    roll = atan2(acc.x, sqrt(pow(acc.y, 2) + pow(acc.z, 2))) * 180.0 / M_PI - roll_offset;    
+//    GetAcc(&acc);
+//    GetGyro(&gyro);
+//    roll = atan2(acc.x, sqrt(pow(acc.y, 2) + pow(acc.z, 2))) * 180.0 / M_PI - roll_offset;    
     
     const float kp = 150.0;
     const float ki = 0.0;
@@ -201,7 +202,7 @@ void main() {
         }
     #endif
         
-        if(play_tone) {
+        /*if(play_tone) {
             if(mode == MODE_POWER) {
                 SetPower(0);
             } else if(mode == MODE_RPM) {
@@ -211,13 +212,13 @@ void main() {
             }
             mode_temp = mode;
             mode = MODE_OFF;
-            LED = 1;
+            LED0 = 1;
             MetroidSaveTheme(board_id);
-            LED = 0;
+            LED0 = 0;
             mode = mode_temp;
             play_tone = 0;
             StartDelaymsCounter();
-        }
+        }*/
         
         if(auto_stop) {
             if(ms_counter2() > 100) {

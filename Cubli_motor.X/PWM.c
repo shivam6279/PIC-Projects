@@ -7,12 +7,12 @@
 unsigned int PWM_MAX;
 
 void PwmInit(float freq) {    
-    TRISBbits.TRISB10 = 0;
-    TRISBbits.TRISB11 = 0;
-    TRISBbits.TRISB12 = 0;
-    TRISBbits.TRISB13 = 0;
-    TRISBbits.TRISB14 = 0;
-    TRISBbits.TRISB15 = 0;
+    TRISBbits.TRISB10 = 1;
+    TRISBbits.TRISB11 = 1;
+    TRISBbits.TRISB12 = 1;
+    TRISBbits.TRISB13 = 1;
+    TRISBbits.TRISB14 = 1;
+    TRISBbits.TRISB15 = 1;
 
     PTCON = 0;
     PTCONbits.PTEN = 0;
@@ -39,7 +39,6 @@ void PwmInit(float freq) {
     PMD4bits.PWM11MD = 1;
     PMD4bits.PWM12MD = 1;
 
-
     PWMCON1 = 0;
     PWMCON2 = 0;
     PWMCON3 = 0;
@@ -50,42 +49,54 @@ void PwmInit(float freq) {
     
     IOCON1 = 0;
     IOCON1bits.PENH = 1;
-    IOCON1bits.SWAP = 1;
+//    IOCON1bits.PENL = 1;
+//    IOCON1bits.SWAP = 1;
+    IOCON1bits.FLTMOD = 0b11;
     PDC1 = 0;
     DTR1 = DEAD_TIME;
     ALTDTR1 = DEAD_TIME;
 
     IOCON2 = 0;
     IOCON2bits.PENH = 1;
-    IOCON2bits.SWAP = 1;
+//    IOCON2bits.PENL = 1;
+//    IOCON2bits.SWAP = 1;
+    IOCON2bits.FLTMOD = 0b11;
     PDC2 = 0;
     DTR2 = DEAD_TIME;
     ALTDTR2 = DEAD_TIME;
 
     IOCON3 = 0;
     IOCON3bits.PENH = 1;
-    IOCON3bits.SWAP = 1;
+//    IOCON3bits.PENL = 1;
+//    IOCON3bits.SWAP = 1;
+    IOCON3bits.FLTMOD = 0b11;
     PDC3 = 0;
     DTR3 = DEAD_TIME;
     ALTDTR3 = DEAD_TIME;
     
     IOCON7 = 0;
     IOCON7bits.PENH = 1;
+    IOCON7bits.POLH = 1;
+    IOCON7bits.FLTMOD = 0b11;
     PDC7 = 0;
     DTR7 = DEAD_TIME;
     ALTDTR7 = DEAD_TIME;
     
     IOCON8 = 0;
     IOCON8bits.PENH = 1;
+    IOCON8bits.POLH = 1;
+    IOCON8bits.FLTMOD = 0b11;
     PDC8 = 0;
     DTR8 = DEAD_TIME;
     ALTDTR8 = DEAD_TIME;
     
     IOCON9 = 0;
     IOCON9bits.PENH = 1;
+    IOCON9bits.POLH = 1;
+    IOCON9bits.FLTMOD = 0b11;
     PDC9 = 0;
     DTR9 = DEAD_TIME;
-    ALTDTR9 = DEAD_TIME;    
+    ALTDTR9 = DEAD_TIME;
 
     float temp = 120000000.0 / (freq * 1.0);
     PWM_MAX = temp;

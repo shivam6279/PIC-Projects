@@ -3,7 +3,8 @@
 
 #include <xc.h>
 
-#define LED LATAbits.LATA10
+#define LED0 LATDbits.LATD6
+#define LED1 LATAbits.LATA8
 
 extern void PICInit();
 extern void ChangeNotificationInit();

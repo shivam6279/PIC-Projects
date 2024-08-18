@@ -17,16 +17,17 @@ void __ISR_AT_VECTOR(_UART3_RX_VECTOR, IPL7AUTO) UART_DIN(void) {
     static unsigned int r;
     do {
         r = U3RXREG & 0xFF;
+//        USART3_send(r);
         if(r == '\r') {
             rx_buffer[rx_buffer_index] = '\0';
             rx_buffer_index = 0;
             
             rx_rdy = 0;
             if(rx_buffer[0] == 'I') {
-                LED = 1;
+                LED0 = 1;
                 
             } else if(rx_buffer[0] == 'O') {
-                LED = 0;
+                LED0 = 0;
                 
             } else if(rx_buffer[0] == 'P') {                
                 SetPower(0);
@@ -56,8 +57,9 @@ void __ISR_AT_VECTOR(_UART3_RX_VECTOR, IPL7AUTO) UART_DIN(void) {
         }        
     }while(U3STAbits.URXDA);    
     
-    if(U3STAbits.OERR)
+    if(U3STAbits.OERR) {
         U3STAbits.OERR = 0;
+    }
     
     IFS1bits.U3RXIF = 0; 
 }

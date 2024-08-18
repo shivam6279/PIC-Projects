@@ -54,7 +54,8 @@ void PICInit(){
     TRISE = 0xFFFFFFFF; 
     TRISF = 0xFFFFFFFF;
     
-    TRISAbits.TRISA10 = 0;
+    TRISAbits.TRISA8 = 0;
+    TRISDbits.TRISD6 = 0;
     
     CM1CON = 0;
     CM2CON = 0;
@@ -112,6 +113,7 @@ void ChangeNotificationInit() {
 }
 
 void QEI_init() {
+    TRISCbits.TRISC6 = 1;
     TRISCbits.TRISC7 = 1;
     TRISCbits.TRISC8 = 1;
     TRISBbits.TRISB6 = 1;

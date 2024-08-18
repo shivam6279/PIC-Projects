@@ -211,7 +211,7 @@ float normalizeAngle(float angle) {
 }
 
 inline void MotorPhase(signed char num, float val) {
-    val = val * PWM_MAX;
+    val = val * (float)PWM_MAX;
     num = (num - 1) % 6;
     num = num < 0 ? num + 7: num + 1;
     switch(num) {
@@ -223,24 +223,24 @@ inline void MotorPhase(signed char num, float val) {
             PDC2 = val;
             PDC8 = val;
             // C - NC
-            PDC3 = PWM_MAX;
-            PDC9 = 0;
+            PDC3 = 0;
+            PDC9 = PWM_MAX;
             break;
         case 2:
             // A - GND
             PDC1 = 0;
             PDC7 = 0;
             // B - NC
-            PDC2 = PWM_MAX;
-            PDC8 = 0;
+            PDC2 = 0;
+            PDC8 = PWM_MAX;
             // C - V+
             PDC3 = val;
             PDC9 = val;
             break;
         case 3:
             // A - NC
-            PDC1 = PWM_MAX;
-            PDC7 = 0;
+            PDC1 = 0;
+            PDC7 = PWM_MAX;
             // B - GND
             PDC2 = 0;
             PDC8 = 0;
@@ -256,24 +256,24 @@ inline void MotorPhase(signed char num, float val) {
             PDC2 = 0;
             PDC8 = 0;
             // C - NC
-            PDC3 = PWM_MAX;
-            PDC9 = 0;
+            PDC3 = 0;
+            PDC9 = PWM_MAX;
             break;
         case 5:
             // A - V+
             PDC1 = val;
             PDC7 = val;
             // B - NC
-            PDC2 = PWM_MAX;
-            PDC8 = 0;
+            PDC2 = 0;
+            PDC8 = PWM_MAX;
             // C - GND
             PDC3 = 0;
             PDC9 = 0;
             break;
         case 6:
             // A - NC
-            PDC1 = PWM_MAX;
-            PDC7 = 0;
+            PDC1 = 0;
+            PDC7 = PWM_MAX;
             // B - V+
             PDC2 = val;
             PDC8 = val;
@@ -287,12 +287,12 @@ inline void MotorPhase(signed char num, float val) {
 void MotorOff() {
     power = 0;
     // A - NC
-    PDC1 = PWM_MAX;
-    PDC7 = 0;
+    PDC1 = 0;
+    PDC7 = PWM_MAX;
     // B - NC
-    PDC2 = PWM_MAX;
-    PDC8 = 0;
+    PDC2 = 0;
+    PDC8 = PWM_MAX;
     // C - NC
-    PDC3 = PWM_MAX;
-    PDC9 = 0;
+    PDC3 = 0;
+    PDC9 = PWM_MAX;
 }
