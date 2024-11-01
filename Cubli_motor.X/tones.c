@@ -8,7 +8,7 @@
 const float tone_power = 0.05;//0.015
 unsigned char tone_phase = 1;
 
-void __ISR_AT_VECTOR(_TIMER_5_VECTOR, IPL3AUTO) tone(void){
+void __ISR_AT_VECTOR(_TIMER_5_VECTOR, IPL2AUTO) tone(void){
     IFS0bits.T5IF = 0;
     MotorPhase(tone_phase++, tone_power);
     if(tone_phase > 2) {

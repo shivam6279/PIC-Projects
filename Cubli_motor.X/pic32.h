@@ -33,4 +33,7 @@ extern void timer5_init(float);
 extern void timer6_init(float);
 extern void timer7_init(float);
 
+extern volatile unsigned long int delay_ms_counter1, delay_ms_counter2, delay_ms_counter3;
+extern volatile unsigned long int delay_us_counter ;
+
 #endif

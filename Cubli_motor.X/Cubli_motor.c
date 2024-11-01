@@ -1,5 +1,6 @@
 #include "pragma.h"
 #include <xc.h>
+#include <sys/kmem.h>
 #include <sys/attribs.h>
 #include <math.h>
 #include <string.h>
@@ -59,11 +60,18 @@ signed int parse_rx() {
     temp_buffer[i] = '\0';
     
     if((temp_buffer[0] > '9' || temp_buffer[0] < '0') && temp_buffer[0] != '-') {
-        return -1;
+        return 0.0;
     }
     
-    if(temp_buffer[0] == '-')
+    if(temp_buffer[0] == '-') {
         flag = 1;
+    }
+    
+    for(i = flag; rx_buffer[i] != '\0'; i++) {
+        if(temp_buffer[i] > '9' || temp_buffer[i] < '0') {
+            return 0.0;
+        }
+    }
     
     for(i = flag, tens = 1; temp_buffer[i] != '\0'; i++, tens *= 10);
     tens /= 10;
@@ -72,22 +80,17 @@ signed int parse_rx() {
         ret += (temp_buffer[i] - '0') * tens;
     }
     
-    if(flag)
+    if(flag) {
         ret = -ret;
+    }
     
     return ret;
 }
 
 int main() {
     int i;
-    XYZ acc, pre_gyro, gyro;    
-    float roll_offset;
-    float setpoint_center;
     signed int a = 0;
-    int out_int = 0;
-    float roll_angle, pitch_angle, heading;
     unsigned char mode_temp;
-    float q[4];
     
     PICInit();
     
@@ -95,17 +98,25 @@ int main() {
     mode = MODE_POWER;
     
     USART3_init(115200);    
-    timer2_init(1000);      // ms delay
-    timer3_init(4500);      // us delay
-    timer4_init(10000);     // FOC
-    timer5_init(50);        // speaker  
-    timer6_init(500);       // velocity
+    timer2_init(1000);      // ms delay - P = 3
+    timer3_init(4500);      // us delay - P = 7
+    timer4_init(10000);     // FOC - P = 6
+    timer5_init(50);        // speaker - P = 2
+    timer6_init(500);       // velocity - P = 4
+//    timer7_init(10000);     // counter
     
-//    EEPROM_init();
+    EEPROM_init();
             
-    PwmInit(24000);    
+    PwmInit(24000);
+    
+    while(1) {
+        LED0 = 1;
+        delay_ms(200);
+        LED0 = 0;
+        delay_ms(200);
+    }
+    
     delay_ms(200);
-//    MPU6050Init();
     
     MotorOff();
     
@@ -114,22 +125,6 @@ int main() {
     LED0 = 1;
     MetroidSaveTheme(board_id);
     LED0 = 0;
-    
-#if ESC == 0
-    LED = 1;
-    GetGyroOffsets();
-    ResetQuaternion(q);
-    for(i = 0; i < 2000; i++) {
-        StartDelaymsCounter();
-        GetAcc(&acc);
-        GetGyro(&gyro);
-        MadgwickQuaternionUpdateAcc(q, acc, 0.05);
-        MadgwickQuaternionUpdateGyro(q, gyro, 0.001);
-        while(ms_counter() < 1);
-    }
-    QuaternionToEuler(q, &roll_angle, &pitch_angle, &heading);
-    LED = 0;
-#endif  
     
 //    mode = MODE_OFF;
 //    while(1) {
@@ -148,47 +143,16 @@ int main() {
 //        delay_ms(150);
 //    }
     
-//    Write_Motor_Offset(0.0);
-//    Write_Roll_Offset(1.2);
-//    Write_Roll_Setpoint(42.2);
-//    CalibrateGyro();
-    
-    motor_zero_angle = Read_Motor_Offset();
-    
-    FOC_TIMER_ON = 1;
-    mode = MODE_POWER;
-    SetPower(0.5);
-    while(1);
-    
-//    setpoint_center = Read_Roll_Setpoint();
-//    roll_offset = Read_Roll_Offset();
-//    gyro_offset = ReadGyroCalibration();
-    
-    ResetMotorPID();
+    motor_zero_angle = 0; //Read_Motor_Offset();
+
     FOC_TIMER_ON = 1;
     MotorOff();
      
     bool flag = false;
-    
-    float setpoint = setpoint_center, pre_set;    
-    float pre_roll = 0.0, roll = 0.0, roll_acc, sum = 0.0;
-    float pre_der = 0.0, der = 0.0, der2 = 0.0, out = 0.0, err = 0.0, ttt; 
-    
-//    GetAcc(&acc);
-//    GetGyro(&gyro);
-//    roll = atan2(acc.x, sqrt(pow(acc.y, 2) + pow(acc.z, 2))) * 180.0 / M_PI - roll_offset;    
-    
-    const float kp = 150.0;
-    const float ki = 0.0;
-    const float kd = 35.0;//35
-    const float ks = 0.83;
-    const float kt = 0.3;
-    
+
     StartDelaymsCounter();
-    while(1) {     
-    #if ESC == 1
-        if(rx_rdy) {            
-            reset_ms_counter2();           
+    while(1) {
+        if(rx_rdy) {         
             a = parse_rx();
             rx_rdy = 0;
 
@@ -199,10 +163,12 @@ int main() {
             } else if(mode == MODE_POS) {
                 SetPosition(a);
             }
+            USART3_send_str("****MESSAGE RECEIVED****\n");
+            USART3_write_float(a, 2);
+            USART3_send_str("\n************************\n");
         }
-    #endif
-        
-        /*if(play_tone) {
+
+        if(play_tone) {
             if(mode == MODE_POWER) {
                 SetPower(0);
             } else if(mode == MODE_RPM) {
@@ -218,83 +184,21 @@ int main() {
             mode = mode_temp;
             play_tone = 0;
             StartDelaymsCounter();
-        }*/
+        }
         
         if(auto_stop) {
             if(ms_counter2() > 100) {
                 SetPower(0);
             }
         }
-
-        if(ms_counter() >= 2) {            
-            float deltat = (float)ms_counter() / 1000.0;
-            reset_ms_counter();
-            
-        #if ESC == 0            
-            pre_gyro = gyro;
-            GetAcc(&acc);
-            GetGyro(&gyro);   
-            
-            pre_roll = roll;
-            pre_der = der;
-            
-            MadgwickQuaternionUpdateGyro(q, gyro, deltat);
-            MadgwickQuaternionUpdateAcc(q, acc, deltat);
-            QuaternionToEuler(q, &roll_angle, &pitch_angle, &heading);
-            
-            roll_acc = atan2(acc.x, sqrt(pow(acc.y, 2) + pow(acc.z, 2))) * 180.0 / M_PI - roll_offset;            
-            roll = 0.01 * roll_acc + 0.99 * (roll - gyro.z * deltat);
-            
-//            roll = pitch_angle;
-            
-            der = 0.5*der + 0.5*-gyro.z;   
-//            der2 = 0.95*der2 + 0.05*(der-pre_der)/(deltat);
-            
-            if(fabs(setpoint - roll) < 1.0) {
-                flag = true;
-                LED = 1;
-            } else if(fabs(45.0 - roll) > 25.0) {
-                if(flag) {
-                    setpoint = setpoint_center;
-                    SetPower(0.0);
-                    SetRPM(0.0);
-                    flag = false;
-                }
-                LED = 0;
-                sum = 0.0;
-                out = 0;
-            }
-            
-            if(flag) {
-                err = roll - setpoint;
-                sum += err * deltat;
-                
-                pre_set = setpoint;
-                setpoint += kt*err*deltat;
-//                setpoint = 0.05*(setpoint + kt*err*deltat) + 0.95*pre_set;
-                setpoint = setpoint > 60 ? 60: setpoint < 30 ? 30: setpoint;
-                
-                out = kp*err + ki*sum + kd*der + ks*GetRPM();
-                out = out >= 1000.0 ? 1000.0: out <= -1000.0 ? -1000.0: out;
-                
-                SetPower((int)out / 2000.0);
-                reset_ms_counter2();
-            }
-            
-            USART3_write_float(roll, 2);
-            USART3_send_str(", ");
-            USART3_write_float(setpoint, 2);
-            USART3_send('\n');
-        #else
-            
-        #if ESC == 1
+        
+//        if(ms_counter2() >= 2) {
+//            reset_ms_counter2();
 //            USART3_send_str("test\n");
-            USART3_write_float(GetRPM(), 2);
+//            USART3_write_float(GetRPM(), 2);
 //            USART3_send_str(", ");
 //            USART3_write_float(GetRPM_der(), 2);
-            USART3_send('\n');
-        #endif
-    #endif
-        }
+//            USART3_send('\n');
+//        }
     }
 }

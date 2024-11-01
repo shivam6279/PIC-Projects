@@ -24,7 +24,7 @@ volatile float motor_zero_angle = 0.0;
 
 #define INTEGRAL_MAX 150
 
-void __ISR_AT_VECTOR(_TIMER_4_VECTOR, IPL6AUTO) FOC_loop(void){
+void __ISR_AT_VECTOR(_TIMER_4_VECTOR, IPL6SOFT) FOC_loop(void){
     IFS0bits.T4IF = 0;
     
     static long int temp, temp2;
@@ -33,10 +33,12 @@ void __ISR_AT_VECTOR(_TIMER_4_VECTOR, IPL6AUTO) FOC_loop(void){
     
     position = temp * 360.0f / ENCODER_RES;
 
-    while(position < 0.0)
+    while(position < 0.0) {
         position += 360.0;
-    while(position > 360.0)
+    }
+    while(position > 360.0) {
         position -= 360.0;
+    }
     
     if(mode == MODE_POS) {
         position += temp2 * 360.0;

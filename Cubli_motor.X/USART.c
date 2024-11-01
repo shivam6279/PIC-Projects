@@ -13,7 +13,7 @@ volatile unsigned char rx_rdy = 0;
 volatile unsigned char play_tone = 0;
 volatile unsigned char auto_stop = 1;
 
-void __ISR_AT_VECTOR(_UART3_RX_VECTOR, IPL7AUTO) UART_DIN(void) {
+void __ISR_AT_VECTOR(_UART3_RX_VECTOR, IPL3SOFT) UART_DIN(void) {
     static unsigned int r;
     do {
         r = U3RXREG & 0xFF;
@@ -57,9 +57,9 @@ void __ISR_AT_VECTOR(_UART3_RX_VECTOR, IPL7AUTO) UART_DIN(void) {
         }        
     }while(U3STAbits.URXDA);    
     
-    if(U3STAbits.OERR) {
-        U3STAbits.OERR = 0;
-    }
+//    if(U3STAbits.OERR) {
+//        U3STAbits.OERR = 0;
+//    }
     
     IFS1bits.U3RXIF = 0; 
 }
@@ -97,7 +97,7 @@ void USART3_init(unsigned long int baud_rate) {
 //    U3MODEbits.RUNOVF = 1;
     
     IFS1bits.U3RXIF = 0;
-    IPC15bits.U3RXIP = 7;
+    IPC15bits.U3RXIP = 3;
     IPC15bits.U3RXIS = 0; 
     IEC1bits.U3RXIE = 1;
     
@@ -139,13 +139,13 @@ void USART3_write_float(double a, unsigned char right) {
     unsigned char i;
     long int tens;
 
-    if(a < 0) {
-        a *= (-1);
+    if(a < 0.0) {
+        a *= (-1.0);
         USART3_send('-');
     } 
     //else USART3_send('+');
     
-    if(a > 1.0) {
+    if(a >= 1.0) {
         for(tens = 1; tens <= a; tens *= 10);
         tens /= 10;
         for(; tens > 0; tens /= 10)

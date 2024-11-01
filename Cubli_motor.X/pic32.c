@@ -1,23 +1,29 @@
 #include "pic32.h"
 #include <sys/attribs.h>
+#include <sys/kmem.h>
 #include <xc.h>
 
-static volatile unsigned long int delay_ms_counter1 = 0, delay_ms_counter2 = 0, delay_ms_counter3 = 0;
-static volatile unsigned long int delay_us_counter = 0;
+volatile unsigned long int delay_ms_counter1 = 0, delay_ms_counter2 = 0, delay_ms_counter3 = 0;
+volatile unsigned long int delay_us_counter = 0;
 
-void __ISR_AT_VECTOR(_TIMER_2_VECTOR, IPL4AUTO) delay_ms_timer(void){
-    IFS0bits.T2IF = 0;
+//void __ISR_AT_VECTOR(_TIMER_2_VECTOR, IPL3SRS) delay_ms_timer(void) {
+void
+__ISR(_TIMER_2_VECTOR, IPL4AUTO)
+timer_isr(void) {
+    IFS0CLR = _IFS0_T2IF_MASK;
     delay_ms_counter1++;
     delay_ms_counter2++;
     delay_ms_counter3++;
 }
 
-void __ISR_AT_VECTOR(_TIMER_3_VECTOR, IPL7AUTO) delay_us_timer(void){
+void __ISR_AT_VECTOR(_TIMER_3_VECTOR, IPL7AUTO) delay_us_timer(void) {
     IFS0bits.T3IF = 0;
     delay_us_counter++;
 }
 
-void PICInit(){
+void PICInit() {
+    register unsigned int val;
+    
     ANSELA = 0;
     ANSELB = 0;
     ANSELC = 0;
@@ -71,33 +77,47 @@ void PICInit(){
     PMCON = 0;
     PMAEN = 0;
     
+    SYSKEY = 0x00000000;
     SYSKEY = 0xAA996655;//Unlocking
     SYSKEY = 0x556699AA;//Sequence
+    
     OSCCONbits.FRCDIV = 0;
     OSCCONbits.COSC = 1;
     OSCCONbits.SOSCEN = 0;
 //    OSCTUNbits.TUN = 0;
-    //SYSKEY = 0x33333333;//Locking sequence
     
-    PRISS = 0x76543210;
-    INTCONbits.MVEC = 1;
-    
-    PB2DIVbits.ON = 1;
     PB2DIVbits.PBDIV = 1;//PBCLK2 at 60mhz
-    
-    PB3DIVbits.ON = 1;
     PB3DIVbits.PBDIV = 1;//PBCLK3 at 60mhz
-    
-    PB4DIVbits.ON = 1;
-    PB4DIVbits.PBDIV = 1;//PBCLK3 at 60mhz
-    
-    PB5DIVbits.ON = 1;
+    PB4DIVbits.PBDIV = 1;//PBCLK4 at 60mhz
     PB5DIVbits.PBDIV = 1;//PBCLK5 at 60mhz
-    
-    PB6DIVbits.ON = 1;
     PB6DIVbits.PBDIV = 1;//PBCLK6 at 60mhz
     
-    __builtin_enable_interrupts();
+    SYSKEY = 0x33333333;//Locking sequence
+    
+    __builtin_mtc0(16, 0,(__builtin_mfc0(16, 0) | 0x3));
+    
+    CHECONbits.PFMWS = 2;
+    CHECONbits.PREFEN = 1;
+    CHECONbits.DCHECOH = 1;
+    CFGCONbits.JTAGEN = 0;
+    
+    PRISS = 0x76543210;
+    
+    asm volatile("mfc0   %0,$13" : "=r"(val));
+    val |= 0x00800000;
+    asm volatile("mtc0   %0,$13" : "+r"(val));
+    
+    INTCONSET = _INTCON_MVEC_MASK;
+    
+    val = 0;
+    asm volatile("ei    %0" : "=r"(val));
+    
+    PB2DIVbits.ON = 1;    
+    PB3DIVbits.ON = 1;    
+    PB4DIVbits.ON = 1;    
+    PB5DIVbits.ON = 1;    
+    PB6DIVbits.ON = 1;    
+//    __builtin_enable_interrupts();
 }
 
 void ChangeNotificationInit() {
@@ -223,6 +243,7 @@ void timer2_init(float frequency) {
     TMR2 = 0;
     
     IPC2bits.T2IP = 4;
+    IPC2bits.T2IS = 0;
     IFS0bits.T2IF = 0;
     IEC0bits.T2IE = 1;
 }
@@ -321,7 +342,7 @@ void timer5_init(float frequency){
     T5CONbits.TCKPS = pre & 0b111;
     PR5 = t;
     TMR5 = 0;
-    IPC6bits.T5IP = 3;
+    IPC6bits.T5IP = 2;
     IFS0bits.T5IF = 0;
     IEC0bits.T5IE = 1;
 }
