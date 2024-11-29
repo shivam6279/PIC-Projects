@@ -1,6 +1,7 @@
 #include "USART.h"
 #include <string.h>
 #include <xc.h>
+#include <math.h>
 #include <sys/attribs.h>
 #include "pic32.h"
 #include "BLDC.h"
@@ -13,7 +14,7 @@ volatile unsigned char rx_rdy = 0;
 volatile unsigned char play_tone = 0;
 volatile unsigned char auto_stop = 1;
 
-void __ISR_AT_VECTOR(_UART3_RX_VECTOR, IPL3SOFT) UART_DIN(void) {
+void __ISR_AT_VECTOR(_UART3_RX_VECTOR, IPL3AUTO) UART_DIN(void) {
     static unsigned int r;
     do {
         r = U3RXREG & 0xFF;
@@ -94,7 +95,7 @@ void USART3_init(unsigned long int baud_rate) {
     U3MODEbits.BRGH = 0;
     U3MODEbits.PDSEL = 0;
     U3MODEbits.STSEL = 0;
-//    U3MODEbits.RUNOVF = 1;
+    U3MODEbits.RUNOVF = 1;
     
     IFS1bits.U3RXIF = 0;
     IPC15bits.U3RXIP = 3;
@@ -138,12 +139,12 @@ void USART3_write_int(long int a) {
 void USART3_write_float(double a, unsigned char right) {
     unsigned char i;
     long int tens;
-
+    
     if(a < 0.0) {
-        a *= (-1.0);
+        a = -a;
         USART3_send('-');
     } 
-    //else USART3_send('+');
+//    else USART3_send('+');
     
     if(a >= 1.0) {
         for(tens = 1; tens <= a; tens *= 10);

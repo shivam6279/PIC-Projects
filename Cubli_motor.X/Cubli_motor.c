@@ -97,7 +97,7 @@ int main() {
     QEI_init();
     mode = MODE_POWER;
     
-    USART3_init(115200);    
+    USART3_init(57600);    
     timer2_init(1000);      // ms delay - P = 3
     timer3_init(4500);      // us delay - P = 7
     timer4_init(10000);     // FOC - P = 6
@@ -108,13 +108,6 @@ int main() {
     EEPROM_init();
             
     PwmInit(24000);
-    
-    while(1) {
-        LED0 = 1;
-        delay_ms(200);
-        LED0 = 0;
-        delay_ms(200);
-    }
     
     delay_ms(200);
     
@@ -137,13 +130,14 @@ int main() {
 //    setPhaseVoltage(0.03, 0); 
 //    FOC_TIMER_ON = 1; 
 //    mode = MODE_OFF;
+//    motor_zero_angle = 0;
 //    while(1) {
 //        USART3_write_float(GetPosition(), 2);
 //        USART3_send('\n');
 //        delay_ms(150);
 //    }
     
-    motor_zero_angle = 0; //Read_Motor_Offset();
+    motor_zero_angle = 33.8; //Read_Motor_Offset();
 
     FOC_TIMER_ON = 1;
     MotorOff();
@@ -163,9 +157,6 @@ int main() {
             } else if(mode == MODE_POS) {
                 SetPosition(a);
             }
-            USART3_send_str("****MESSAGE RECEIVED****\n");
-            USART3_write_float(a, 2);
-            USART3_send_str("\n************************\n");
         }
 
         if(play_tone) {
@@ -192,13 +183,12 @@ int main() {
             }
         }
         
-//        if(ms_counter2() >= 2) {
-//            reset_ms_counter2();
-//            USART3_send_str("test\n");
-//            USART3_write_float(GetRPM(), 2);
+        if(ms_counter2() >= 2) {
+            reset_ms_counter2();
+            USART3_write_float(GetRPM(), 2);
 //            USART3_send_str(", ");
 //            USART3_write_float(GetRPM_der(), 2);
-//            USART3_send('\n');
-//        }
+            USART3_send('\n');
+        }
     }
 }
