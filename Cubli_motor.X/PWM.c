@@ -118,6 +118,8 @@ void PwmInit(float freq) {
     float temp = 120000000.0 / (freq * 1.0);
     PWM_MAX = temp;
     PTPERbits.PTPER = PWM_MAX;
+    
+    SEVTCMP = 20;
 
     PTCONbits.PTEN = 1;
 }

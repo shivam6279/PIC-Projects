@@ -5,7 +5,7 @@
 
 #define FOC_MODE 1
 #define ENCODER_RES 4096.0f
-#define POLE_PAIRS 7.0f
+#define POLE_PAIRS 12.0f //7.0f
 #define DEG_PER_POLE_PAIR  (float)(360.0 / POLE_PAIRS)
 
 #define SVPWM_SIZE		360
@@ -16,8 +16,11 @@
 #define MODE_RPM 2
 #define MODE_POS 3
 
+#define WAVEFORM_FOC 0
+#define WAVEFORM_TRAPEZOID 1
+
 extern volatile float motor_zero_angle;
-extern volatile unsigned char mode;
+extern volatile unsigned char mode, waveform_mode;
 
 extern void MotorPhase(signed char, float);
 extern void MotorOff();

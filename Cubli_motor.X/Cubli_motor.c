@@ -94,20 +94,28 @@ int main() {
     
     PICInit();
     
+    TRISGbits.TRISG6 = 1;   // W
+    TRISGbits.TRISG7 = 1;   // V
+    TRISGbits.TRISG8 = 1;   // U
+    
+    CNPUGbits.CNPUG6 = 1;
+    CNPUGbits.CNPUG7 = 1;
+    CNPUGbits.CNPUG8 = 1;
+    
     QEI_init();
     mode = MODE_POWER;
     
-    USART3_init(57600);    
+    USART3_init(115200);    
     timer2_init(1000);      // ms delay - P = 3
     timer3_init(4500);      // us delay - P = 7
-    timer4_init(10000);     // FOC - P = 6
+    timer4_init(50000);     // FOC - P = 6
     timer5_init(50);        // speaker - P = 2
     timer6_init(500);       // velocity - P = 4
 //    timer7_init(10000);     // counter
     
     EEPROM_init();
             
-    PwmInit(24000);
+    PwmInit(96000);
     
     delay_ms(200);
     
@@ -118,26 +126,31 @@ int main() {
     LED0 = 1;
     MetroidSaveTheme(board_id);
     LED0 = 0;
-    
+
+//    motor_zero_angle = 26;
+//    FOC_TIMER_ON = 1; 
 //    mode = MODE_OFF;
 //    while(1) {
-//        for(i = 1; i <= 6; i++) {
-//            MotorPhase(i, 0.02);
-//            delay_ms(100);
+//        for(i = 0; i < 360; i += 60) {
+//            setPhaseVoltage(0.03, (float)i);
+//            delay_ms(500);
+//            USART3_write_float(GetPosition(), 2);
+//            USART3_send('\n');
+//            delay_ms(250);
 //        }
 //    }
     
-//    setPhaseVoltage(0.03, 0); 
+//    setPhaseVoltage(0.03, 0);
+//    motor_zero_angle = 0;
 //    FOC_TIMER_ON = 1; 
 //    mode = MODE_OFF;
-//    motor_zero_angle = 0;
 //    while(1) {
 //        USART3_write_float(GetPosition(), 2);
 //        USART3_send('\n');
 //        delay_ms(150);
 //    }
     
-    motor_zero_angle = 33.8; //Read_Motor_Offset();
+    motor_zero_angle = 26.36; //Read_Motor_Offset();
 
     FOC_TIMER_ON = 1;
     MotorOff();
@@ -165,6 +178,7 @@ int main() {
             } else if(mode == MODE_RPM) {
                 SetRPM(0);
             } else if(mode == MODE_POS) {
+                INDX1CNT = 0;
                 SetPosition(0);
             }
             mode_temp = mode;
