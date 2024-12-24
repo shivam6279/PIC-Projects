@@ -19,8 +19,14 @@
 #define WAVEFORM_FOC 0
 #define WAVEFORM_TRAPEZOID 1
 
+#define FOC_TIMER_ON T4CONbits.ON
+
 extern volatile float motor_zero_angle;
 extern volatile unsigned char mode, waveform_mode;
+extern float encoder_LUT[];
+
+extern void init_encoder_lut();
+extern void interpolate_encoder_lut(unsigned int, float[])
 
 extern void MotorPhase(signed char, float);
 extern void MotorOff();

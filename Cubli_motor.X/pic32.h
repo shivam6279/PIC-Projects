@@ -7,6 +7,7 @@
 #define LED1 LATAbits.LATA8
 
 extern void PICInit();
+extern void GPIO_init();
 extern void ChangeNotificationInit();
 extern void QEI_init();
 

@@ -1,5 +1,6 @@
 #include "EEPROM.h"
 #include <xc.h>
+#include <stdint.h>
 #include "MPU6050.h"
 #include "pic32.h"
 
@@ -48,7 +49,7 @@ void EEPROM_init() {
     EECONbits.WREN = 0; // Turn off writes.    
 }
 
-unsigned int EEPROM_read(unsigned int ee_addr) {
+unsigned int EEPROM_read(uint32_t ee_addr) {
     unsigned int data;
     
     EEADDR = ee_addr & 0xFFC; // Set address on 32-bit boundary
@@ -66,7 +67,7 @@ unsigned int EEPROM_read(unsigned int ee_addr) {
     return data;
 }
 
-void EEPROM_write(unsigned int ee_addr, unsigned int ee_data)
+void EEPROM_write(uint32_t ee_addr, uint32_t ee_data)
 {
     EECONbits.CMD = 1; // Load CMD<2:0> with write command
     EECONbits.WREN = 1; // Access for write
@@ -96,9 +97,9 @@ void CalibrateGyro() {
     gyro_avg.y /= 1000.0;
     gyro_avg.z /= 1000.0;
     
-    EEPROM_write(GYRO_X_OFFSET_ADDR, *(unsigned int*)(char*)&gyro_avg.x);
-    EEPROM_write(GYRO_Y_OFFSET_ADDR, *(unsigned int*)(char*)&gyro_avg.y);
-    EEPROM_write(GYRO_Z_OFFSET_ADDR, *(unsigned int*)(char*)&gyro_avg.z);
+    EEPROM_write(GYRO_X_OFFSET_ADDR, *(uint32_t*)(char*)&gyro_avg.x);
+    EEPROM_write(GYRO_Y_OFFSET_ADDR, *(uint32_t*)(char*)&gyro_avg.y);
+    EEPROM_write(GYRO_Z_OFFSET_ADDR, *(uint32_t*)(char*)&gyro_avg.z);
 }
 
 XYZ ReadGyroCalibration() {
@@ -117,7 +118,7 @@ XYZ ReadGyroCalibration() {
 }
 
 void Write_Motor_Offset(float off) {
-    EEPROM_write(MOTOR_OFFSET_ADDR, *(unsigned int*)(char*)&off);
+    EEPROM_write(MOTOR_OFFSET_ADDR, *(uint32_t*)(char*)&off);
 }
 
 float Read_Motor_Offset() {
@@ -127,7 +128,7 @@ float Read_Motor_Offset() {
 }
 
 void Write_Roll_Offset(float off) {
-    EEPROM_write(ROLL_OFFSET_ADDR, *(unsigned int*)(char*)&off);
+    EEPROM_write(ROLL_OFFSET_ADDR, *(uint32_t*)(char*)&off);
 }
 
 float Read_Roll_Offset() {
@@ -137,11 +138,19 @@ float Read_Roll_Offset() {
 }
 
 void Write_Roll_Setpoint(float off) {
-    EEPROM_write(ROLL_SETPOINT_ADDR, *(unsigned int*)(char*)&off);
+    EEPROM_write(ROLL_SETPOINT_ADDR, *(uint32_t*)(char*)&off);
 }
 
 float Read_Roll_Setpoint() {
     unsigned int temp;
     temp = EEPROM_read(ROLL_SETPOINT_ADDR);
     return *(float*)(char*)&temp;
+}
+
+void write_encoderCalibration(float arr[], unsigned int len) {
+    unsigned int i;
+    EEPROM_write(ENCODER_CALIB_ADDR, *(uint32_t*)(char*)&len);
+    for(i = 0; i < len; i++) {
+        EEPROM_write(ENCODER_CALIB_ADDR + (i+1), *(uint32_t*)(char*)&arr[i]);
+    }
 }

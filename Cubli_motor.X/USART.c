@@ -3,6 +3,7 @@
 #include <xc.h>
 #include <math.h>
 #include <sys/attribs.h>
+#include <stdbool.h>
 #include "pic32.h"
 #include "BLDC.h"
 
@@ -16,45 +17,25 @@ volatile unsigned char auto_stop = 1;
 
 void __ISR_AT_VECTOR(_UART3_RX_VECTOR, IPL3AUTO) UART_DIN(void) {
     static unsigned int r;
+    static bool overflow = false;
     do {
         r = U3RXREG & 0xFF;
 //        USART3_send(r);
         if(r == '\r') {
             rx_buffer[rx_buffer_index] = '\0';
             rx_buffer_index = 0;
-            
-            rx_rdy = 0;
-            if(rx_buffer[0] == 'I') {
-                LED0 = 1;
-                
-            } else if(rx_buffer[0] == 'O') {
-                LED0 = 0;
-                
-            } else if(rx_buffer[0] == 'P') {                
-                SetPower(0);
-                mode = MODE_POWER;
-                
-            } else if(rx_buffer[0] == 'R') {
-                ResetMotorPID() ;
-                SetRPM(0);
-                mode = MODE_RPM;
-                
-            } else if(rx_buffer[0] == 'A') {                
-                ResetPosition();
-                SetPosition(0);
-                mode = MODE_POS;
-                
-            } else if(rx_buffer[0] == 'T'){
-                play_tone = 1;
-                
-            } else if(rx_buffer[0] == 'D'){
-                auto_stop ^= 0x01;
-                
-            } else {   
+
+            if(!overflow) {
                 rx_rdy = 1;
             }
-        } else {
+
+            overflow = false;
+        } else if(!overflow) {
             rx_buffer[rx_buffer_index++] = r;
+            if(rx_buffer_index >= (RX_BUFFER_SIZE - 1)) {
+                overflow = true;
+                rx_buffer_index = 0;
+            }
         }        
     }while(U3STAbits.URXDA);    
     

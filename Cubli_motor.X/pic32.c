@@ -60,9 +60,6 @@ void PICInit() {
     TRISE = 0xFFFFFFFF; 
     TRISF = 0xFFFFFFFF;
     
-    TRISAbits.TRISA8 = 0;
-    TRISDbits.TRISD6 = 0;
-    
     CM1CON = 0;
     CM2CON = 0;
     CM3CON = 0;
@@ -146,6 +143,19 @@ void QEI_init() {
     QEI1IOC = 0;    
     QEI1CONbits.PIMOD = 0b001;
     QEI1CONbits.QEIEN = 1;
+}
+
+void GPIO_init() {
+    TRISAbits.TRISA8 = 0;
+    TRISDbits.TRISD6 = 0;
+    
+    TRISGbits.TRISG6 = 1;   // W
+    TRISGbits.TRISG7 = 1;   // V
+    TRISGbits.TRISG8 = 1;   // U
+    
+    CNPUGbits.CNPUG6 = 1;
+    CNPUGbits.CNPUG7 = 1;
+    CNPUGbits.CNPUG8 = 1;
 }
 
 void StartDelaymsCounter() {

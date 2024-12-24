@@ -10,6 +10,8 @@
 const float svpwm_max = 1000;
 const unsigned int SVPWM_table[SVPWM_SIZE] = {500, 515, 530, 545, 560, 575, 591, 606, 621, 635, 650, 665, 680, 695, 710, 724, 739, 753, 768, 782, 796, 810, 824, 838, 852, 866, 880, 893, 907, 920, 933, 937, 941, 946, 949, 953, 957, 960, 964, 967, 970, 973, 976, 978, 981, 983, 985, 987, 989, 991, 992, 994, 995, 996, 997, 998, 999, 999, 1000, 1000, 1000, 1000, 1000, 999, 999, 998, 997, 996, 995, 994, 992, 991, 989, 987, 985, 983, 981, 978, 976, 973, 970, 967, 964, 960, 957, 953, 949, 946, 941, 937, 933, 937, 941, 946, 949, 953, 957, 960, 964, 967, 970, 973, 976, 978, 981, 983, 985, 987, 989, 991, 992, 994, 995, 996, 997, 998, 999, 999, 1000, 1000, 1000, 1000, 1000, 999, 999, 998, 997, 996, 995, 994, 992, 991, 989, 987, 985, 983, 981, 978, 976, 973, 970, 967, 964, 960, 957, 953, 949, 946, 941, 937, 933, 920, 907, 893, 880, 866, 852, 838, 824, 810, 796, 782, 768, 753, 739, 724, 710, 695, 680, 665, 650, 635, 621, 606, 591, 575, 560, 545, 530, 515, 500, 485, 470, 455, 440, 425, 409, 394, 379, 365, 350, 335, 320, 305, 290, 276, 261, 247, 232, 218, 204, 190, 176, 162, 148, 134, 120, 107, 93, 80, 67, 63, 59, 54, 51, 47, 43, 40, 36, 33, 30, 27, 24, 22, 19, 17, 15, 13, 11, 9, 8, 6, 5, 4, 3, 2, 1, 1, 0, 0, 0, 0, 0, 1, 1, 2, 3, 4, 5, 6, 8, 9, 11, 13, 15, 17, 19, 22, 24, 27, 30, 33, 36, 40, 43, 47, 51, 54, 59, 63, 67, 63, 59, 54, 51, 47, 43, 40, 36, 33, 30, 27, 24, 22, 19, 17, 15, 13, 11, 9, 8, 6, 5, 4, 3, 2, 1, 1, 0, 0, 0, 0, 0, 1, 1, 2, 3, 4, 5, 6, 8, 9, 11, 13, 15, 17, 19, 22, 24, 27, 30, 33, 36, 40, 43, 47, 51, 54, 59, 63, 67, 80, 93, 107, 120, 134, 148, 162, 176, 190, 204, 218, 232, 247, 261, 276, 290, 305, 320, 335, 350, 365, 379, 394, 409, 425, 440, 455, 470, 485};
 
+float encoder_LUT[(int)ENCODER_RES];
+
 volatile unsigned char mode = MODE_POWER, waveform_mode = WAVEFORM_FOC;
 
 volatile float pre_pos = 0, position = 0.0, rpm = 0.0, rpm_der = 0.0, power = 0.0;
@@ -28,21 +30,14 @@ volatile float motor_zero_angle = 0.0;
 void __ISR_AT_VECTOR(_TIMER_4_VECTOR, IPL6SOFT) FOC_loop(void){
     IFS0bits.T4IF = 0;
     
-    static long int temp, temp2;
-    temp = POS1CNT;
-    temp2 = INDX1CNT;
+    static long int pos_cnt, ind_cnt;
+    pos_cnt = POS1CNT;
+    ind_cnt = INDX1CNT;
     
-    position = temp * 360.0f / ENCODER_RES - motor_zero_angle;
-
-    while(position < 0.0) {
-        position += 360.0;
-    }
-    while(position > 360.0) {
-        position -= 360.0;
-    }
+    position = encoder_LUT[pos_cnt] - motor_zero_angle;
     
     if(mode == MODE_POS) {
-        position += temp2 * 360.0;
+        position += ind_cnt * 360.0;
         
         if((position - pre_pos) > 60) {
             position -= 360.0;
@@ -307,4 +302,23 @@ void MotorOff() {
     // C - NC
     PDC3 = 0;
     PDC9 = PWM_MAX;
+}
+
+void init_encoder_lut() {
+	unsigned int i;
+	for(i = 0; i < ENCODER_RES; i++) {
+		encoder_LUT[i] = (float)i * 360.0/(float)ENCODER_RES;
+	}
+}
+
+
+void interpolate_encoder_lut(unsigned int len, float arr[]) {
+    float i, j, k;
+    float delta_index = (float)ENCODER_RES / (float)len;
+    float delta;
+    for(i = 0; i < ENCODER_RES; i++) {
+        j = (float)i / delta_index;
+        delta =  (j + 1) < len ? arr[(int)j + 1] - arr[(int)j] : 360 - arr[(int)j]; 
+        encoder_LUT[(int)i] = arr[(int)j] + delta * (j - (int)j);
+    }
 }

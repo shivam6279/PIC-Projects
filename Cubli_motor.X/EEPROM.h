@@ -10,6 +10,7 @@
 #define MOTOR_OFFSET_ADDR 0x14
 #define ROLL_OFFSET_ADDR 0x18
 #define ROLL_SETPOINT_ADDR 0x1C
+#define ENCODER_CALIB_ADDR 0x20
 
 extern void EEPROM_init();
 extern unsigned int EEPROM_read();

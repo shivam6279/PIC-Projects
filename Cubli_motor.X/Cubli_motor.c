@@ -10,97 +10,74 @@
 #include "pic32.h"
 #include "PWM.h"
 #include "BLDC.h"
+#include "motor_utils.h"
+#include "string_utils.h"
 #include "USART.h"
-#include "MPU6050.h"
 #include "bitbang_I2C.h"
 #include "tones.h"
 #include "EEPROM.h"
 #include "SPI.h"
-#include "AHRS.h"
 
 /* 
  * UART CODES:
  * 
  * I: LED On
- * O : LED Off
+ * O: LED Off
  * 
  * P: Power mode
  * R: RPM Mode (PID control RPM)
  * A: Angle mode PID control angle)
  * 
  * T: Play tone
+ * D: Test Menu
+ * E: Toggle auto-stop
  */
-
-#define FOC_TIMER_ON T4CONbits.ON
-
-#define SETPOINT_CENTER 40.0f
 
 #define ESC 1
 
 unsigned char board_id = 0;
 
-void ResetQuaternion(float q[]){
-    q[0] = 1;
-    q[1] = 0;
-    q[2] = 0;
-    q[3] = 0;
-}
+void parse_rx_codes() {
+    if(rx_buffer[0] == 'I') {
+        LED0 = 1;
+        
+    } else if(rx_buffer[0] == 'O') {
+        LED0 = 0;
+        
+    } else if(rx_buffer[0] == 'P') {                
+        SetPower(0);
+        mode = MODE_POWER;
+        
+    } else if(rx_buffer[0] == 'R') {
+        ResetMotorPID() ;
+        SetRPM(0);
+        mode = MODE_RPM;
+        
+    } else if(rx_buffer[0] == 'A') {                
+        ResetPosition();
+        SetPosition(0);
+        mode = MODE_POS;
+        
+    } else if(rx_buffer[0] == 'T'){
+        play_tone = 1;
+        
+    } else if(rx_buffer[0] == 'E'){
+        auto_stop ^= 0x01;
 
-signed int parse_rx() {
-    int i;
-    signed int ret;
-    unsigned long int tens;
-    unsigned char flag = 0;
-    
-    unsigned char temp_buffer[RX_BUFFER_SIZE];
-    
-    for(i = 0; rx_buffer[i] != '\0'; i++) {
-        temp_buffer[i] = rx_buffer[i];
+    } else if(rx_buffer[0] == 'D'){
+        test_menu();
     }
-    temp_buffer[i] = '\0';
-    
-    if((temp_buffer[0] > '9' || temp_buffer[0] < '0') && temp_buffer[0] != '-') {
-        return 0.0;
-    }
-    
-    if(temp_buffer[0] == '-') {
-        flag = 1;
-    }
-    
-    for(i = flag; rx_buffer[i] != '\0'; i++) {
-        if(temp_buffer[i] > '9' || temp_buffer[i] < '0') {
-            return 0.0;
-        }
-    }
-    
-    for(i = flag, tens = 1; temp_buffer[i] != '\0'; i++, tens *= 10);
-    tens /= 10;
-    
-    for(i = flag, ret = 0; temp_buffer[i] != '\0'; i++, tens /= 10) {
-        ret += (temp_buffer[i] - '0') * tens;
-    }
-    
-    if(flag) {
-        ret = -ret;
-    }
-    
-    return ret;
 }
 
 int main() {
     int i;
     signed int a = 0;
     unsigned char mode_temp;
+    unsigned char temp_buffer[RX_BUFFER_SIZE];
     
     PICInit();
-    
-    TRISGbits.TRISG6 = 1;   // W
-    TRISGbits.TRISG7 = 1;   // V
-    TRISGbits.TRISG8 = 1;   // U
-    
-    CNPUGbits.CNPUG6 = 1;
-    CNPUGbits.CNPUG7 = 1;
-    CNPUGbits.CNPUG8 = 1;
+    GPIO_init();
+    init_encoder_lut();
     
     QEI_init();
     mode = MODE_POWER;
@@ -114,61 +91,44 @@ int main() {
 //    timer7_init(10000);     // counter
     
     EEPROM_init();
-            
     PwmInit(96000);
-    
-    delay_ms(200);
-    
     MotorOff();
-    
+
+    delay_ms(200);
+
     board_id = 1;//EEPROM_read(ID_ADDR);
-    
     LED0 = 1;
     MetroidSaveTheme(board_id);
     LED0 = 0;
-
-//    motor_zero_angle = 26;
-//    FOC_TIMER_ON = 1; 
-//    mode = MODE_OFF;
-//    while(1) {
-//        for(i = 0; i < 360; i += 60) {
-//            setPhaseVoltage(0.03, (float)i);
-//            delay_ms(500);
-//            USART3_write_float(GetPosition(), 2);
-//            USART3_send('\n');
-//            delay_ms(250);
-//        }
-//    }
-    
-//    setPhaseVoltage(0.03, 0);
-//    motor_zero_angle = 0;
-//    FOC_TIMER_ON = 1; 
-//    mode = MODE_OFF;
-//    while(1) {
-//        USART3_write_float(GetPosition(), 2);
-//        USART3_send('\n');
-//        delay_ms(150);
-//    }
     
     motor_zero_angle = 26.36; //Read_Motor_Offset();
 
     FOC_TIMER_ON = 1;
     MotorOff();
-     
-    bool flag = false;
 
     StartDelaymsCounter();
     while(1) {
-        if(rx_rdy) {         
-            a = parse_rx();
+        if(rx_rdy) {
+            for(i = 0; rx_buffer[i] != '\0'; i++) {
+                temp_buffer[i] = rx_buffer[i];
+            }
+            temp_buffer[i] = '\0';
             rx_rdy = 0;
 
-            if(mode == MODE_POWER) {
-                SetPower((float)a / 2000.0);
-            } else if(mode == MODE_RPM) {
-                SetRPM(a);
-            } else if(mode == MODE_POS) {
-                SetPosition(a);
+            if(char_isAlpha(temp_buffer[0])) {
+                parse_rx_codes();
+            } else {
+                a = str_toInt(temp_buffer);
+
+                if(mode == MODE_POWER) {
+                    SetPower((float)a / 2000.0);
+                } else if(mode == MODE_RPM) {
+                    SetRPM(a);
+                } else if(mode == MODE_POS) {
+                    INDX1CNT = 0;
+                    SetPosition(a);
+                }
+                reset_ms_counter3();
             }
         }
 
@@ -192,7 +152,7 @@ int main() {
         }
         
         if(auto_stop) {
-            if(ms_counter2() > 100) {
+            if(ms_counter3() > 1000) {
                 SetPower(0);
             }
         }
