@@ -8,5 +8,6 @@ extern void test_spinMotor();
 extern void test_setMotorZero();
 extern void test_calibrateEncoder();
 extern void test_printEncoder();
+extern void test_printRawEncoder();
 
 #endif

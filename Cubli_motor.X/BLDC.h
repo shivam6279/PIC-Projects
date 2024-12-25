@@ -4,11 +4,15 @@
 #include <math.h>
 
 #define FOC_MODE 1
+
 #define ENCODER_RES 4096.0f
-#define POLE_PAIRS 12.0f //7.0f
+#define ENCODER_RES_BITS 12
+#define ENCODER_RES_MASK 0xFFF
+
+#define POLE_PAIRS 12.0f //7
 #define DEG_PER_POLE_PAIR  (float)(360.0 / POLE_PAIRS)
 
-#define SVPWM_SIZE		360
+#define SVPWM_SIZE  360
 #define SVPWM_INCREMENT (SVPWM_SIZE / 3)
 
 #define MODE_OFF 0
@@ -23,10 +27,11 @@
 
 extern volatile float motor_zero_angle;
 extern volatile unsigned char mode, waveform_mode;
-extern float encoder_LUT[];
+extern double encoder_LUT[];
+extern double encoder_calib_data[(int)POLE_PAIRS*6];
 
 extern void init_encoder_lut();
-extern void interpolate_encoder_lut(unsigned int, float[])
+extern void interpolate_encoder_lut(unsigned int, double[]);
 
 extern void MotorPhase(signed char, float);
 extern void MotorOff();

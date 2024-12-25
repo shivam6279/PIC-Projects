@@ -66,6 +66,9 @@ void parse_rx_codes() {
 
     } else if(rx_buffer[0] == 'D'){
         test_menu();
+        FOC_TIMER_ON = 1;
+        reset_ms_counter2();
+        StartDelaymsCounter();
     }
 }
 
@@ -93,6 +96,8 @@ int main() {
     EEPROM_init();
     PwmInit(96000);
     MotorOff();
+    
+//    interpolate_encoder_lut(POLE_PAIRS*6, encoder_calib_data);
 
     delay_ms(200);
 
@@ -101,7 +106,7 @@ int main() {
     MetroidSaveTheme(board_id);
     LED0 = 0;
     
-    motor_zero_angle = 26.36; //Read_Motor_Offset();
+    motor_zero_angle = 41.8359; //Read_Motor_Offset();
 
     FOC_TIMER_ON = 1;
     MotorOff();
@@ -151,11 +156,11 @@ int main() {
             StartDelaymsCounter();
         }
         
-        if(auto_stop) {
-            if(ms_counter3() > 1000) {
-                SetPower(0);
-            }
-        }
+//        if(auto_stop) {
+//            if(ms_counter3() > 1000) {
+//                SetPower(0);
+//            }
+//        }
         
         if(ms_counter2() >= 2) {
             reset_ms_counter2();

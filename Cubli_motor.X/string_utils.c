@@ -3,6 +3,7 @@
 #include <ctype.h>
 #include <inttypes.h>
 #include <stdlib.h>
+#include <math.h>
 #include <string.h>
 
 // Declare function to avoid compile warning: comparison between pointer and integer.
@@ -86,7 +87,7 @@ bool str_endsWith(char *str, char *check) {
 
 bool str_isInt(char *str) {
 	unsigned int i = 0;
-	if(str[0] != '+' && str[0] != '-') {
+	if(str[0] == '+' || str[0] == '-') {
 		i++;
 	}
 	for(; str[i] != '\0'; i++) {
@@ -208,10 +209,10 @@ signed int str_toInt(char *str) {
     return ret;
 }
 
-unsigned int str_toIntHex() {
+unsigned int str_toIntHex(char *str) {
 	unsigned int i;
 	signed int ret = 0;
-    unsigned char offset = 0;
+    unsigned char offset = 0, digit;
 
 	if(!str_isHex(str)) {
 		return 0;
