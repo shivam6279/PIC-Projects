@@ -3,7 +3,7 @@
 
 #define UART1_TX_INTERRUPT IEC3bits.U1TXIE
 
-#define RX_BUFFER_SIZE 32
+#define RX_BUFFER_SIZE 128
 
 extern void USART1_init(unsigned long int);
 extern void USART2_init(unsigned long int);

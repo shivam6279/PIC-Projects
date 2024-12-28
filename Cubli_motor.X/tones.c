@@ -5,55 +5,38 @@
 #include <sys/attribs.h>
 #include "USART.h"
 
-const float tone_power = 0.05;//0.015
+const float tone_power = 0.05;  //0.015
 unsigned char tone_phase = 1;
+
+const float song_metroid_theme[5][2] = {{NOTE_D5, 750}, {NOTE_F5, 750}, {NOTE_D5, 750}, {NOTE_C5, 750}, {NOTE_A4, 2000}};
 
 void __ISR_AT_VECTOR(_TIMER_5_VECTOR, IPL2AUTO) tone(void){
     IFS0bits.T5IF = 0;
-    MotorPhase(tone_phase++, tone_power);
-    if(tone_phase > 2) {
-        tone_phase = 1;
-    }
+    MotorPhase(tone_phase, tone_power);
+    tone_phase = (tone_phase % 2) + 1;
 }
 
 void MetroidSaveTheme(unsigned char id) {
+    unsigned int i;
+    unsigned int len = sizeof(song_metroid_theme) / sizeof(song_metroid_theme[0]);
+    float pitch_factor = 1;
+
     if(id == 1) {
-        PlayTone(NOTE_D4);
-        delay_ms(750);
-        PlayTone(NOTE_F4);
-        delay_ms(750);
-        PlayTone(NOTE_D4);
-        delay_ms(750);
-        PlayTone(NOTE_C4);
-        delay_ms(750);
-        PlayTone(NOTE_A3); 
-        delay_ms(2000);
-        StopTone();
+        pitch_factor = 0.5;
+
     } else if(id == 2) {
-        PlayTone(NOTE_D5);
-        delay_ms(750);
-        PlayTone(NOTE_F5);
-        delay_ms(750);
-        PlayTone(NOTE_D5);
-        delay_ms(750);
-        PlayTone(NOTE_C5);
-        delay_ms(750);
-        PlayTone(NOTE_A4); 
-        delay_ms(2000);
-        StopTone();
+        pitch_factor = 1;
+
     } else if(id == 3) {
-        PlayTone(NOTE_D6);
-        delay_ms(750);
-        PlayTone(NOTE_F6);
-        delay_ms(750);
-        PlayTone(NOTE_D6);
-        delay_ms(750);
-        PlayTone(NOTE_C6);
-        delay_ms(750);
-        PlayTone(NOTE_A5); 
-        delay_ms(2000);
-        StopTone();    
+        pitch_factor = 2;
     }
+
+    for(i = 0; i < len; i++) {
+        PlayTone(song_metroid_theme[i][0] * pitch_factor);
+        delay_ms(song_metroid_theme[i][1]);
+    }
+    
+    StopTone();  
     play_tone = 0;
 }
 

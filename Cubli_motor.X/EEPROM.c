@@ -1,7 +1,6 @@
 #include "EEPROM.h"
 #include <xc.h>
 #include <stdint.h>
-#include "MPU6050.h"
 #include "pic32.h"
 
 #define EEKEY1 0xEDB7
@@ -82,41 +81,6 @@ void EEPROM_write(uint32_t ee_addr, uint32_t ee_data)
     while (EECONbits.RW == 1);
 }
 
-void CalibrateGyro() {
-    XYZ gyro_avg = {0, 0, 0}, gyro;
-    unsigned int i;
-    
-    for(i = 0 ; i < 1000; i++) {
-        GetRawGyro(&gyro);
-        gyro_avg.x += gyro.x;
-        gyro_avg.y += gyro.y;
-        gyro_avg.z += gyro.z;
-        delay_ms(2);
-    }
-    gyro_avg.x /= 1000.0;
-    gyro_avg.y /= 1000.0;
-    gyro_avg.z /= 1000.0;
-    
-    EEPROM_write(GYRO_X_OFFSET_ADDR, *(uint32_t*)(char*)&gyro_avg.x);
-    EEPROM_write(GYRO_Y_OFFSET_ADDR, *(uint32_t*)(char*)&gyro_avg.y);
-    EEPROM_write(GYRO_Z_OFFSET_ADDR, *(uint32_t*)(char*)&gyro_avg.z);
-}
-
-XYZ ReadGyroCalibration() {
-    XYZ gyro_offset;
-    unsigned int temp;
-    temp = EEPROM_read(GYRO_X_OFFSET_ADDR);
-    gyro_offset.x = *(float*)(char*)&temp;
-    
-    temp = EEPROM_read(GYRO_Y_OFFSET_ADDR);
-    gyro_offset.y = *(float*)(char*)&temp;
-    
-    temp = EEPROM_read(GYRO_Z_OFFSET_ADDR);
-    gyro_offset.z = *(float*)(char*)&temp;
-    
-    return gyro_offset;
-}
-
 void Write_Motor_Offset(float off) {
     EEPROM_write(MOTOR_OFFSET_ADDR, *(uint32_t*)(char*)&off);
 }
@@ -124,26 +88,6 @@ void Write_Motor_Offset(float off) {
 float Read_Motor_Offset() {
     unsigned int temp;
     temp = EEPROM_read(MOTOR_OFFSET_ADDR);
-    return *(float*)(char*)&temp;
-}
-
-void Write_Roll_Offset(float off) {
-    EEPROM_write(ROLL_OFFSET_ADDR, *(uint32_t*)(char*)&off);
-}
-
-float Read_Roll_Offset() {
-    unsigned int temp;
-    temp = EEPROM_read(ROLL_OFFSET_ADDR);
-    return *(float*)(char*)&temp;
-}
-
-void Write_Roll_Setpoint(float off) {
-    EEPROM_write(ROLL_SETPOINT_ADDR, *(uint32_t*)(char*)&off);
-}
-
-float Read_Roll_Setpoint() {
-    unsigned int temp;
-    temp = EEPROM_read(ROLL_SETPOINT_ADDR);
     return *(float*)(char*)&temp;
 }
 

@@ -1,4 +1,4 @@
-#ifndef _TONES_H    /* Guard against multiple inclusion */
+#ifndef _TONES_H
 #define _TONES_H
 
 #define NOTE_C0     16.35
@@ -119,7 +119,7 @@
 #define NOTE_B8     7902.13
 
 extern void MetroidSaveTheme(unsigned char);
-extern void PlayTone(float freq);
+extern void PlayTone(float);
 extern void StopTone();
 
 #endif

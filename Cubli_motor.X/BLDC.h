@@ -31,7 +31,7 @@ extern double encoder_LUT[];
 extern double encoder_calib_data[(int)POLE_PAIRS*6];
 
 extern void init_encoder_lut();
-extern void interpolate_encoder_lut(unsigned int, double[]);
+extern void interpolate_encoder_lut(double[], unsigned int);
 
 extern void MotorPhase(signed char, float);
 extern void MotorOff();

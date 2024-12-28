@@ -9,14 +9,15 @@
 
 #include "pic32.h"
 #include "PWM.h"
+#include "ADC.h"
 #include "BLDC.h"
-#include "motor_utils.h"
+#include "diags.h"
 #include "string_utils.h"
 #include "USART.h"
 #include "bitbang_I2C.h"
 #include "tones.h"
 #include "EEPROM.h"
-#include "SPI.h"
+#include "TMP1075.h"
 
 /* 
  * UART CODES:
@@ -65,7 +66,8 @@ void parse_rx_codes() {
         auto_stop ^= 0x01;
 
     } else if(rx_buffer[0] == 'D'){
-        test_menu();
+        diagsMenu();
+        mode = MODE_POWER;
         FOC_TIMER_ON = 1;
         reset_ms_counter2();
         StartDelaymsCounter();
@@ -73,48 +75,50 @@ void parse_rx_codes() {
 }
 
 int main() {
-    int i;
-    signed int a = 0;
-    unsigned char mode_temp;
-    unsigned char temp_buffer[RX_BUFFER_SIZE];
-    
-    PICInit();
-    GPIO_init();
-    init_encoder_lut();
-    
-    QEI_init();
-    mode = MODE_POWER;
-    
-    USART3_init(115200);    
-    timer2_init(1000);      // ms delay - P = 3
-    timer3_init(4500);      // us delay - P = 7
-    timer4_init(50000);     // FOC - P = 6
-    timer5_init(50);        // speaker - P = 2
-    timer6_init(500);       // velocity - P = 4
-//    timer7_init(10000);     // counter
-    
-    EEPROM_init();
-    PwmInit(96000);
-    MotorOff();
-    
-//    interpolate_encoder_lut(POLE_PAIRS*6, encoder_calib_data);
+	int i;
+	signed int a = 0;
+	unsigned char mode_temp;
+	unsigned char temp_buffer[RX_BUFFER_SIZE];
 
-    delay_ms(200);
+	PICInit();
+	GPIO_init();
+	ADCInit();
+	init_encoder_lut();
 
-    board_id = 1;//EEPROM_read(ID_ADDR);
-    LED0 = 1;
-    MetroidSaveTheme(board_id);
+	QEI_init();
+	mode = MODE_POWER;
+
+	USART3_init(115200);    
+	timer2_init(1000);      // ms delay - P = 3
+	timer3_init(4500);      // us delay - P = 7
+	timer4_init(50000);     // FOC      - P = 6
+	timer5_init(50);        // Speaker  - P = 2
+	timer6_init(500);       // RPM      - P = 4
+	// timer7_init(10 000);     // counter
+
+	EEPROM_init();
+	PwmInit(96000);
+	MotorOff();
+
+//	interpolate_encoder_lut(encoder_calib_data, sizeof(encoder_calib_data)/sizeof(encoder_calib_data[0]));
+
+	delay_ms(200);
+	TMP1075Init();
+
+	board_id = 1;//EEPROM_read(ID_ADDR);
+	LED0 = 1;
+//    MetroidSaveTheme(board_id);
     LED0 = 0;
-    
-    motor_zero_angle = 41.8359; //Read_Motor_Offset();
 
-    FOC_TIMER_ON = 1;
-    MotorOff();
+	motor_zero_angle = 12.92; //Read_Motor_Offset();
 
-    StartDelaymsCounter();
-    while(1) {
+	FOC_TIMER_ON = 1;
+	MotorOff();
+
+	StartDelaymsCounter();
+	while(1) {
         if(rx_rdy) {
-            for(i = 0; rx_buffer[i] != '\0'; i++) {
+			for(i = 0; rx_buffer[i] != '\0'; i++) {
                 temp_buffer[i] = rx_buffer[i];
             }
             temp_buffer[i] = '\0';
@@ -156,17 +160,17 @@ int main() {
             StartDelaymsCounter();
         }
         
-//        if(auto_stop) {
-//            if(ms_counter3() > 1000) {
-//                SetPower(0);
-//            }
-//        }
+       // if(auto_stop) {
+       //     if(ms_counter3() > 1000) {
+       //         SetPower(0);
+       //     }
+       // }
         
         if(ms_counter2() >= 2) {
             reset_ms_counter2();
             USART3_write_float(GetRPM(), 2);
-//            USART3_send_str(", ");
-//            USART3_write_float(GetRPM_der(), 2);
+           // USART3_send_str(", ");
+           // USART3_write_float(GetRPM_der(), 2);
             USART3_send('\n');
         }
     }

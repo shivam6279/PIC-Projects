@@ -20,7 +20,7 @@ void __ISR_AT_VECTOR(_UART3_RX_VECTOR, IPL3AUTO) UART_DIN(void) {
     static bool overflow = false;
     do {
         r = U3RXREG & 0xFF;
-//        USART3_send(r);
+       // USART3_send(r);
         if(r == '\r') {
             rx_buffer[rx_buffer_index] = '\0';
             rx_buffer_index = 0;
@@ -39,9 +39,9 @@ void __ISR_AT_VECTOR(_UART3_RX_VECTOR, IPL3AUTO) UART_DIN(void) {
         }        
     }while(U3STAbits.URXDA);    
     
-//    if(U3STAbits.OERR) {
-//        U3STAbits.OERR = 0;
-//    }
+   // if(U3STAbits.OERR) {
+   //     U3STAbits.OERR = 0;
+   // }
     
     IFS1bits.U3RXIF = 0; 
 }
@@ -95,10 +95,9 @@ void USART3_send(unsigned char byte) {
     U3TXREG = byte;
 }
 
-void USART3_send_str(char str[]) {
-    int i;
-    for(i = 0; str[i] != '\0'; i++) {
-        USART3_send(str[i]);
+void USART3_send_str(const char *str) {
+    for(; *str != '\0'; str++) {
+        USART3_send(*str);
     }
 }
 
@@ -106,15 +105,14 @@ void USART3_write_int(long int a) {
     long int tens;
 
     if(a < 0) {
-        a *= (-1);
+        a = -a;
         USART3_send('-');
     }
-    //else USART1_send('+');
     
     for(tens = 1; tens <= a; tens *= 10);
     if(tens >= 10) tens /= 10;
     for(; tens > 0; tens /= 10)
-        USART3_send(((a / tens) % 10) + 48);
+        USART3_send(((a / tens) % 10) + '0');
 }
 
 void USART3_write_float(double a, unsigned char right) {
@@ -125,20 +123,18 @@ void USART3_write_float(double a, unsigned char right) {
         a = -a;
         USART3_send('-');
     } 
-//    else USART3_send('+');
     
     if(a >= 1.0) {
         for(tens = 1; tens <= a; tens *= 10);
         tens /= 10;
         for(; tens > 0; tens /= 10)
-            USART3_send(((long int)(a / tens) % 10) + 48);
+            USART3_send(((long int)(a / tens) % 10) + '0');
     } else {
         USART3_send('0');
     }
 
     USART3_send('.');
-    for(i = 0, tens = 10; i < right; i++, tens *= 10)
-        USART3_send(((long int)(a * tens) % 10) + 48);
+    for(i = 0, tens = 10; i < right; i++, tens *= 10) {
+        USART3_send(((long int)(a * tens) % 10) + '0');
+    }
 }
-
-//----------------------------UART2----------------------------

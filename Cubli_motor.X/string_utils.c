@@ -3,8 +3,10 @@
 #include <ctype.h>
 #include <inttypes.h>
 #include <stdlib.h>
-#include <math.h>
 #include <string.h>
+#include <stdbool.h>
+
+#include <math.h>
 
 // Declare function to avoid compile warning: comparison between pointer and integer.
 extern char *strcasestr(const char *, const char *);
@@ -51,19 +53,32 @@ char getHexDigit(unsigned char num) {
 
 // ------------------------------------ String Conditionals ------------------------------------
 
-unsigned int str_len(char *str) {
+unsigned int str_len(const char *str) {
     unsigned int i;
 	for(i = 0; str[i] != '\0'; i++);
 	return i;
 }
 
-bool str_beginsWith(char *str, char *check) {
+bool str_isEqual(const char *str, const char *check) {
+    unsigned int i;
+	for(i = 0; str[i] != '\0'; i++) {
+		if(str[i] != check[i] || check[i] == '\0') {
+			return false;
+		}
+	}
+	if(check[i] != '\0') {
+		return false;
+	}
+	return true;
+}
+
+bool str_beginsWith(const char *str, const char *check) {
 	unsigned int strlen_str = str_len(str);
 	unsigned int strlen_check = str_len(check);
 	if(strlen_str < strlen_check) {
 		return false;
 	}
-	for(unsigned int i = 0; i < strlen_str; i++) {
+	for(unsigned int i = 0; i < strlen_check; i++) {
 		if(str[i] != check[i]) {
 			return false;
 		}
@@ -77,12 +92,32 @@ bool str_endsWith(char *str, char *check) {
 	if(strlen_str < strlen_check) {
 		return false;
 	}
-	for(unsigned int i = strlen_str - strlen_check; i < strlen_str; i++) {
-		if(str[i] != check[i]) {
+	for(unsigned int i = 0; i < strlen_check; i++) {
+		if(str[i + (strlen_str - strlen_check)] != check[i]) {
 			return false;
 		}
 	}
 	return true;
+}
+
+bool str_contains(char *str, char *check) {
+	unsigned int strlen_str = str_len(str);
+	unsigned int strlen_check = str_len(check);
+    unsigned int i, j;
+	if(strlen_str < strlen_check) {
+		return false;
+	}
+	for(i = 0; i <= (strlen_str - strlen_check); i++) {
+		for(j = 0; j < strlen_check; j++) {
+			if(str[i+j] != check[j]) {
+				break;
+			}
+		}
+		if(j == strlen_check) {
+			return true;
+		}
+	}
+	return false;
 }
 
 bool str_isInt(char *str) {
@@ -111,24 +146,46 @@ bool str_isHex(char *str) {
 	return true;
 }
 
-bool str_contains(char *str, char *check) {
+bool str_getArgValue(char *str, char *arg, char *val) {
+	unsigned int i, j;
+	bool flag = false;
 	unsigned int strlen_str = str_len(str);
-	unsigned int strlen_check = str_len(check);
-    unsigned int i, j;
-	if(strlen_str < strlen_check) {
+	unsigned int strlen_arg = str_len(arg);
+
+	if(strlen_str < strlen_arg) {
 		return false;
 	}
-	for(i = 0; i <= strlen_str - strlen_check; i++) {
-		for(j = 0; j < strlen_check; i++) {
-			if(str[i+j] != check[j]) {
+	for(i = 0; i <= (strlen_str - strlen_arg); i++) {
+		for(j = 0; j < strlen_arg; j++) {
+			if(str[i+j] != arg[j]) {
 				break;
 			}
 		}
-		if(j == strlen_check) {
-			return true;
+		if(j == strlen_arg) {
+			flag = true;
+			break;
 		}
 	}
-	return false;
+	if(!flag) {
+		return false;
+	}
+	i += strlen_arg;
+	
+	if(str[i] == '\0') {
+	  val[0] = '\0';
+	  return true;
+	} else if(str[i] != ' ') {
+		return false;
+	}
+	
+	i++;
+	
+	for(j = 0; str[i+j] != ' ' && str[i+j] != '\0'; j++) {
+		val[j] = str[i+j];
+	}
+    val[j] = '\0';
+    
+	return true;
 }
 
 // ------------------------------------ String Manipulation ------------------------------------
@@ -248,14 +305,14 @@ double str_toFloat(char *str) {
 		offset = 1;
 	}
 
-	for(i = offset; str[i] != '\0'; i++) {
-        if (str[i]!='.'){
+	for(i = offset, j = 0; str[i] != '\0'; i++) {
+        if (str[i] != '.'){
             ret = (ret * 10) + (str[i] - '0');
             if (flag == 1) {
                 j++;
             }
         }
-        if (str[i] =='.') {
+        if (str[i] == '.') {
     		if (flag == 1) {
 				return 0;
     		}
