@@ -9,7 +9,7 @@
 #define ENCODER_RES_BITS 12
 #define ENCODER_RES_MASK 0xFFF
 
-#define POLE_PAIRS 12.0f //7
+#define POLE_PAIRS 7.0f
 #define DEG_PER_POLE_PAIR  (float)(360.0 / POLE_PAIRS)
 
 #define SVPWM_SIZE  360
@@ -28,7 +28,9 @@
 extern volatile float motor_zero_angle;
 extern volatile unsigned char mode, waveform_mode;
 extern double encoder_LUT[];
-extern double encoder_calib_data[(int)POLE_PAIRS*6];
+extern double encoder_calib_data[32];
+
+extern unsigned char pole_pairs;
 
 extern void init_encoder_lut();
 extern void interpolate_encoder_lut(double[], unsigned int);

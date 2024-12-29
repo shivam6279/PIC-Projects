@@ -86,32 +86,31 @@ void PICInit() {
     PB5DIVbits.PBDIV = 1;   // PBCLK5 at 60mhz
     PB6DIVbits.PBDIV = 1;   // PBCLK6 at 60mhz
     
-    SYSKEY = 0x33333333;    // Locking sequence
+//    SYSKEY = 0x33333333;    // Locking sequence
     
     __builtin_mtc0(16, 0,(__builtin_mfc0(16, 0) | 0x3));
-    
     CHECONbits.PFMWS = 2;
     CHECONbits.PREFEN = 1;
     CHECONbits.DCHECOH = 1;
     CFGCONbits.JTAGEN = 0;
     
     PRISS = 0x76543210;
+    INTCONbits.MVEC = 1;
     
-    asm volatile("mfc0   %0,$13" : "=r"(val));
-    val |= 0x00800000;
-    asm volatile("mtc0   %0,$13" : "+r"(val));
-    
-    INTCONSET = _INTCON_MVEC_MASK;
-    
-    val = 0;
-    asm volatile("ei    %0" : "=r"(val));
+//    asm volatile("mfc0   %0,$13" : "=r"(val));
+//    val |= 0x00800000;
+//    asm volatile("mtc0   %0,$13" : "+r"(val));
+//    INTCONSET = _INTCON_MVEC_MASK;
+//    val = 0;
+//    asm volatile("ei    %0" : "=r"(val));
     
     PB2DIVbits.ON = 1;    
     PB3DIVbits.ON = 1;    
     PB4DIVbits.ON = 1;    
     PB5DIVbits.ON = 1;    
     PB6DIVbits.ON = 1;    
-   // __builtin_enable_interrupts();
+    
+    __builtin_enable_interrupts();
 }
 
 void ChangeNotificationInit() {

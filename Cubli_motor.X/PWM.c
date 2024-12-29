@@ -1,11 +1,21 @@
 #include "PWM.h"
 #include <xc.h>
 #include <sys/attribs.h>
+#include <stdbool.h>
 
 #define DEAD_TIME 5
 
-unsigned int PWM_MAX;
+volatile unsigned char comparator = 0;
 
+void __ISR(_PWM4_VECTOR, IPL7AUTO) PWM_sync_timer(void) {
+//    PWMCON4bits.TRGIF = 0;
+    PWMCON4bits.PWMHIF = 0;
+    IFS5bits.PWM4IF = 0;
+    comparator = (PORTG >> 6) & 0b111;
+//    LATAINV |= 1 << 8;
+}
+
+unsigned int PWM_MAX;
 void PwmInit(float freq) {
 //    PWMKEY = 0xABCD
 //    PWMKEY = 0x4321
@@ -24,7 +34,7 @@ void PwmInit(float freq) {
     CHOP = 0;
 
     PTCONbits.PCLKDIV = 0;
-
+    
     CFGCONbits.PWMAPIN1 = 1;
     CFGCONbits.PWMAPIN2 = 1;
     CFGCONbits.PWMAPIN3 = 1;
@@ -32,7 +42,7 @@ void PwmInit(float freq) {
     PMD4bits.PWM1MD = 0;
     PMD4bits.PWM2MD = 0;
     PMD4bits.PWM3MD = 0;
-    PMD4bits.PWM4MD = 1;
+    PMD4bits.PWM4MD = 0;
     PMD4bits.PWM5MD = 1;
     PMD4bits.PWM6MD = 1;
     PMD4bits.PWM7MD = 0;
@@ -48,13 +58,10 @@ void PwmInit(float freq) {
     
     PWMCON1bits.ECAM = 0;
     PWMCON2bits.ECAM = 0;
-    PWMCON3bits.ECAM = 0;   
+    PWMCON3bits.ECAM = 0;
     
     IOCON1 = 0;
     IOCON1bits.PENH = 1;
-    IOCON1bits.PENL = 1;
-//    IOCON1bits.PENL = 1;
-//    IOCON1bits.SWAP = 1;
     IOCON1bits.FLTMOD = 0b11;
     PDC1 = 0;
     DTR1 = DEAD_TIME;
@@ -62,9 +69,6 @@ void PwmInit(float freq) {
 
     IOCON2 = 0;
     IOCON2bits.PENH = 1;
-    IOCON2bits.PENL = 1;
-//    IOCON2bits.PENL = 1;
-//    IOCON2bits.SWAP = 1;
     IOCON2bits.FLTMOD = 0b11;
     PDC2 = 0;
     DTR2 = DEAD_TIME;
@@ -72,9 +76,6 @@ void PwmInit(float freq) {
 
     IOCON3 = 0;
     IOCON3bits.PENH = 1;
-    IOCON3bits.PENL = 1;
-//    IOCON3bits.PENL = 1;
-//    IOCON3bits.SWAP = 1;
     IOCON3bits.FLTMOD = 0b11;
     PDC3 = 0;
     DTR3 = DEAD_TIME;
@@ -90,7 +91,6 @@ void PwmInit(float freq) {
     
     IOCON7 = 0;
     IOCON7bits.PENH = 1;
-//    IOCON7bits.PENL = 1;
     IOCON7bits.POLH = 1;
     IOCON7bits.FLTMOD = 0b11;
     PDC7 = 0;
@@ -99,7 +99,6 @@ void PwmInit(float freq) {
     
     IOCON8 = 0;
     IOCON8bits.PENH = 1;
-//    IOCON8bits.PENL = 1;
     IOCON8bits.POLH = 1;
     IOCON8bits.FLTMOD = 0b11;
     PDC8 = 0;
@@ -108,7 +107,6 @@ void PwmInit(float freq) {
     
     IOCON9 = 0;
     IOCON9bits.PENH = 1;
-//    IOCON9bits.PENL = 1;
     IOCON9bits.POLH = 1;
     IOCON9bits.FLTMOD = 0b11;
     PDC9 = 0;
@@ -119,7 +117,22 @@ void PwmInit(float freq) {
     PWM_MAX = temp;
     PTPERbits.PTPER = PWM_MAX;
     
-    SEVTCMP = 20;
+//    SEVTCMP = 20;
+    
+    PWMCON4 = 0;
+    TRIG4 = 0;
+    TRGCON4 = 0;
+    
+//    TRGCON4bits.STRGIS = 1;
+//    PWMCON4bits.TRGIEN = 1;
+//    PWMCON4bits.TRGIF = 0;
+    PDC4 = 1;
+    PWMCON4bits.PWMHIEN = 1;
+    PWMCON4bits.PWMHIF = 0;
+    IPC44bits.PWM4IP = 7;
+    IPC44bits.PWM4IS = 0;
+    IFS5bits.PWM4IF = 0;
+    IEC5bits.PWM4IE = 1;
 
     PTCONbits.PTEN = 1;
 }
@@ -169,4 +182,15 @@ void WritePwm(int num, int val){
             PDC12 = val;
             break;
     }
+}
+
+bool U_bemf() {
+    return (comparator >> 2) & 1;
+}
+bool V_bemf() {
+    return (comparator >> 1) & 1;
+}
+
+bool W_bemf() {
+    return comparator & 1;
 }

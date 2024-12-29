@@ -121,5 +121,6 @@
 extern void MetroidSaveTheme(unsigned char);
 extern void PlayTone(float);
 extern void StopTone();
+extern void PlayNote(const char*);
 
 #endif

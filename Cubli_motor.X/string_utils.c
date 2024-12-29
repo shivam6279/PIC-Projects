@@ -54,13 +54,13 @@ char getHexDigit(unsigned char num) {
 // ------------------------------------ String Conditionals ------------------------------------
 
 unsigned int str_len(const char *str) {
-    unsigned int i;
+	unsigned int i;
 	for(i = 0; str[i] != '\0'; i++);
 	return i;
 }
 
 bool str_isEqual(const char *str, const char *check) {
-    unsigned int i;
+	unsigned int i;
 	for(i = 0; str[i] != '\0'; i++) {
 		if(str[i] != check[i] || check[i] == '\0') {
 			return false;
@@ -103,7 +103,7 @@ bool str_endsWith(char *str, char *check) {
 bool str_contains(char *str, char *check) {
 	unsigned int strlen_str = str_len(str);
 	unsigned int strlen_check = str_len(check);
-    unsigned int i, j;
+	unsigned int i, j;
 	if(strlen_str < strlen_check) {
 		return false;
 	}
@@ -146,6 +146,24 @@ bool str_isHex(char *str) {
 	return true;
 }
 
+bool str_isFloat(char *str) {
+	unsigned int i = 0;
+	unsigned char j = 0;
+	if(str[0] == '+' || str[0] == '-') {
+		i++;
+	}
+	for(; str[i] != '\0'; i++) {
+		if(str[i] == '.') {
+			if(++j > 1) {
+				return false;
+			}
+		} else if(!char_isDigit(str[i])) {
+			return false;
+		}
+	}
+	return true;
+}
+
 bool str_getArgValue(char *str, char *arg, char *val) {
 	unsigned int i, j;
 	bool flag = false;
@@ -172,8 +190,8 @@ bool str_getArgValue(char *str, char *arg, char *val) {
 	i += strlen_arg;
 	
 	if(str[i] == '\0') {
-	  val[0] = '\0';
-	  return true;
+		val[0] = '\0';
+		return true;
 	} else if(str[i] != ' ') {
 		return false;
 	}
@@ -183,18 +201,18 @@ bool str_getArgValue(char *str, char *arg, char *val) {
 	for(j = 0; str[i+j] != ' ' && str[i+j] != '\0'; j++) {
 		val[j] = str[i+j];
 	}
-    val[j] = '\0';
-    
+	val[j] = '\0';
+	
 	return true;
 }
 
 // ------------------------------------ String Manipulation ------------------------------------
 
-void str_cpy(char *src, char *dest) {
+void str_cpy(const char *src, char *dest) {
 	for(; *src != '\0'; src++, dest++) {
-        *dest = *src;
-    }
-    *dest = '\0';
+		*dest = *src;
+	}
+	*dest = '\0';
 }
 
 void str_toUpper(char *str) {
@@ -227,7 +245,7 @@ unsigned int str_removeChar(char *str, char ch) {
 }
 
 void str_concat(char *dest, char *str_a, char*str_b) {
-    unsigned int i;
+	unsigned int i;
 	unsigned int strlen_a = str_len(str_a);
 	unsigned int strlen_b = str_len(str_b);
 	for(i = 0; i < strlen_a; i++) {
@@ -242,34 +260,34 @@ void str_concat(char *dest, char *str_a, char*str_b) {
 signed int str_toInt(char *str) {
 	unsigned int i;
 	signed int ret = 0;
-    unsigned char isNeg = 0, offset = 0;
+	unsigned char isNeg = 0, offset = 0;
 
-    if(!str_isInt(str)) {
-    	return 0;
-    }
+	if(!str_isInt(str)) {
+		return 0;
+	}
 
-    if(str[0] == '-') {
-        isNeg = 1;
-        offset = 1;
-    } else if(str[0] == '+') {
+	if(str[0] == '-') {
+		isNeg = 1;
+		offset = 1;
+	} else if(str[0] == '+') {
 		offset = 1;
 	} 
-    
-    for(i = offset; str[i] != '\0'; i++) {
-    	ret = (ret * 10) + (str[i] - '0');
-    }
-    
-    if(isNeg) {
-        ret = -ret;
-    }
+	
+	for(i = offset; str[i] != '\0'; i++) {
+		ret = (ret * 10) + (str[i] - '0');
+	}
+	
+	if(isNeg) {
+		ret = -ret;
+	}
 
-    return ret;
+	return ret;
 }
 
 unsigned int str_toIntHex(char *str) {
 	unsigned int i;
 	signed int ret = 0;
-    unsigned char offset = 0, digit;
+	unsigned char offset = 0, digit;
 
 	if(!str_isHex(str)) {
 		return 0;
@@ -289,43 +307,47 @@ unsigned int str_toIntHex(char *str) {
 		ret = (ret << 4) | digit;
 	}
 
-    return ret;
+	return ret;
 }
 
 double str_toFloat(char *str) {
 	unsigned int i, j;
 	double ret = 0;
 	unsigned char flag = 0;
-    unsigned char isNeg = 0, offset = 0;
+	unsigned char isNeg = 0, offset = 0;
 
-    if(str[0] == '-') {
-        isNeg = 1;
-        offset = 1;
-    } else if(str[0] == '+') {
+	if(!str_isFloat(str)) {
+		return 0.0;
+	}
+
+	if(str[0] == '-') {
+		isNeg = 1;
+		offset = 1;
+	} else if(str[0] == '+') {
 		offset = 1;
 	}
 
 	for(i = offset, j = 0; str[i] != '\0'; i++) {
-        if (str[i] != '.'){
-            ret = (ret * 10) + (str[i] - '0');
-            if (flag == 1) {
-                j++;
-            }
-        }
-        if (str[i] == '.') {
-    		if (flag == 1) {
+		if (str[i] != '.'){
+			ret = (ret * 10) + (str[i] - '0');
+			if (flag == 1) {
+				j++;
+			}
+		}
+		if (str[i] == '.') {
+			if (flag == 1) {
 				return 0;
-    		}
+			}
 			flag = 1;
 		}
-    }
-    ret = ret / pow(10, j);
-    
-    if(isNeg) {
-        ret = -ret;
-    }
+	}
+	ret = ret / pow(10, j);
+	
+	if(isNeg) {
+		ret = -ret;
+	}
 
-    return ret;
+	return ret;
 }
 
 // ---------------------------------------- To String ----------------------------------------
@@ -333,10 +355,10 @@ double str_toFloat(char *str) {
 void intToStr(char *str, signed int num) {
 	signed int i;
 
-    if(num < 0) {
-        *str++ = '-';
-        num = -num;
-    }
+	if(num < 0) {
+		*str++ = '-';
+		num = -num;
+	}
 
 	for(i = 0; pow(10, i) <= num; i++);
 	i--;
@@ -365,10 +387,10 @@ void hexToStr(char *str, signed int num) {
 void floatToStr(char *str, double num, unsigned char precision) {
 	signed int i;
 
-    if(num < 0) {
-        *str++ = '-';
-        num = -num;
-    }
+	if(num < 0) {
+		*str++ = '-';
+		num = -num;
+	}
 
 	for(i = 0; pow(10, i) <= num; i++);
 	i--;

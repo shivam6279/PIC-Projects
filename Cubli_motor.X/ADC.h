@@ -8,7 +8,7 @@
 #define VSNS_VBAT_DIVIDER (4.7f/(4.7f + 33.0f))
 #define VSNS_12V_DIVIDER (4.7f/(4.7f + 33.0f))
 
-#define ISNS_UVW_R 0.008f
+#define ISNS_UVW_R 0.01f
 #define ISNS_VBAT_R 0.01f
 
 extern unsigned int adc_data[5];

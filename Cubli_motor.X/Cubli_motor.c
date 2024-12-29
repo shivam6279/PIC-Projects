@@ -5,6 +5,7 @@
 #include <math.h>
 #include <string.h>
 #include <stdbool.h>
+#include <inttypes.h>
 #include <stdio.h>
 
 #include "pic32.h"
@@ -28,6 +29,7 @@
  * P: Power mode
  * R: RPM Mode (PID control RPM)
  * A: Angle mode PID control angle)
+ * X: Off mode
  * 
  * T: Play tone
  * D: Test Menu
@@ -35,6 +37,7 @@
  */
 
 #define ESC 1
+#define LPF_PHASE 0.8f
 
 unsigned char board_id = 0;
 
@@ -59,6 +62,11 @@ void parse_rx_codes() {
         SetPosition(0);
         mode = MODE_POS;
         
+    } else if(rx_buffer[0] == 'X') {
+        SetPower(0);
+        mode = MODE_OFF;
+        MotorOff();
+        
     } else if(rx_buffer[0] == 'T'){
         play_tone = 1;
         
@@ -75,7 +83,7 @@ void parse_rx_codes() {
 }
 
 int main() {
-	int i;
+	int i, j;
 	signed int a = 0;
 	unsigned char mode_temp;
 	unsigned char temp_buffer[RX_BUFFER_SIZE];
@@ -90,30 +98,92 @@ int main() {
 
 	USART3_init(115200);    
 	timer2_init(1000);      // ms delay - P = 3
-	timer3_init(4500);      // us delay - P = 7
+	timer3_init(100000);    // us delay - P = 7
 	timer4_init(50000);     // FOC      - P = 6
 	timer5_init(50);        // Speaker  - P = 2
 	timer6_init(500);       // RPM      - P = 4
-	// timer7_init(10 000);     // counter
 
 	EEPROM_init();
 	PwmInit(96000);
 	MotorOff();
 
-//	interpolate_encoder_lut(encoder_calib_data, sizeof(encoder_calib_data)/sizeof(encoder_calib_data[0]));
+//	interpolate_encoder_lut(encoder_calib_data, 32);
 
 	delay_ms(200);
 	TMP1075Init();
-
+    
 	board_id = 1;//EEPROM_read(ID_ADDR);
 	LED0 = 1;
-//    MetroidSaveTheme(board_id);
+    MetroidSaveTheme(board_id);
     LED0 = 0;
+    
+    float pp = 0.07, phase_delay;
+    while(1) {
+        for(j = 0; j < 50; j++) {
+            for(i = 0; i < 6; i++) {
+                MotorPhase(i, 0.07);
+                delay_ms(4);
+            }
+        }
+        phase_delay = 400;
+        while(1) {
+            MotorPhase(0, pp);
+            StartDelayusCounter();
+            while(us_counter() < 6);
+            while(!W_bemf()); // W rising
+            phase_delay = (1.0f - LPF_PHASE) * phase_delay + LPF_PHASE * (float)us_counter();
+            while(us_counter() < 2*phase_delay);
+            
+            MotorPhase(1, pp);
+            StartDelayusCounter();
+            while(us_counter() < 6);
+            while(V_bemf()); // V falling
+            phase_delay = (1.0f - LPF_PHASE) * phase_delay + LPF_PHASE * (float)us_counter();
+            while(us_counter() < 2*phase_delay);
+            
+            MotorPhase(2, pp);
+            StartDelayusCounter();
+            while(us_counter() < 6);
+            while(!U_bemf()); // U rising
+            phase_delay = (1.0f - LPF_PHASE) * phase_delay + LPF_PHASE * (float)us_counter();
+            while(us_counter() < 2*phase_delay);
+            
+            MotorPhase(3, pp);
+            StartDelayusCounter();
+            while(us_counter() < 6);
+            while(W_bemf()); // W falling
+            phase_delay = (1.0f - LPF_PHASE) * phase_delay + LPF_PHASE * (float)us_counter();
+            while(us_counter() < 2*phase_delay);
+            
+            MotorPhase(4, pp);
+            StartDelayusCounter();
+            while(us_counter() < 6);
+            while(!V_bemf()); // V rising
+            phase_delay = (1.0f - LPF_PHASE) * phase_delay + LPF_PHASE * (float)us_counter();
+            while(us_counter() < 2*phase_delay);
+            
+            MotorPhase(5, pp);
+            StartDelayusCounter();
+            while(us_counter() < 6);
+            while(U_bemf()); // U falling
+            phase_delay = (1.0f - LPF_PHASE) * phase_delay + LPF_PHASE * (float)us_counter();
+            while(us_counter() < 2*phase_delay);
+            
+            if(i++ > 42) {
+                i = 0;
+                if(pp < 0.7) {
+                    pp += 0.001;
+                }
+            }
+        }
+    }
 
-	motor_zero_angle = 12.92; //Read_Motor_Offset();
+	motor_zero_angle = 19.6875; //Read_Motor_Offset();
 
 	FOC_TIMER_ON = 1;
 	MotorOff();
+    
+    delay_ms(200);
 
 	StartDelaymsCounter();
 	while(1) {
@@ -134,7 +204,6 @@ int main() {
                 } else if(mode == MODE_RPM) {
                     SetRPM(a);
                 } else if(mode == MODE_POS) {
-                    INDX1CNT = 0;
                     SetPosition(a);
                 }
                 reset_ms_counter3();

@@ -16,10 +16,11 @@ extern bool str_beginsWith(const char*, const char*);
 extern bool str_endsWith(char*, char*);
 extern bool str_isInt(char*);
 extern bool str_isHex(char *str);
+extern bool str_isFloat(char *str);
 extern bool str_getArgValue(char*, char*, char*);
 extern bool str_contains(char*, char*);
 
-extern void str_cpy(char*, char*);
+extern void str_cpy(const char*, char*);
 extern void str_toUpper(char*);
 extern void str_toLower(char*);
 extern unsigned int str_removeChar(char*, char);

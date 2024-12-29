@@ -105,7 +105,7 @@ void USART3_write_int(long int a) {
     long int tens;
 
     if(a < 0) {
-        a = -a;
+        a = fabs(a);
         USART3_send('-');
     }
     
@@ -121,7 +121,9 @@ void USART3_write_float(double a, unsigned char right) {
     
     if(a < 0.0) {
         a = -a;
-        USART3_send('-');
+        if(a > 1/pow(10, right)) {
+            USART3_send('-');
+        }
     } 
     
     if(a >= 1.0) {
