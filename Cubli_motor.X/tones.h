@@ -1,6 +1,8 @@
 #ifndef _TONES_H
 #define _TONES_H
 
+#include <stdbool.h>
+
 #define NOTE_C0     16.351597831287414667365624595207
 #define NOTE_CS0    17.323914436054506015549145850076
 #define NOTE_D0     18.354047994837972516423938366286
@@ -135,5 +137,6 @@ extern void MetroidSaveTheme(unsigned char);
 extern void PlayTone(float);
 extern void StopTone();
 extern void PlayNote(const char*);
+extern bool PlayRTTLL(const char*);
 
 #endif

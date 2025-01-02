@@ -185,8 +185,6 @@ bool PlayRTTLL(const char *in_str) {
 	}
 	name_str[i] = '\0';
 	i++;
-	
-	printf("%s\n", name_str);
 
 	for(j = 0; in_str[i] != ':'; i++, j++) {
 		settings_str[j] = in_str[i];
@@ -232,7 +230,6 @@ bool PlayRTTLL(const char *in_str) {
 	for(j = 0; ; i++) {
 		if(in_str[i] == ',' || in_str[i] == '\0') {
 			note[j] = '\0';
-			printf("%s\n", note);
 			k = 0;
 			if(char_isDigit(note[k])) {
 				delay = note[k++] - '0';

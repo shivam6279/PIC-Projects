@@ -551,9 +551,6 @@ scan : Scan bus and report addresses found\n";
 }
 
 void diags_tone(char *cmd) {
-	unsigned char ch;
-	long int pos_cnt, ind_cnt;
-	float pos;
 	char arg_val[50];
 	
 	const char help_str[] = "\
@@ -561,7 +558,7 @@ Plays audio through the motor:\n\
 note [note] : Note to be played. eg a4, cs5 (sharp), bf2 (flat) etc.\n\
 freq [freq] : Frequency to be played in Hz.\n\
 song : Play stored song.\n\
-rttll [str] : Play rttll formatted string
+rttll [str] : Play rttll formatted string\n\
 off : Stop playing tones\n\
 wave [wave] : Set waveform type to [square] or [sin]\n";
 	
@@ -592,7 +589,7 @@ wave [wave] : Set waveform type to [square] or [sin]\n";
 
 	} else if(str_getArgValue(cmd, "rttll", arg_val)) {
 		USART3_send_str("Playing rttll string\n");
-		if(!PlayRTTLL()) {
+		if(!PlayRTTLL(arg_val)) {
 			USART3_send_str("Incorrect rttll string\n");
 		}
 		StopTone();
@@ -675,7 +672,7 @@ void diags_comp(char *cmd) {
 	
 	const char help_str[] = "\
 Comparator output\n\
--s : Stream data until 'x' is entered
+-s : Stream data until 'x' is entered\n\
 -f [x]: Set streaming frequency to f [1, 10000] (Hz).\n";
 	
 	if(str_getArgValue(cmd, "-h", arg_val) || str_getArgValue(cmd, "--help", arg_val)) {
