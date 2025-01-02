@@ -9,6 +9,7 @@ extern void WritePwm(int num, int val);
 extern bool U_bemf();
 extern bool V_bemf();
 extern bool W_bemf();
+extern bool bemf_phase(unsigned char);
 
 extern volatile unsigned char comparator;
 extern unsigned int PWM_MAX;

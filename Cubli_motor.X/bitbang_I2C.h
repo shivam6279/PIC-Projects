@@ -4,13 +4,13 @@
 #include <stdbool.h>
 #include <xc.h>
 
-#define SDA_LAT     LATEbits.LATE13
-#define SDA_TRIS    TRISEbits.TRISE13
-#define SDA_PORT    PORTEbits.RE13
+#define SDA_LAT		LATEbits.LATE13
+#define SDA_TRIS	TRISEbits.TRISE13
+#define SDA_PORT	PORTEbits.RE13
 
-#define SCL_LAT     LATEbits.LATE14
-#define SCL_TRIS    TRISEbits.TRISE14
-#define SCL_PORT    PORTEbits.RE14
+#define SCL_LAT		LATEbits.LATE14
+#define SCL_TRIS	TRISEbits.TRISE14
+#define SCL_PORT	PORTEbits.RE14
 
 extern bool I2C_WriteRegisters(unsigned char address, unsigned char *data, unsigned int num);
 extern bool I2C_ReadRegisters(unsigned char address, unsigned char start_adr, unsigned char *data, unsigned int num);

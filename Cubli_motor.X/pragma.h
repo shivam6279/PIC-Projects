@@ -1,6 +1,6 @@
 #ifndef _pragma_H_
 #define _pragma_H_
-   
+
 #pragma config FUSBIDIO2 = OFF
 #pragma config FVBUSIO2 = OFF
 #pragma config PGL1WAY = OFF

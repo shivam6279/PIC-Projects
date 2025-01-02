@@ -47,7 +47,7 @@ void __ISR_AT_VECTOR(_TIMER_4_VECTOR, IPL6AUTO) FOC_loop(void){
 	pos_cnt &= ENCODER_RES_MASK;
 	
 //	position = encoder_LUT[pos_cnt] - motor_zero_angle;
-    position = ((float)pos_cnt * 360.0 / ENCODER_RES) - motor_zero_angle;
+		position = ((float)pos_cnt * 360.0 / ENCODER_RES) - motor_zero_angle;
 	
 	while(position < 0.0) {
 		position += 360.0;
@@ -55,8 +55,8 @@ void __ISR_AT_VECTOR(_TIMER_4_VECTOR, IPL6AUTO) FOC_loop(void){
 	while(position > 360.0) {
 		position -= 360.0;
 	}
-    
-    six_step_angle = fmod(position, 30) / 6;
+		
+		six_step_angle = fmod(position, 30) / 6;
 	current_six_step_phase = ((signed int)six_step_angle + 6) % 6;
 	
 	if(mode == MODE_POS) {
@@ -111,7 +111,7 @@ void __ISR_AT_VECTOR(_TIMER_6_VECTOR, IPL4AUTO) RPM(void){
 	p_rpm = rpm;
 	rpm = (1.0-RPM_LPF) * ((float)temp / ENCODER_RES * 30000.0) + RPM_LPF*rpm;
 	
-//    rpm_der = (1.0-RPM_LPF) * ((float)(temp-p_temp) / ENCODER_RES * 60000.0) + RPM_LPF*rpm_der;    
+	//rpm_der = (1.0-RPM_LPF) * ((float)(temp-p_temp) / ENCODER_RES * 60000.0) + RPM_LPF*rpm_der;    
 	rpm_der = (1.0-RPM_DER_LPF)*100.0*(rpm-p_rpm) + RPM_DER_LPF*rpm_der;
 	
 	if(mode == MODE_RPM) {        
@@ -120,8 +120,8 @@ void __ISR_AT_VECTOR(_TIMER_6_VECTOR, IPL4AUTO) RPM(void){
 			rpm_sum += rpm_err * 0.002;
 		} else {
 			rpm_sum = 0.0;
-		}        
-//        rpm_sum = rpm_sum > 75 ? 75: rpm_sum < -75 ? -75: rpm_sum;
+		}
+		//rpm_sum = rpm_sum > 75 ? 75: rpm_sum < -75 ? -75: rpm_sum;
 		rpm_out = rpm_kp * rpm_err + rpm_ki * rpm_sum;// - rpm_kd * rpm_der;
 		
 		if(set_rpm == 0 && fabs(rpm) < 25) {
@@ -159,7 +159,7 @@ inline void setPhaseVoltage(float p, float angle_el) {
 		// angle normalisation in between 0 and 2pi
 		angle_el = normalizeAngle(angle_el);
 		
-		index = angle_el;        
+		index = angle_el;
 		index = index < 0.0 | index >= SVPWM_SIZE ? 0 : index;
 		
 		pwm_a = (float)SVPWM_table[index]/svpwm_max * p;
@@ -179,7 +179,7 @@ inline void setPhaseVoltage(float p, float angle_el) {
 		PDC3 = pwm_c;
 		PDC9 = pwm_c;
 		
-	#elif FOC_MODE == 2        
+	#elif FOC_MODE == 2
 		// Standard phase commutation
 		if(p < 0) angle_el += 180;
 		p = fabs(p);
@@ -224,7 +224,7 @@ float GetPower() {
 
 void ResetPosition() {
 	unsigned long int t = VEL1CNT;
-    INDX1CNT = 0;
+	INDX1CNT = 0;
 	position = 0.0;
 }
 
@@ -237,8 +237,8 @@ float GetRPM_der() {
 }
 
 float normalizeAngle(float angle) {
-  float a = fmod(angle, 360);
-  return a >= 0 ? a : (a + 360);
+	float a = fmod(angle, 360);
+	return a >= 0 ? a : (a + 360);
 }
 
 void MotorPhase(signed char num, float val) {

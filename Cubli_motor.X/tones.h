@@ -1,18 +1,18 @@
 #ifndef _TONES_H
 #define _TONES_H
 
-#define NOTE_C0     16.35
-#define NOTE_CS0    17.32
-#define NOTE_D0     18.35
-#define NOTE_DS0    19.45
-#define NOTE_E0     20.6
-#define NOTE_F0     21.83
-#define NOTE_FS0    23.12
-#define NOTE_G0     24.5
-#define NOTE_GS0    25.96
-#define NOTE_A0     27.5
-#define NOTE_AS0    29.14
-#define NOTE_B0     30.87
+#define NOTE_C0     16.351597831287414667365624595207
+#define NOTE_CS0    17.323914436054506015549145850076
+#define NOTE_D0     18.354047994837972516423938366286
+#define NOTE_DS0    19.445436482630056921023219957883
+#define NOTE_E0     20.601722307054370608490110065410
+#define NOTE_F0     21.826764464562742777835952539994
+#define NOTE_FS0    23.124651419477149933355950596413
+#define NOTE_G0     24.499714748859330880356220653739
+#define NOTE_GS0    25.956543598746571157652611808357
+#define NOTE_A0     27.500000000000000000000000000000
+#define NOTE_AS0    29.135235094880619775450195611024
+#define NOTE_B0     30.867706328507756989422158866177
 
 #define NOTE_C1     32.70
 #define NOTE_CS1    34.65
@@ -85,7 +85,7 @@
 #define NOTE_DS6    1244.51
 #define NOTE_E6     1318.51
 #define NOTE_F6     1396.91
-#define NOTE_FS6    1479.98 	
+#define NOTE_FS6    1479.98
 #define NOTE_G6     1567.98
 #define NOTE_GS6    1661.22
 #define NOTE_A6     1760.00
@@ -117,6 +117,19 @@
 #define NOTE_A8     7040.00
 #define NOTE_AS8    7458.62
 #define NOTE_B8     7902.13
+
+typedef enum {
+	SQUARE,
+	SIN
+} tone_waveform_type;
+
+typedef enum {
+	SIX_STEP,
+	FOC
+} tone_square_phase_type;
+
+extern tone_waveform_type tone_waveform;
+extern tone_square_phase_type tone_square_phase;
 
 extern void MetroidSaveTheme(unsigned char);
 extern void PlayTone(float);
