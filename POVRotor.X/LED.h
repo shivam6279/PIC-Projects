@@ -5,7 +5,7 @@
 #define BUFFER_LENGTH 140 // 96/3*4 + 12
 
 struct led {
-    unsigned char red, green, blue;
+	unsigned char red, green, blue;
 };
 
 extern struct led color_white;

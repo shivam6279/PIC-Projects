@@ -18,5 +18,3 @@ extern void SPI4_write(unsigned char);
 extern void SPI_all_write(unsigned char, unsigned char, unsigned char);
 
 #endif
-
-
