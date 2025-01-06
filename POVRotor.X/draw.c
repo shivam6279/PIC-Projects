@@ -2,7 +2,7 @@
 #include "draw.h"
 #include <math.h>
 
-void pie(struct led *buffer, struct led *pie_colors, int n, double angle) {
+void pie(led *buffer, led *pie_colors, int n, double angle) {
 	int i;
 	limit_angle(&angle);
 	int idx1 = angle / (360.0 / (double)n);
@@ -21,7 +21,7 @@ void pie(struct led *buffer, struct led *pie_colors, int n, double angle) {
 	buffer[LED_LENGTH / 2] = color_black;
 }
 
-void polar(struct led *buffer, double (*f)(double), struct led color, double angle) {
+void polar(led *buffer, double (*f)(double), led color, double angle) {
 	limit_angle(&angle);
 	double r1 = f(angle) * LED_LENGTH/2;
 	
@@ -43,7 +43,7 @@ void polar(struct led *buffer, double (*f)(double), struct led color, double ang
 	buffer[(int)t] = color;
 }
 
-void polar_fill(struct led *buffer, double (*f)(double), struct led color, double angle) {
+void polar_fill(led *buffer, double (*f)(double), led color, double angle) {
 	limit_angle(&angle);
 	int r1 = f(angle);
 	
@@ -68,7 +68,7 @@ void polar_fill(struct led *buffer, double (*f)(double), struct led color, doubl
 	}
 }
 
-void polar_neg(struct led *buffer, double (*f)(double), struct led color, double angle) {
+void polar_neg(led *buffer, double (*f)(double), led color, double angle) {
 	limit_angle(&angle);
 	int r = f(angle);
 	int i;
@@ -94,7 +94,7 @@ void polar_neg(struct led *buffer, double (*f)(double), struct led color, double
 	}
 }
 
-void polar_neg_d(struct led *buffer, double (*f)(double), double (*g)(double), struct led color, double angle) {
+void polar_neg_d(led *buffer, double (*f)(double), double (*g)(double), led color, double angle) {
 	limit_angle(&angle);
 	int r = f(angle);
 	double d = g(angle); 

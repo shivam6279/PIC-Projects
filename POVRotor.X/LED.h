@@ -4,25 +4,25 @@
 #define LED_LENGTH 96
 #define BUFFER_LENGTH 140 // 96/3*4 + 12
 
-struct led {
+typedef struct led {
 	unsigned char red, green, blue;
-};
+} led;
 
-extern struct led color_white;
-extern struct led color_black;
-extern struct led color_red;
-extern struct led color_green;
-extern struct led color_blue;
-extern struct led color_cyan;
-extern struct led color_magenta;
-extern struct led color_yellow;
+extern led color_white;
+extern led color_black;
+extern led color_red;
+extern led color_green;
+extern led color_blue;
+extern led color_cyan;
+extern led color_magenta;
+extern led color_yellow;
 
-extern struct led buffer[LED_LENGTH];
+extern led buffer[LED_LENGTH];
 
-extern void scaleBrightness(struct led*);
-extern void writeLEDs(struct led*);
-extern void writeLEDs_ISR(struct led*);
-extern void writeLEDs_hue(struct led*, double);
+extern void scaleBrightness(led*);
+extern void writeLEDs(led*);
+extern void writeLEDs_ISR(led*);
+extern void writeLEDs_hue(led*, double);
 
 extern void led_test_loop(unsigned char, unsigned char);
 

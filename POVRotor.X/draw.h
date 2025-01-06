@@ -6,11 +6,11 @@
 #define OPP_ANGLE_CORRECTION 0
 
 extern void limit_angle(double*);
-extern void pie(struct led *buffer, struct led *pie_colors, int n, double angle);
-extern void polar(struct led *, double (*f)(double), struct led, double);
-extern void polar_neg(struct led *, double (*f)(double), struct led, double);
-extern void polar_neg_d(struct led *,double (*f)(double), double (*g)(double), struct led, double);
-extern void polar_fill(struct led *, double (*f)(double), struct led, double);
+extern void pie(led *buffer, led *pie_colors, int n, double angle);
+extern void polar(led *, double (*f)(double), led, double);
+extern void polar_neg(led *, double (*f)(double), led, double);
+extern void polar_neg_d(led *,double (*f)(double), double (*g)(double), led, double);
+extern void polar_fill(led *, double (*f)(double), led, double);
 extern double spiral(double);
 extern double cardioid(double);
 extern double cosn(double);

@@ -5,6 +5,6 @@
 
 enum color {RED, GREEN, BLUE};
 
-extern void debug_int(long int, struct led*, enum color);
+extern void debug_int(long int, led*, enum color);
 
 #endif

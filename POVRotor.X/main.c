@@ -16,8 +16,8 @@ void delay_ms(unsigned int x);
 void fabulous();
 void morph();
 
-#define RPM_TIMER_FREQ 25000 //25000
-#define RPM_TIMER_DEBOUNCE 500
+#define RPM_TIMER_FREQ 50000
+#define RPM_TIMER_DEBOUNCE RPM_TIMER_FREQ / 50
 #define ANGLE_OFFSET 165
 
 volatile unsigned long int magnet_counter = 0, speed_counter = 0, p_omega = 0, omega = 0, raw_omega = 0;
@@ -25,13 +25,11 @@ volatile unsigned char magnet_flag = 1;
 
 volatile double time = 0.0;
 
-struct led **cart_image;
-struct led cart_image1[size][size], cart_image2[size][size];
-struct led *temp_pointer;
+led cart_image[size][size];
 
 #define RPM_LPF 0.9
 
-void __ISR_AT_VECTOR(_TIMER_3_VECTOR, IPL7SOFT) speed_timer(void) {
+void __ISR_AT_VECTOR(_TIMER_3_VECTOR, IPL7SRS) speed_timer(void) {
 	IFS0bits.T3IF = 0;
 	
 	speed_counter++;
@@ -53,8 +51,9 @@ void __ISR_AT_VECTOR(_TIMER_3_VECTOR, IPL7SOFT) speed_timer(void) {
 	time += 0.00002;
 }
 
-void __ISR_AT_VECTOR(_TIMER_4_VECTOR, IPL3SOFT) LED_timer(void) {
+void __ISR_AT_VECTOR(_TIMER_4_VECTOR, IPL3SRS) LED_timer(void) {
 	static double angle;
+	static int a;
 	
 	IFS0bits.T4IF = 0;
 	if(!(LED_A_TX_INTERRUPT || LED_B_TX_INTERRUPT || LED_C_TX_INTERRUPT)) {
@@ -63,7 +62,7 @@ void __ISR_AT_VECTOR(_TIMER_4_VECTOR, IPL3SOFT) LED_timer(void) {
 		polar_image(buffer, cart_image, angle);
 		// scaleBrightness(buffer);
 		writeLEDs_ISR(buffer);
-		// writeLEDs_hue(buffer, time*50); 
+		// writeLEDs_hue(buffer, time*50);
 	}
 }
 
@@ -75,17 +74,16 @@ long int mag(long int a) {
 }
 
 void main() {
-	int i, j, k;
+	int i;
 	float rpm;
 	unsigned char gif_frame = 0, max_frames;
-	struct led temp_color;
 	
 	PICInit();
 	TRISCbits.TRISC13 = 1;
 	
 	timer2_init(1000); 
 	timer3_init(RPM_TIMER_FREQ);
-	timer4_init(5000);
+	timer4_init(10000);
 	
 	timer5_init(1000000);
 	
@@ -99,8 +97,8 @@ void main() {
 	
 	led_test_loop(1, 100);
 	
-	for(j = 0; j < LED_LENGTH; j++){
-		buffer[j] = color_black;
+	for(i = 0; i < LED_LENGTH; i++){
+		buffer[i] = color_black;
 	}
 	writeLEDs_ISR(buffer);
 	
@@ -121,27 +119,17 @@ void main() {
 //    }
 	
 	max_frames = gif_init();    
-	gif_get_frame(cart_image2, 0);
-	memcpy(&cart_image, &cart_image2, sizeof(cart_image2));
+	gif_get_frame(cart_image, 0);
 	gif_frame = 1;
 	
 	LED_TIMER_ON = 1;
 //    uS_TIMER_ON = 1;
 	
-	unsigned char pointer_cnt = 0;
 	StartDelayCounter();
 	while(1) {
-		if(ms_counter2() > 0) {
+		if(ms_counter2() > 1) {
 			set_ms_counter2(0);
-			if(pointer_cnt) {
-				gif_get_frame(cart_image1, gif_frame);
-				cart_image = cart_image1;
-			} else {
-				gif_get_frame(cart_image2, gif_frame);
-				cart_image = cart_image2;
-			}
-			pointer_cnt = pointer_cnt ^ 0x01;
-			// memcpy(&cart_image, &cart_image2, sizeof(cart_image2));
+			gif_get_frame(cart_image, gif_frame);
 			gif_frame = (gif_frame + 1) % max_frames;
 		}
 	}

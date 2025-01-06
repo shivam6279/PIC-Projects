@@ -5,13 +5,14 @@
 
 #define SCALE_FACTOR 1.0
 #define size 275
+#define size_2 137.5 // size / 2
 
-extern void polar_image(struct led *, struct led[size][size], double);
+extern void polar_image(led *, led[size][size], double);
 
-extern void scaleBrightness_image(struct led[size][size], float);
+extern void scaleBrightness_image(led[size][size], float);
 
 extern unsigned char gif_init();
-extern unsigned char gif_get_frame(struct led image[size][size], unsigned char);
+extern unsigned char gif_get_frame(led image[size][size], unsigned char);
 
 extern unsigned char ppm_temp[];
 

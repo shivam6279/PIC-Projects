@@ -1,6 +1,6 @@
 #include "debug.h"
 
-void debug_int(long int t, struct led *buffer, enum color c){
+void debug_int(long int t, led *buffer, enum color c){
 	int i;
 	for (i = 0; i < 32; i++) {
 		if (t & 1) {
