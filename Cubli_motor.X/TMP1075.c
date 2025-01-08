@@ -5,9 +5,7 @@
 #include <inttypes.h>
 #include <math.h>
 
-void TMP1075Init() {
-	unsigned char i;
-	
+void TMP1075Init() {	
 	I2C_WriteRegisters(TMP1075_ADDR, (unsigned char[2]){0x01, 0b01000100}, 2);
 	I2C_WriteRegisters(TMP1075_ADDR, (unsigned char[2]){0x02, 0b01000100}, 2);
 

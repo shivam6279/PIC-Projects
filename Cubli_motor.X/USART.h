@@ -1,7 +1,7 @@
 #ifndef _USART_H_
 #define _USART_H_
 
-#define RX_BUFFER_SIZE 128
+#define RX_BUFFER_SIZE 512
 
 extern void USART3_init(unsigned long int);
 extern void USART3_send(unsigned char);

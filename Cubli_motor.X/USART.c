@@ -10,17 +10,17 @@
 //----------------------------UART3----------------------------
 
 volatile unsigned char rx_buffer[RX_BUFFER_SIZE];
-static unsigned int rx_buffer_index = 0;
+static volatile unsigned int rx_buffer_index = 0;
 volatile unsigned char rx_rdy = 0;
 volatile unsigned char play_tone = 0;
 volatile unsigned char auto_stop = 1;
 
-void __ISR_AT_VECTOR(_UART3_RX_VECTOR, IPL3AUTO) UART_DIN(void) {
-	static unsigned int r;
-	static bool overflow = false;
+void __ISR_AT_VECTOR(_UART3_RX_VECTOR, IPL3SOFT) UART_DIN(void) {
+	static volatile unsigned int r;
+	static volatile bool overflow = false;
 	do {
 		r = U3RXREG & 0xFF;
-	   // USART3_send(r);
+//	    USART3_send(r);
 		if(r == '\r') {
 			rx_buffer[rx_buffer_index] = '\0';
 			rx_buffer_index = 0;
@@ -39,9 +39,9 @@ void __ISR_AT_VECTOR(_UART3_RX_VECTOR, IPL3AUTO) UART_DIN(void) {
 		}        
 	}while(U3STAbits.URXDA);    
 	
-   // if(U3STAbits.OERR) {
-   //     U3STAbits.OERR = 0;
-   // }
+//    if(U3STAbits.OERR) {
+//        U3STAbits.OERR = 0;
+//    }
 	
 	IFS1bits.U3RXIF = 0; 
 }

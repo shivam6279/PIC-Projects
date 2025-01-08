@@ -6,14 +6,14 @@
 volatile unsigned long int delay_ms_counter1 = 0, delay_ms_counter2 = 0, delay_ms_counter3 = 0;
 volatile unsigned long int delay_us_counter = 0;
 
-void __ISR(_TIMER_2_VECTOR, IPL4AUTO) delay_ms_timer(void) {
-	IFS0CLR = _IFS0_T2IF_MASK;
+void __ISR(_TIMER_2_VECTOR, IPL4SOFT) delay_ms_timer(void) {
+	IFS0bits.T2IF = 0;
 	delay_ms_counter1++;
 	delay_ms_counter2++;
 	delay_ms_counter3++;
 }
 
-void __ISR_AT_VECTOR(_TIMER_3_VECTOR, IPL7AUTO) delay_us_timer(void) {
+void __ISR_AT_VECTOR(_TIMER_3_VECTOR, IPL7SOFT) delay_us_timer(void) {
 	IFS0bits.T3IF = 0;
 	delay_us_counter++;
 }
@@ -414,7 +414,7 @@ void timer7_init(float frequency) {
 	T7CONbits.TCKPS = pre & 0b111;
 	PR7 = t;
 	TMR7 = 0;
-	IPC20bits.T7IP = 4;
+	IPC20bits.T7IP = 5;
 	IFS2bits.T7IF = 0;
 	IEC2bits.T7IE = 1;
 }

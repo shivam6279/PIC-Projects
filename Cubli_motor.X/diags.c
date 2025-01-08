@@ -18,18 +18,19 @@
 void printDiagsMenu();
 char read_rx_char();
 
-void diags_spinMotor(char*);
-void diags_calibrateEncoder(char*);
-void diags_motor(char*);
-void diags_encoder(char*);
-void diags_readTemperature(char*);
-void diags_readADC(char*);
-void diags_i2c(char*);
-void diags_tone(char*);
-void diags_comp(char*);
-void diags_reset(char*);
+bool diags_spinMotor(char*);
+bool diags_calibrateEncoder(char*);
+bool diags_motor(char*);
+bool diags_encoder(char*);
+bool diags_readTemperature(char*);
+bool diags_readADC(char*);
+bool diags_i2c(char*);
+bool diags_tone(char*);
+bool diags_comp(char*);
+bool diags_reset(char*);
+bool diags_LED(char *cmd);
 
-typedef void (*diags_function)(char*);
+typedef bool (*diags_function)(char*);
 
 typedef struct diags_menu_item {
 	char name[100];
@@ -47,7 +48,7 @@ const diags_menu_item diags_list[] = {
 	{ .name = "I2C commands",					.cmd = "i2c",	.func = diags_i2c				},
 	{ .name = "Generate tones from the motor",	.cmd = "tone",	.func = diags_tone				},
 	{ .name = "Comparator readings",			.cmd = "comp",	.func = diags_comp				},
-	{ .name = "Turn LEDs on or off",			.cmd = "led",	.func = diags_comp				},
+	{ .name = "Turn LEDs on or off",			.cmd = "led",	.func = diags_LED				},
 	{ .name = "Perform a software reset",		.cmd = "reset",	.func = diags_reset				}
 };
 
@@ -62,8 +63,10 @@ void diagsMenu() {
 
 	MotorOff();
 	printDiagsMenu();
+	USART3_send_str("[diags]: ");
 	
 	while(ch != 'x') {
+		delay_ms(10);
 		if(rx_rdy) {
 			for(i = 0; rx_buffer[i] != '\0'; i++) {
 				input[i] = rx_buffer[i];
@@ -73,10 +76,6 @@ void diagsMenu() {
 			
 			ch = input[0];
 			
-			if(!flag) {
-				USART3_send_str("[diags]: ");
-				flag = false;
-			}
 			USART3_send_str(input);
 			USART3_send('\n');
 
@@ -97,17 +96,20 @@ void diagsMenu() {
 					if(str_beginsWith(input, diags_list[i].cmd)) {
 						input_len = str_len(input);
 						if(input[input_len] == ' ' || input[input_len] == '\0') {
-							diags_list[i].func(input);
-							USART3_send_str("Done\n");
-							USART3_send_str("[diags]: ");
+							if(diags_list[i].func(input)) {
+								USART3_send_str("OK\n");
+							} else {
+								USART3_send_str("ERROR\n");
+							}
 							flag = true;
 						}
 					}
 				}
-				// if(!flag) {
-				// 	USART3_send_str("Incorrect diags command");
-				// }
+				if(!flag && input[0] != '\0') {
+					USART3_send_str("Incorrect diags command. \"help\" to see list of commands\n");
+				}
 			}
+			USART3_send_str("[diags]: ");
 		}
 	}
 }
@@ -132,7 +134,7 @@ void printDiagsMenu() {
 	USART3_send_str("x. Exit\n");
 }
 
-void diags_spinMotor(char *cmd) {
+bool diags_spinMotor(char *cmd) {
 	unsigned int i;
 	unsigned char ch;
 	
@@ -151,14 +153,16 @@ void diags_spinMotor(char *cmd) {
 				if(ch == 'x') {
 					mode = MODE_OFF;
 					MotorOff();
-					return;
+					return true;
 				}
 			}
 		}
 	}
+	
+	return true;
 }
 
-void diags_motor(char *cmd) {
+bool diags_motor(char *cmd) {
 	unsigned char ch;
 	static float diags_power = 0.03;
 	char arg_val[20];
@@ -169,12 +173,13 @@ Commands to control the BLDC motor with the parameters:\n\
 -e [x] : Move motor to electrical degree x\n\
 -s [x] : Move motor to six step phase x\n\
 off : Turn motor off (coast)\n\
-setwaveform [s] : Set waveform type to \"foc\" or \"trapezoid\"\n\
+wave [s] : Display waveform type. Set waveform type to \"svpwm\", \"sin\", or \"trapezoid\"\n\
+polepairs [p] : Display pole pairs. Optionally set to p.\n\
 setpower [x] : Set power level for other commands to x (-1.0, 1.0)\n";
 	
 	if(str_getArgValue(cmd, "-h", arg_val) || str_getArgValue(cmd, "--help", arg_val)) {
 		USART3_send_str(help_str);
-		return;
+		return true;
 	}
 
 	// Set electrical angle
@@ -215,30 +220,59 @@ setpower [x] : Set power level for other commands to x (-1.0, 1.0)\n";
 		USART3_send_str("Power set to: ");
 		USART3_write_float(diags_power, 4);
 		USART3_send('\n');
+		
+	} else if(str_getArgValue(cmd, "polepairs", arg_val)) {
+		if(char_isDigit(arg_val[0])) {
+			pole_pairs = str_toInt(arg_val);
+			USART3_send_str("Motor pole pairs set to: \n");
+			USART3_write_int(pole_pairs);
+			USART3_send('\n');
+		} else {
+			USART3_send_str("Current motor pole pairs: \n");
+			USART3_write_int(pole_pairs);
+			USART3_send('\n');
+		}
 
 	// Set waveform
-	} else if(str_getArgValue(cmd, "setwaveform", arg_val)) {
-		if(str_isEqual(arg_val, "foc")) {
-			waveform_mode = WAVEFORM_FOC;
-			USART3_send_str("Waveform type set to: FOC\n");
+	} else if(str_getArgValue(cmd, "wave", arg_val)) {
+		if(str_isEqual(arg_val, "")) {
+			USART3_send_str("Current motor waveform type: ");
+			if(waveform_mode == MOTOR_SVPWM) {
+				USART3_send_str("SVPWM\n");
+			} else if(waveform_mode == MOTOR_SIN) {
+				USART3_send_str("SIN\n");
+			}else if(waveform_mode == MOTOR_TRAPEZOID) {
+				USART3_send_str("TRAPEZOID\n");
+			}
+			
+		} else if(str_isEqual(arg_val, "svpwm")) {
+			waveform_mode = MOTOR_SVPWM;
+			USART3_send_str("Waveform type set to: SVPWM\n");
+
+		} else if(str_isEqual(arg_val, "sin")) {
+			waveform_mode = MOTOR_SIN;
+			USART3_send_str("Waveform type set to: SIN\n");
 
 		} else if(str_isEqual(arg_val, "trapezoid")) {
-			waveform_mode = WAVEFORM_TRAPEZOID;
+			waveform_mode = MOTOR_TRAPEZOID;
 			USART3_send_str("Waveform type set to: Trapezoid (6 step)\n");
 
 		} else {
-			USART3_send_str("Incorrect arg for --setwaveform. Requires:\n");
-			USART3_send_str("foc\n");
+			USART3_send_str("Incorrect arg for wave. Requires:\n");
+			USART3_send_str("svpwm\n");
+			USART3_send_str("sin\n");
 			USART3_send_str("trapezoid\n");
 		}
 
 	} else {
 		USART3_send_str(help_str);
-		return;
+		return true;
 	}
+	
+	return true;
 }
 
-void diags_encoder(char *cmd) {
+bool diags_encoder(char *cmd) {
 	unsigned char ch;
 	long int pos_cnt, ind_cnt;
 	float pos;
@@ -247,12 +281,12 @@ void diags_encoder(char *cmd) {
 	const char help_str[] = "\
 Read rotary encoder data:\n\
 -r : Output raw data scaled to degrees. No calibration or offset applied.\n\
-setzero [x]: Set motor zero angle to x\n\
-calib --on/off : Enable/disable encoder calibration correction\n";
+zero [x]: Display stored zero offset. Set to x\n\
+calib [on/off] : Enable/disable encoder calibration correction\n";
 	
 	if(str_getArgValue(cmd, "-h", arg_val) || str_getArgValue(cmd, "--help", arg_val)) {
 		USART3_send_str(help_str);
-		return;
+		return true;
 	}
 	
 	// Display raw
@@ -269,24 +303,30 @@ calib --on/off : Enable/disable encoder calibration correction\n";
 			if(rx_rdy) {
 				ch = read_rx_char();
 				if(ch == 'x') {
-					return;
+					return true;
 				}
 			}
 		}
 
 	// Set zero angle
-	} else if(str_getArgValue(cmd, "setzero", arg_val)) {
-		motor_zero_angle = str_toFloat(arg_val);
-		USART3_send_str("Motor zero offset set to: ");
-		USART3_write_float(motor_zero_angle, 4);
-		USART3_send('\n');
+	} else if(str_getArgValue(cmd, "zero", arg_val)) {
+		if(char_isDigit(arg_val[0])) {
+			motor_zero_angle = str_toFloat(arg_val);
+			USART3_send_str("Encoder zero offset set to: \n");
+			USART3_write_float(motor_zero_angle, 4);
+			USART3_send_str(" degrees\n");
+		} else {
+			USART3_send_str("Encoder zero offset: \n");
+			USART3_write_float(motor_zero_angle, 4);
+			USART3_send_str(" degrees\n");
+		}
 	
 	// Encoder calibration correction
 	} else if(str_getArgValue(cmd, "calib", arg_val)) {
-		if(str_isEqual(arg_val, "--on")) {
+		if(str_isEqual(arg_val, "on")) {
 			interpolate_encoder_lut(encoder_calib_data, 32);
 			USART3_send_str("Encoder calibration correction enabled\n");
-		} else if(str_isEqual(arg_val, "--off")) {
+		} else if(str_isEqual(arg_val, "off")) {
 			init_encoder_lut();
 			USART3_send_str("Encoder calibration correction disabled\n");
 		}
@@ -304,14 +344,16 @@ calib --on/off : Enable/disable encoder calibration correction\n";
 			if(rx_rdy) {
 				ch = read_rx_char();
 				if(ch == 'x') {
-					return;
+					return true;
 				}
 			}
 		}
-	}	
+	}
+	
+	return true;
 }
 
-void diags_calibrateEncoder(char *cmd) {
+bool diags_calibrateEncoder(char *cmd) {
 	unsigned char ch;
 	unsigned int i, j, arr_indx;
 	float power = 0.05;
@@ -333,7 +375,7 @@ void diags_calibrateEncoder(char *cmd) {
 				if(ch == 'x') {
 					mode = MODE_OFF;
 					MotorOff();
-					return;
+					return true;
 				}
 			}
 		}
@@ -354,10 +396,10 @@ void diags_calibrateEncoder(char *cmd) {
 		}
 	}
 
-	float output[(int)POLE_PAIRS*6][2];
+	float output[(int)pole_pairs*6][2];
 
 	arr_indx = 0;
-	for(j = 0; j < POLE_PAIRS; j++) {
+	for(j = 0; j < pole_pairs; j++) {
 		for(i = 0; i < 360; i += 60) {
 			setPhaseVoltage(power, (float)i);
 			delay_ms(500);
@@ -372,7 +414,7 @@ void diags_calibrateEncoder(char *cmd) {
 				pos -= 360.0;
 			}
 
-			output[arr_indx][0] = (360.0 * j + i) / (float)POLE_PAIRS;
+			output[arr_indx][0] = (360.0 * j + i) / (float)pole_pairs;
 			output[arr_indx][1] = pos;
 			arr_indx++;
 
@@ -381,7 +423,7 @@ void diags_calibrateEncoder(char *cmd) {
 				if(ch == 'x') {
 					mode = MODE_OFF;
 					MotorOff();
-					return;
+					return true;
 				}
 			}
 		}
@@ -389,7 +431,7 @@ void diags_calibrateEncoder(char *cmd) {
 	
 	float zero_offset = output[0][1];
 	
-	for(arr_indx = 0; arr_indx < (POLE_PAIRS*6); arr_indx++) {
+	for(arr_indx = 0; arr_indx < (pole_pairs*6); arr_indx++) {
 		output[arr_indx][1] -= zero_offset;
 		while(output[arr_indx][1] < 0.0) {
 			output[arr_indx][1] += 360.0;
@@ -402,7 +444,7 @@ void diags_calibrateEncoder(char *cmd) {
 	USART3_write_float(zero_offset, 4);
 	USART3_send('\n');
 
-	for(arr_indx = 0; arr_indx < (POLE_PAIRS*6); arr_indx++) {
+	for(arr_indx = 0; arr_indx < (pole_pairs*6); arr_indx++) {
 		USART3_write_float(output[arr_indx][0], 4);
 		USART3_send(',');
 		USART3_write_float(output[arr_indx][1], 4);
@@ -411,24 +453,62 @@ void diags_calibrateEncoder(char *cmd) {
 	
 	mode = MODE_OFF;
 	MotorOff();
+	
+	return true;
 }
 
-void diags_readTemperature(char *cmd) {
+bool diags_readTemperature(char *cmd) {
 	float t1 = 0, t2 = 0;
 	int16_t t1_raw = 0, t2_raw = 0;
 	char arg_val[5];
+	static unsigned int delay = 100;
+	float f;
+	char ch;
 	
 	const char help_str[] = "\
 Read temp sensor TMP1075:\n\
 2 sensors on device near: MCU and FETs\n\
+-s : Stream data\n\
+-f [x]: Set streaming frequency to f [1, 10000] (Hz).\n\
 -r : Output raw data\n";
 	
 	if(str_getArgValue(cmd, "-h", arg_val) || str_getArgValue(cmd, "--help", arg_val)) {
 		USART3_send_str(help_str);
-		return;
+		return true;
 	}
+	
+	if(str_getArgValue(cmd, "-f", arg_val)) {
+		f = str_toFloat(arg_val);
+		if(f < 1.0 || f > 10000.0) {
+			USART3_send_str("Invalid frequency\n");
+		} else {
+			USART3_send_str("Set streaming fequency to ");
+			USART3_write_float(f, 4);
+			USART3_send_str(" Hz\n");
+			delay = 1000 / f;
+		}
+	}
+	
+	if(str_getArgValue(cmd, "-s", arg_val)) {
+		USART3_send_str("MCU, FETs\n");
+		while(1) {
+			StartDelaymsCounter();
+			TMP1075_getTemp(0, &t1);
+			TMP1075_getTemp(1, &t2);
+			USART3_write_float(t2, 2);
+			USART3_send_str(", "); 
+			USART3_write_float(t1, 2);
+			USART3_send('\n');
+			while(ms_counter() < delay);
 
-	if(str_getArgValue(cmd, "-r", arg_val)) {
+			if(rx_rdy) {
+				ch = read_rx_char();
+				if(ch == 'x') {
+					return true;
+				}
+			}
+		}
+	} else if(str_getArgValue(cmd, "-r", arg_val)) {
 		TMP1075_getRawTemp(0, &t1_raw);
 		TMP1075_getRawTemp(1, &t2_raw);
 
@@ -438,7 +518,7 @@ Read temp sensor TMP1075:\n\
 
 		USART3_send_str("1: "); 
 		USART3_write_float(t2_raw, 2);
-		USART3_send('\n'); 
+		USART3_send('\n');
 
 	} else {
 		TMP1075_getTemp(0, &t1);
@@ -452,9 +532,11 @@ Read temp sensor TMP1075:\n\
 		USART3_write_float(t1, 2);
 		USART3_send_str(" C\n"); 
 	}
+	
+	return true;
 }
 
-void diags_readADC(char *cmd) {
+bool diags_readADC(char *cmd) {
 	float isns_u, isns_v, isns_w, isns_vbat, vsns_vbat, vsns_12v;
 	char arg_val[5];
 	
@@ -464,7 +546,7 @@ Read ADC data\n\
 	
 	if(str_getArgValue(cmd, "-h", arg_val) || str_getArgValue(cmd, "--help", arg_val)) {
 		USART3_send_str(help_str);
-		return;
+		return true;
 	}
 
 	adc_readAll();
@@ -522,9 +604,11 @@ Read ADC data\n\
 		USART3_write_float(vsns_12v, 2);
 		USART3_send_str(" V\n");
 	}
+	
+	return true;
 }
 
-void diags_i2c(char *cmd) {
+bool diags_i2c(char *cmd) {
 	unsigned int i;
 	char arg_val[25];
 	char out_str[10];
@@ -535,7 +619,7 @@ scan : Scan bus and report addresses found\n";
 	
 	if(str_getArgValue(cmd, "-h", arg_val) || str_getArgValue(cmd, "--help", arg_val)) {
 		USART3_send_str(help_str);
-		return;
+		return true;
 	}
 	
 	// I2C scan
@@ -547,10 +631,14 @@ scan : Scan bus and report addresses found\n";
 				USART3_send('\n');
 			}
 		}
+	} else {
+		USART3_send_str(help_str);
 	}
+	
+	return true;
 }
 
-void diags_tone(char *cmd) {
+bool diags_tone(char *cmd) {
 	char arg_val[50];
 	
 	const char help_str[] = "\
@@ -558,13 +646,16 @@ Plays audio through the motor:\n\
 note [note] : Note to be played. eg a4, cs5 (sharp), bf2 (flat) etc.\n\
 freq [freq] : Frequency to be played in Hz.\n\
 song : Play stored song.\n\
+wav : Play stored wav file.\n\
 rttll [str] : Play rttll formatted string\n\
 off : Stop playing tones\n\
+power [p]: Display motor power level. Optionally set it to p (0 - 1.0)\n\
+amplitude [p]: Display audio amplitude (degrees). Optionally set it to p (0 - 360)\n\
 wave [wave] : Set waveform type to [square] or [sin]\n";
 	
 	if(str_getArgValue(cmd, "-h", arg_val) || str_getArgValue(cmd, "--help", arg_val)) {
 		USART3_send_str(help_str);
-		return;
+		return true;
 	}
 	
 	// Display raw
@@ -581,7 +672,10 @@ wave [wave] : Set waveform type to [square] or [sin]\n";
 		USART3_send_str(" Hz\n");
 		PlayTone(str_toFloat(arg_val));
 
-	} else if(str_getArgValue(cmd, "-s", arg_val)) {
+	} else if(str_getArgValue(cmd, "wav", arg_val)) {
+		PlayWav();
+
+	} else if(str_getArgValue(cmd, "song", arg_val)) {
 		MetroidSaveTheme(1);
 
 	} else if(str_getArgValue(cmd, "off", arg_val)) {
@@ -593,7 +687,31 @@ wave [wave] : Set waveform type to [square] or [sin]\n";
 			USART3_send_str("Incorrect rttll string\n");
 		}
 		StopTone();
-
+		
+	} else if(str_getArgValue(cmd, "power", arg_val)) {
+		if(char_isDigit(arg_val[0])) {
+			tone_power = str_toFloat(arg_val);
+			USART3_send_str("Motor audio power level set to: \n");
+			USART3_write_float(tone_power, 4);
+			USART3_send('\n');
+		} else {
+			USART3_send_str("Current motor audio power level: \n");
+			USART3_write_float(tone_power, 4);
+			USART3_send('\n');
+		}
+		
+	}  else if(str_getArgValue(cmd, "amplitude", arg_val)) {
+		if(char_isDigit(arg_val[0])) {
+			tone_amplitude = str_toFloat(arg_val);
+			USART3_send_str("Audio amplitude set to ");
+			USART3_write_float(tone_amplitude, 2);
+			USART3_send_str(" degrees\n");
+		} else {
+			USART3_send_str("Current audio amplitude is ");
+			USART3_write_float(tone_amplitude, 4);
+			USART3_send_str(" degrees\n");
+		}
+		
 	} else if(str_getArgValue(cmd, "wave", arg_val)) {
 		if(str_isEqual(arg_val, "square")) {
 			tone_waveform = SQUARE;
@@ -612,13 +730,13 @@ wave [wave] : Set waveform type to [square] or [sin]\n";
 
 	} else {
 		USART3_send_str(help_str);
-		return;
-	}	
+		return true;
+	}
+
+	return true;	
 }
 
-void diags_LED(char *cmd) {
-	float t1 = 0, t2 = 0;
-	int16_t t1_raw = 0, t2_raw = 0;
+bool diags_LED(char *cmd) {
 	char arg_val[5];
 	
 	const char help_str[] = "\
@@ -628,7 +746,7 @@ led <led no> <state>:\n\
 	
 	if(str_getArgValue(cmd, "-h", arg_val) || str_getArgValue(cmd, "--help", arg_val)) {
 		USART3_send_str(help_str);
-		return;
+		return true;
 	}
 
 	if(cmd[4] == '0') {
@@ -637,7 +755,7 @@ led <led no> <state>:\n\
 			LED0 = 0;
 		} else if(cmd[6] == '1') {
 			USART3_send_str("LED0 turned on\n");
-			LED1 = 0;
+			LED0 = 1;
 		} else if(cmd[6] == 't') {
 			USART3_send_str("LED0 toggled\n");
 			LATDINV |= 1 << 6;
@@ -651,7 +769,7 @@ led <led no> <state>:\n\
 			LED1 = 0;
 		} else if(cmd[6] == '1') {
 			USART3_send_str("LED1 turned on\n");
-			LED1 = 0;
+			LED1 = 1;
 		} else if(cmd[6] == 't') {
 			USART3_send_str("LED1 toggled\n");
 			LATAINV |= 1 << 8;
@@ -660,10 +778,13 @@ led <led no> <state>:\n\
 		}
 	} else {
 		USART3_send_str("Incorrect LED number selected\n");
+		USART3_send_str(help_str);
 	}
+	
+	return true;
 }
 
-void diags_comp(char *cmd) {
+bool diags_comp(char *cmd) {
 	unsigned char comp, ch;
 	char arg_val[5];
 
@@ -677,7 +798,7 @@ Comparator output\n\
 	
 	if(str_getArgValue(cmd, "-h", arg_val) || str_getArgValue(cmd, "--help", arg_val)) {
 		USART3_send_str(help_str);
-		return;
+		return true;
 	}
 
 	if(str_getArgValue(cmd, "-f", arg_val)) {
@@ -708,7 +829,7 @@ Comparator output\n\
 			if(rx_rdy) {
 				ch = read_rx_char();
 				if(ch == 'x') {
-					return;
+					return true;
 				}
 			}
 		}
@@ -717,15 +838,17 @@ Comparator output\n\
 		comp = comparator;
 		USART3_send_str("U: ");
 		USART3_write_int((comparator >> 2) & 1);
-		USART3_send_str("V: ");
+		USART3_send_str("\nV: ");
 		USART3_write_int((comparator >> 1) & 1);
-		USART3_send_str("W: ");
+		USART3_send_str("\nW: ");
 		USART3_write_int(comparator & 1);
 		USART3_send('\n');
 	}
+	
+	return true;
 }
 
-void diags_reset(char *cmd) {
+bool diags_reset(char *cmd) {
 	RSWRSTbits.SWRST = 1;
 	RSWRST;
 }

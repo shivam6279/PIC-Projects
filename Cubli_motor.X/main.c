@@ -15,10 +15,14 @@
 #include "diags.h"
 #include "string_utils.h"
 #include "USART.h"
+#include "SPI.h"
 #include "bitbang_I2C.h"
 #include "tones.h"
 #include "EEPROM.h"
 #include "TMP1075.h"
+
+#define MHZ(x) x * 1000000.0f
+#define KHZ(x) x * 1000.0f
 
 /* 
  * UART CODES:
@@ -40,7 +44,7 @@ const char rttll_metroid_save[] = {"Metroid_Save:d=4,o=5,b=200:d,f,d,c,a4,p,a4"}
 const char rttll_mario[] = {"Mario:d=4,o=6,b=180:8e,8e,8p,8e,8p,8c,e,g,p,g5,p"};
 
 #define ESC 1
-#define LPF_PHASE 0.8f
+#define LPF_PHASE 0.99f
 
 unsigned char board_id = 0;
 
@@ -96,20 +100,22 @@ int main() {
 	ADCInit();
 	init_encoder_lut();
 
-	QEI_init();
+//	QEI_init();
+	SPI1_init(MHZ(5));
 	mode = MODE_POWER;
 
-	USART3_init(115200);    
-	timer2_init(1000);      // ms delay - P = 3
-	timer3_init(100000);    // us delay - P = 7
-	timer4_init(50000);     // FOC      - P = 6
-	timer5_init(50);        // Speaker  - P = 2
-	timer6_init(500);       // RPM      - P = 4
+	USART3_init(250000);    
+	timer2_init(KHZ(1));	// ms delay - P = 3
+	timer3_init(KHZ(100));	// us delay - P = 7
+	timer4_init(KHZ(10));	// FOC      - P = 6
+	timer5_init(50);		// Speaker  - P = 2
+	timer6_init(500);		// RPM      - P = 4
+	timer7_init(KHZ(50));
 
 	EEPROM_init();
 	PwmInit(96000);
 	MotorOff();
-
+	
 //	interpolate_encoder_lut(encoder_calib_data, 32);
 
 	delay_ms(200);
@@ -117,14 +123,16 @@ int main() {
 	
 	board_id = 1;//EEPROM_read(ID_ADDR);
 	LED0 = 1;
-	MetroidSaveTheme(board_id);
+//	MetroidSaveTheme(board_id);
+	PlayWav();
 	LED0 = 0;
 	
+	/*FOC_TIMER_ON = 0;
 	float pp = 0.07, phase_delay;
 	while(1) {
-		for(j = 0; j < 50; j++) {
+		for(j = 0; j < 10; j++) {
 			for(i = 0; i < 6; i++) {
-				MotorPhase(i, 0.07);
+				MotorPhase(i, pp);
 				delay_ms(4);
 			}
 		}
@@ -135,21 +143,25 @@ int main() {
 				StartDelayusCounter();
 				while(us_counter() < 6);
 				while(!bemf_phase(i)); // Wait for back emf to rise/fall
+				LATAINV |= 1 << 8;
 				phase_delay = (1.0f - LPF_PHASE) * phase_delay + LPF_PHASE * (float)us_counter();
-				while(us_counter() < 2*phase_delay);
+				while(us_counter() < 1.25*phase_delay);
 			}
 			
 			if(j++ > 7) {
 				j = 0;
-				if(pp < 0.7) {
-					pp += 0.001;
+				if(pp < 1.0) {
+					pp += 0.003;
 				}
 			}
 		}
-	}
+	}*/
 
-	motor_zero_angle = 19.6875; //Read_Motor_Offset();
-
+	motor_zero_angle = 24.2; //Read_Motor_Offset();
+	
+	TMR7 = 50;
+	IEC1bits.SPI1RXIE = 1;
+	T7CONbits.ON = 1;
 	FOC_TIMER_ON = 1;
 	MotorOff();
 	

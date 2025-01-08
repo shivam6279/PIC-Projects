@@ -7,7 +7,7 @@
 
 volatile unsigned char comparator = 0;
 
-void __ISR(_PWM4_VECTOR, IPL7AUTO) PWM_sync_timer(void) {
+void __ISR(_PWM4_VECTOR, IPL7SOFT) PWM_sync_timer(void) {
 //    PWMCON4bits.TRGIF = 0;
 	PWMCON4bits.PWMHIF = 0;
 	IFS5bits.PWM4IF = 0;

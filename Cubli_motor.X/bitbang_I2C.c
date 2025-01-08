@@ -171,28 +171,39 @@ bool I2C_GetAck() {
 void I2C_SendAck() {
 	SDA_LAT = 0;
 	SDA_TRIS = 0; 
-//    I2C_DelaySettle();   
+    I2C_DelaySettle();   
 	I2C_Clock();       
 	SDA_TRIS = 1;        
-//    I2C_DelaySettle();  
+    I2C_DelaySettle();  
 }
 
 void I2C_SendNak() {
 	SDA_TRIS = 1; 
 	SDA_LAT = 0;
-//    I2C_DelaySettle();   
+    I2C_DelaySettle();   
 	I2C_Clock();         
-//    I2C_DelaySettle();  
+    I2C_DelaySettle();  
 }
 
 void inline I2C_DelayFull() {
-	Nop();Nop();Nop();Nop();
+	Nop();Nop();Nop();Nop();Nop();Nop();Nop();Nop();
+	Nop();Nop();Nop();Nop();Nop();Nop();Nop();Nop();
+	Nop();Nop();Nop();Nop();Nop();Nop();Nop();Nop();
+	Nop();Nop();Nop();Nop();Nop();Nop();Nop();Nop();
+	Nop();Nop();Nop();Nop();Nop();Nop();Nop();Nop();
+	Nop();Nop();Nop();Nop();Nop();Nop();Nop();Nop();
+	Nop();Nop();Nop();Nop();Nop();Nop();Nop();Nop();
+	Nop();Nop();Nop();Nop();Nop();Nop();Nop();Nop();
 }
 
 void inline I2C_DelayHalf() {
-	Nop();Nop();
+	Nop();Nop();Nop();Nop();Nop();Nop();Nop();Nop();
+	Nop();Nop();Nop();Nop();Nop();Nop();Nop();Nop();
+	Nop();Nop();Nop();Nop();Nop();Nop();Nop();Nop();
+	Nop();Nop();Nop();Nop();Nop();Nop();Nop();Nop();
+	Nop();Nop();Nop();Nop();Nop();Nop();Nop();Nop();
 }
 
 void inline I2C_DelaySettle() {
-	Nop();
+	Nop();Nop();Nop();Nop();Nop();Nop();Nop();Nop();
 }
