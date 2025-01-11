@@ -1,4 +1,5 @@
 #include "SPI.h"
+#include "pic32.h"
 #include <xc.h>
 #include <inttypes.h>
 #include <sys/attribs.h>
@@ -6,11 +7,11 @@
 
 volatile uint16_t spi_angle = 0;
 
-void __ISR_AT_VECTOR(_SPI1_TX_VECTOR, IPL5SOFT) SPI_TX(void) {
-	IFS1bits.SPI1TXIF = 0;
-	spi_angle = SPI1BUF & 0xFFF;
-	SPI1BUF = 0x20 << 8;
-}
+//void __ISR_AT_VECTOR(_SPI1_TX_VECTOR, IPL5SOFT) SPI_TX(void) {
+//	IFS1bits.SPI1TXIF = 0;
+//	spi_angle = SPI1BUF & 0xFFF;
+//	SPI1BUF = 0x20 << 8;
+//}
 
 void __ISR_AT_VECTOR(_SPI1_RX_VECTOR, IPL5SOFT) SPI_RX(void) {
 	IFS1bits.SPI1RXIF = 0;
@@ -20,7 +21,8 @@ void __ISR_AT_VECTOR(_SPI1_RX_VECTOR, IPL5SOFT) SPI_RX(void) {
 
 void __ISR(_TIMER_7_VECTOR, IPL5SOFT) SPI_timer(void) {
 	IFS2bits.T7IF = 0;
-	SPI1BUF = 0x30 << 8;
+//	T7CONbits.ON = 0;
+	SPI1BUF = 0x20 << 8;
 }
 
 void SPI1_init(float freq) {

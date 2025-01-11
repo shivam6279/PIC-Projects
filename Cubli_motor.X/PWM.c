@@ -12,7 +12,6 @@ void __ISR(_PWM4_VECTOR, IPL7SOFT) PWM_sync_timer(void) {
 	PWMCON4bits.PWMHIF = 0;
 	IFS5bits.PWM4IF = 0;
 	comparator = (PORTG >> 6) & 0b111;
-//    LATAINV |= 1 << 8;
 }
 
 unsigned int PWM_MAX;

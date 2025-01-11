@@ -100,17 +100,17 @@ int main() {
 	ADCInit();
 	init_encoder_lut();
 
-//	QEI_init();
-	SPI1_init(MHZ(5));
+	QEI_init();
+//	SPI1_init(MHZ(10));
 	mode = MODE_POWER;
 
 	USART3_init(250000);    
 	timer2_init(KHZ(1));	// ms delay - P = 3
 	timer3_init(KHZ(100));	// us delay - P = 7
-	timer4_init(KHZ(10));	// FOC      - P = 6
+	timer4_init(KHZ(25));	// FOC      - P = 6
 	timer5_init(50);		// Speaker  - P = 2
 	timer6_init(500);		// RPM      - P = 4
-	timer7_init(KHZ(50));
+	timer7_init(KHZ(25));
 
 	EEPROM_init();
 	PwmInit(96000);
@@ -160,8 +160,6 @@ int main() {
 	motor_zero_angle = 24.2; //Read_Motor_Offset();
 	
 	TMR7 = 50;
-	IEC1bits.SPI1RXIE = 1;
-	T7CONbits.ON = 1;
 	FOC_TIMER_ON = 1;
 	MotorOff();
 	

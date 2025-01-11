@@ -55,8 +55,8 @@ void __ISR_AT_VECTOR(_TIMER_4_VECTOR, IPL6AUTO) FOC_loop(void){
 	pos_cnt &= ENCODER_RES_MASK;
 	
 //	position = encoder_LUT[pos_cnt] - motor_zero_angle + rpm * RPM_ADVANCE_FACTOR;
-//	position = ((float)pos_cnt * 360.0 / ENCODER_RES) - motor_zero_angle + rpm * RPM_ADVANCE_FACTOR;
-	position = ((float)(4095 - spi_angle) * 360.0 / 4095.0) - motor_zero_angle;
+	position = ((float)pos_cnt * 360.0 / ENCODER_RES) - motor_zero_angle + rpm * RPM_ADVANCE_FACTOR;
+//	position = ((float)(4095 - spi_angle) * 360.0 / 4095.0) - motor_zero_angle;
 	
 	if(position < 0.0) {
 		position += 360.0;
@@ -145,9 +145,6 @@ inline void setPhaseVoltage(float p, float angle_el) {
 	p = p < -1.0 ? -1.0 : p > 1.0 ? 1.0 : p;
 	
 	if(waveform_mode == MOTOR_SIN || waveform_mode == MOTOR_SVPWM) {
-		float pwm_a, pwm_b, pwm_c;
-		static float *PWM_table;
-		int index;
 
 //		if(p < 0) angle_el += 180;
 		p = fabs(p);
