@@ -43,9 +43,6 @@
 const char rttll_metroid_save[] = {"Metroid_Save:d=4,o=5,b=200:d,f,d,c,a4,p,a4"};
 const char rttll_mario[] = {"Mario:d=4,o=6,b=180:8e,8e,8p,8e,8p,8c,e,g,p,g5,p"};
 
-#define ESC 1
-#define LPF_PHASE 0.99f
-
 unsigned char board_id = 0;
 
 void parse_rx_codes() {
@@ -110,7 +107,8 @@ int main() {
 	timer4_init(KHZ(25));	// FOC      - P = 6
 	timer5_init(50);		// Speaker  - P = 2
 	timer6_init(500);		// RPM      - P = 4
-	timer7_init(KHZ(25));
+	timer7_init(KHZ(25));	// SPI data request
+	timer8_init(KHZ(100));	// Sensorless
 
 	EEPROM_init();
 	PwmInit(96000);
@@ -128,7 +126,7 @@ int main() {
 	LED0 = 0;
 	
 	/*FOC_TIMER_ON = 0;
-	float pp = 0.07, phase_delay;
+	float pp = 0.07;
 	while(1) {
 		for(j = 0; j < 10; j++) {
 			for(i = 0; i < 6; i++) {
@@ -136,22 +134,33 @@ int main() {
 				delay_ms(4);
 			}
 		}
+		MotorPhase(0, pp);
+		SensorlessStart(pp);
+		while(1) {
+			delay_ms(10);
+			SetPower(GetPower() + 0.001);
+			if(GetPower() > 0.95) {
+				break;
+			}
+		}
+		while(1);
+		IEC5bits.PWM4IE = 1;
 		phase_delay = 400;
+		StartDelaymsCounter();
 		while(1) {
 			for(i = 0; i  < 6; i++) {
 				MotorPhase(i, pp);
 				StartDelayusCounter();
 				while(us_counter() < 6);
 				while(!bemf_phase(i)); // Wait for back emf to rise/fall
-				LATAINV |= 1 << 8;
-				phase_delay = (1.0f - LPF_PHASE) * phase_delay + LPF_PHASE * (float)us_counter();
+				phase_delay = LPF_PHASE * phase_delay + (1.0f - LPF_PHASE) * (float)us_counter();
 				while(us_counter() < 1.25*phase_delay);
 			}
 			
-			if(j++ > 7) {
-				j = 0;
+			if(ms_counter() > 10) {
+				reset_ms_counter();
 				if(pp < 1.0) {
-					pp += 0.003;
+					pp += 0.0005;
 				}
 			}
 		}

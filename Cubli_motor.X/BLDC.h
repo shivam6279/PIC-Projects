@@ -8,7 +8,7 @@
 #define ENCODER_RES_MASK 0xFFF
 
 #define FOC_DEGREE_ADVANCE 90.0f
-#define RPM_ADVANCE_FACTOR 0.0002f//0.0002f
+#define RPM_ADVANCE_FACTOR 0.000f//0.0002f
 
 #define SVPWM_SIZE 1440
 #define SVPWM_INCREMENT (SVPWM_SIZE / 3)
@@ -18,7 +18,8 @@
 typedef enum {
 	MOTOR_SVPWM,
 	MOTOR_SIN,
-	MOTOR_TRAPEZOID
+	MOTOR_TRAPEZOID,
+	MODE_SENSORLESS
 } motor_waveform_type;
 
 typedef enum {
@@ -30,6 +31,9 @@ typedef enum {
 
 extern volatile motor_waveform_type waveform_mode;
 extern volatile motor_mode mode;
+
+extern volatile float phase_delay;
+#define LPF_PHASE 0.1f
 
 extern volatile float motor_zero_angle;
 extern double encoder_LUT[];
@@ -44,6 +48,8 @@ extern void MotorPhase(signed char, float);
 extern void MotorOff();
 extern unsigned char GetHallPhase();
 extern unsigned char TestPhase(int, int);
+
+extern void SensorlessStart(float);
 
 extern void setPhaseVoltage(float, float);
 extern float normalizeAngle(float);

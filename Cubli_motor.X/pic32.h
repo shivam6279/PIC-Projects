@@ -27,11 +27,14 @@ extern unsigned long int us_counter();
 extern void reset_us_counter();
 extern void delay_us(unsigned int);
 
+extern void calc_timer_period(float, unsigned int*, unsigned char*);
 extern void timer2_init(float);
 extern void timer3_init(float);
 extern void timer4_init(float);
 extern void timer5_init(float);
 extern void timer6_init(float);
 extern void timer7_init(float);
+extern void timer8_init(float);
+extern void timer9_init(float);
 
 #endif

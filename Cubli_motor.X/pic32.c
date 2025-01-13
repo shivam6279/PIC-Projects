@@ -221,34 +221,42 @@ void delay_us(unsigned int x) {
 	StopDelayusCounter();
 }
 
-void timer2_init(float frequency) {
-	float f = 60000000.0 / frequency; 
-	unsigned char pre = 0;
+void calc_timer_period(float freq, unsigned int *pr, unsigned char *pre) {
+	float f = 60000000.0 / freq;
+	*pre = 0;
 	while(f > 65535.0) { 
 		f /= 2.0;
-		pre++; 
+		(*pre)++; 
 	}
-	unsigned int t = (unsigned int)f;
-	while(t % 2 == 0 && pre < 8) { 
-		t /= 2; 
-		pre++; 
+	*pr = (unsigned int)f;
+	while(*pr % 2 == 0 && *pre < 8) { 
+		*pr /= 2; 
+		(*pre)++; 
 	}
-	if(pre == 7) {
-		if(t > 32767) {
-			t /= 2;
-			pre++;
+	if(*pre == 7) {
+		if(*pr > 32767) {
+			*pr /= 2;
+			(*pre)++;
 		} else {
-			t *= 2; 
-			pre--;
+			*pr *= 2; 
+			(*pre)--;
 		}
 	}
-	if(pre == 8) pre = 7;
+	if(*pre == 8) {
+		*pre = 7;
+	}
+}
+
+void timer2_init(float freq) {
+	unsigned int pr;
+	unsigned char pre;
+	calc_timer_period(freq, &pr, &pre);
 	
 	T2CONbits.ON = 0;
 	T2CONbits.T32 = 0;
 	T2CONbits.TCKPS = pre & 0b111;
 	T2CONbits.TCS = 0;
-	PR2 = t;
+	PR2 = pr;
 	TMR2 = 0;
 	
 	IPC2bits.T2IP = 4;
@@ -257,33 +265,16 @@ void timer2_init(float frequency) {
 	IEC0bits.T2IE = 1;
 }
 
-void timer3_init(float frequency) {
-	float f = 60000000.0 / frequency; 
-	unsigned char pre = 0;
-	while(f > 65535.0) { 
-		f /= 2.0;
-		pre++; 
-	}
-	unsigned int t = (unsigned int)f;
-	while(t % 2 == 0 && pre < 8) { 
-		t /= 2; 
-		pre++; 
-	}
-	if(pre == 7) {
-		if(t > 32767) {
-			t /= 2;
-			pre++;
-		} else {
-			t *= 2; 
-			pre--;
-		}
-	}
-	if(pre == 8) pre = 7;
+void timer3_init(float freq) {
+	unsigned int pr;
+	unsigned char pre;
+	calc_timer_period(freq, &pr, &pre);
+
 	T3CONbits.ON = 0;
 	T3CONbits.T32 = 0;
 	T3CONbits.TCKPS = pre & 0b111;
 	T3CONbits.TCS = 0;
-	PR3 = t;
+	PR3 = pr;
 	TMR3 = 0;
 	
 	IPC3bits.T3IP = 7;
@@ -291,33 +282,16 @@ void timer3_init(float frequency) {
 	IEC0bits.T3IE = 1;
 }
 
-void timer4_init(float frequency) {
-	float f = 60000000.0 / frequency; 
-	unsigned char pre = 0;
-	while(f > 65535.0) { 
-		f /= 2.0;
-		pre++; 
-	}
-	unsigned int t = (unsigned int)f;
-	while(t % 2 == 0 && pre < 8) { 
-		t /= 2; 
-		pre++; 
-	}
-	if(pre == 7) {
-		if(t > 32767) {
-			t /= 2;
-			pre++;
-		} else {
-			t *= 2; 
-			pre--;
-		}
-	}
-	if(pre == 8) pre = 7;
+void timer4_init(float freq) {
+	unsigned int pr;
+	unsigned char pre;
+	calc_timer_period(freq, &pr, &pre);
+
 	T4CONbits.ON = 0;
 	T4CONbits.T32 = 0;
 	T4CONbits.TCKPS = pre & 0b111;
 	T4CONbits.TCS = 0;
-	PR4 = t;
+	PR4 = pr;
 	TMR4 = 0;
 	
 	IPC4bits.T4IP = 6;
@@ -325,96 +299,73 @@ void timer4_init(float frequency) {
 	IEC0bits.T4IE = 1;
 }
 
-void timer5_init(float frequency) {
-	float f = 60000000.0 / frequency; 
-	unsigned char pre = 0;
-	while(f > 65535.0) { 
-		f /= 2.0;
-		pre++; 
-	}
-	unsigned int t = (unsigned int)f;
-	while(t % 2 == 0 && pre < 8) { 
-		t /= 2; 
-		pre++; 
-	}
-	if(pre == 7) {
-		if(t > 32767) {
-			t /= 2;
-			pre++;
-		} else {
-			t *= 2; 
-			pre--;
-		}
-	}
-	if(pre == 8) pre = 7;
+void timer5_init(float freq) {
+	unsigned int pr;
+	unsigned char pre;
+	calc_timer_period(freq, &pr, &pre);
+
 	T5CONbits.ON = 0;
 	T5CONbits.TCKPS = pre & 0b111;
-	PR5 = t;
+	PR5 = pr;
 	TMR5 = 0;
 	IPC6bits.T5IP = 2;
 	IFS0bits.T5IF = 0;
 	IEC0bits.T5IE = 1;
 }
 
-void timer6_init(float frequency) {
-	float f = 60000000.0 / frequency; 
-	unsigned char pre = 0;
-	while(f > 65535.0) { 
-		f /= 2.0;
-		pre++; 
-	}
-	unsigned int t = (unsigned int)f;
-	while(t % 2 == 0 && pre < 8) { 
-		t /= 2; 
-		pre++; 
-	}
-	if(pre == 7) {
-		if(t > 32767) {
-			t /= 2;
-			pre++;
-		} else {
-			t *= 2; 
-			pre--;
-		}
-	}
-	if(pre == 8) pre = 7;
+void timer6_init(float freq) {
+	unsigned int pr;
+	unsigned char pre;
+	calc_timer_period(freq, &pr, &pre);
+
 	T6CONbits.ON = 1;
 	T6CONbits.T32 = 0;
 	T6CONbits.TCKPS = pre & 0b111;
-	PR6 = t;
+	PR6 = pr;
 	TMR6 = 0;
 	IPC19bits.T6IP = 4;
 	IFS2bits.T6IF = 0;
 	IEC2bits.T6IE = 1;
 }
 
-void timer7_init(float frequency) {
-	float f = 60000000.0 / frequency; 
-	unsigned char pre = 0;
-	while(f > 65535.0) { 
-		f /= 2.0;
-		pre++; 
-	}
-	unsigned int t = (unsigned int)f;
-	while(t % 2 == 0 && pre < 8) { 
-		t /= 2; 
-		pre++; 
-	}
-	if(pre == 7) {
-		if(t > 32767) {
-			t /= 2;
-			pre++;
-		} else {
-			t *= 2; 
-			pre--;
-		}
-	}
-	if(pre == 8) pre = 7;
+void timer7_init(float freq) {
+	unsigned int pr;
+	unsigned char pre;
+	calc_timer_period(freq, &pr, &pre);
+
 	T7CONbits.ON = 0;
 	T7CONbits.TCKPS = pre & 0b111;
-	PR7 = t;
+	PR7 = pr;
 	TMR7 = 0;
 	IPC20bits.T7IP = 5;
 	IFS2bits.T7IF = 0;
 	IEC2bits.T7IE = 1;
+}
+
+void timer8_init(float freq) {
+	unsigned int pr;
+	unsigned char pre;
+	calc_timer_period(freq, &pr, &pre);
+
+	T8CONbits.ON = 0;
+	T8CONbits.TCKPS = pre & 0b111;
+	PR8 = pr;
+	TMR8 = 0;
+	IPC21bits.T8IP = 7;
+	IFS2bits.T8IF = 0;
+	IEC2bits.T8IE = 1;
+}
+
+void timer9_init(float freq) {
+	unsigned int pr;
+	unsigned char pre;
+	calc_timer_period(freq, &pr, &pre);
+
+	T9CONbits.ON = 0;
+	T9CONbits.TCKPS = pre & 0b111;
+	PR9 = pr;
+	TMR9 = 0;
+	IPC22bits.T9IP = 5;
+	IFS2bits.T9IF = 0;
+	IEC2bits.T9IE = 1;
 }
