@@ -1,8 +1,13 @@
 #include "SPI.h"
+#include "LED.h"
 #include <xc.h>
 #include <sys/attribs.h>  
 
 #define BRG 3
+
+extern __inline__ unsigned int __attribute__((always_inline)) virt_to_phys(const void* p) { 
+	return (int)p<0?((int)p&0x1fffffffL):(unsigned int)((unsigned char*)p+0x40000000L); 
+}
 
 void SPI2_init(){
 	unsigned char data;
@@ -26,20 +31,51 @@ void SPI2_init(){
 	SPI2CONbits.MSTEN = 1;    
 	SPI2CONbits.DISSDI = 1;
 	
-	SPI2CONbits.STXISEL = 0b01;    
+	SPI2CONbits.STXISEL = 0b01;
 	SPI2CONbits.ENHBUF  = 1;
 
 	SPI2CON2 = 0;
 
 	SPI2BRG = BRG;
 	
-	IFS4bits.SPI2TXIF = 0;
-	LED_C_TX_INTERRUPT = 0;
-	IPC36bits.SPI2TXIP = 6;
-	IPC36bits.SPI2TXIS = 0;
+//	IFS4bits.SPI2TXIF = 0;
+//	LED_C_TX_INTERRUPT = 0;
+//	IPC36bits.SPI2TXIP = 1; // 6
+//	IPC36bits.SPI2TXIS = 0;
 	
 	data = SPI2BUF;
 	SPI2CONbits.ON = 1;
+
+	// ------------------- DMA -------------------
+	DCH0CONbits.CHEN = 0;							// Turn off this channel
+
+	DCH0SSA = virt_to_phys(LED_C_tx_buffer);		// Move the data from the [buffer] array
+	DCH0DSA = virt_to_phys((const void*)&SPI2BUF);	// Move the data to the x register
+	DCH0SSIZ = BUFFER_LENGTH;						// Move num_bytes bytes of data in total
+	DCH0CSIZ = 1;									// Move 1 byte at a time
+	DCH0DSIZ = 1;									// Destination size is 1 byte
+
+	DCH0ECON=0;										// Clear the DMA configuration settings 
+	DCH0ECONbits.CHSIRQ = _SPI2_TX_VECTOR;			// Move data on PMP interrupt
+	DCH0ECONbits.CHAIRQ = _SPI2_FAULT_VECTOR;		// Abort on PMP error
+	DCH0ECONbits.SIRQEN = 1;						// Enable Start IRQ
+//	DCH0ECONbits.AIRQEN = 1;						// Enable Abort IRQ
+	
+	DCH0CONbits.CHAEN = 0;
+	DCH0CONbits.CHPRI = 3;							// The priority of this channel is 3 (highest)
+	DCH0CONbits.CHEN = 1;							// Turn this channel on now
+
+	IPC33bits.DMA0IP = 3;							// Set DMA 0 interrupt priority to 3
+	IPC33bits.DMA0IS = 1;							// Set DMA 0 interrupt sub-priority to 1
+	IFS4bits.SPI2TXIF = 0;							// Clear the SPI TX interrupt flag
+	IFS4bits.DMA0IF = 0;							// Clear the DMA channel 0 interrupt flag
+	IEC4bits.DMA0IE = 1;							// Enable the DMA 0 interrupt
+	DCH0INTbits.CHBCIE = 1;							// Enable the Channel Block Transer Complete (CHBC) Interrupt
+
+//	DCH0ECONbits.CFORCE = 1;						// Force the start of the transfer now
+
+	DMACONSET = 0x8000;
+	// ------------------------------------------
 }
 
 void SPI3_init(){
@@ -71,13 +107,44 @@ void SPI3_init(){
 
 	SPI3BRG = BRG;
 	
-	IFS4bits.SPI3TXIF = 0;
-	LED_B_TX_INTERRUPT = 0;
-	IPC39bits.SPI3TXIP = 6;
-	IPC39bits.SPI3TXIS = 0;
+//	IFS4bits.SPI3TXIF = 0;
+//	LED_B_TX_INTERRUPT = 0;
+//	IPC39bits.SPI3TXIP = 6;
+//	IPC39bits.SPI3TXIS = 0;
 	
 	data = SPI3BUF;
 	SPI3CONbits.ON = 1;
+	
+	// ------------------- DMA -------------------
+	DCH1CONbits.CHEN = 0;							// Turn off this channel
+
+	DCH1SSA = virt_to_phys(LED_B_tx_buffer);		// Move the data from the [buffer] array
+	DCH1DSA = virt_to_phys((const void*)&SPI3BUF);	// Move the data to the x register
+	DCH1SSIZ = BUFFER_LENGTH;						// Move num_bytes bytes of data in total
+	DCH1CSIZ = 1;									// Move 1 byte at a time
+	DCH1DSIZ = 1;									// Destination size is 1 byte
+
+	DCH1ECON=0;										// Clear the DMA configuration settings 
+	DCH1ECONbits.CHSIRQ = _SPI3_TX_VECTOR;			// Move data on PMP interrupt
+	DCH1ECONbits.CHAIRQ = _SPI3_FAULT_VECTOR;		// Abort on PMP error
+	DCH1ECONbits.SIRQEN = 1;						// Enable Start IRQ
+//	DCH1ECONbits.AIRQEN = 1;						// Enable Abort IRQ
+	
+	DCH1CONbits.CHAEN = 0;
+	DCH1CONbits.CHPRI = 3;							// The priority of this channel is 3 (highest)
+	DCH1CONbits.CHEN = 1;							// Turn this channel on now
+
+	IPC33bits.DMA1IP = 3;							// Set DMA 0 interrupt priority to 3
+	IPC33bits.DMA1IS = 1;							// Set DMA 0 interrupt sub-priority to 1
+	IFS4bits.SPI3TXIF = 0;							// Clear the SPI TX interrupt flag
+	IFS4bits.DMA1IF = 0;							// Clear the DMA channel 0 interrupt flag
+	IEC4bits.DMA1IE = 1;							// Enable the DMA 0 interrupt
+	DCH1INTbits.CHBCIE = 1;							// Enable the Channel Block Transer Complete (CHBC) Interrupt
+
+//	DCH0ECONbits.CFORCE = 1;						// Force the start of the transfer now
+
+	DMACONSET = 0x8000;
+	// ------------------------------------------
 }
 
 void SPI4_init(){
@@ -109,13 +176,65 @@ void SPI4_init(){
 
 	SPI4BRG = BRG;
 	
-	IFS5bits.SPI4TXIF = 0;
-	LED_A_TX_INTERRUPT = 0;
-	IPC41bits.SPI4TXIP = 6;
-	IPC41bits.SPI4TXIS = 0;
+//	IFS5bits.SPI4TXIF = 0;
+//	LED_A_TX_INTERRUPT = 0;
+//	IPC41bits.SPI4TXIP = 6;
+//	IPC41bits.SPI4TXIS = 0;
 	
 	data = SPI4BUF;
 	SPI4CONbits.ON = 1;
+	
+	// ------------------- DMA -------------------
+	DCH0CONbits.CHEN = 0;							// Turn off this channel
+
+	DCH2SSA = virt_to_phys(LED_A_tx_buffer);		// Move the data from the [buffer] array
+	DCH2DSA = virt_to_phys((const void*)&SPI4BUF);	// Move the data to the x register
+	DCH2SSIZ = BUFFER_LENGTH;						// Move num_bytes bytes of data in total
+	DCH2CSIZ = 1;									// Move 1 byte at a time
+	DCH2DSIZ = 1;									// Destination size is 1 byte
+
+	DCH2ECON=0;										// Clear the DMA configuration settings 
+	DCH2ECONbits.CHSIRQ = _SPI4_TX_VECTOR;			// Move data on PMP interrupt
+	DCH2ECONbits.CHAIRQ = _SPI4_FAULT_VECTOR;		// Abort on PMP error
+	DCH2ECONbits.SIRQEN = 1;						// Enable Start IRQ
+//	DCH2ECONbits.AIRQEN = 1;						// Enable Abort IRQ
+	
+	DCH2CONbits.CHAEN = 0;
+	DCH2CONbits.CHPRI = 3;							// The priority of this channel is 3 (highest)
+	DCH2CONbits.CHEN = 1;							// Turn this channel on now
+
+	IPC34bits.DMA2IP = 3;							// Set DMA 0 interrupt priority to 3
+	IPC34bits.DMA2IS = 1;							// Set DMA 0 interrupt sub-priority to 1
+	IFS5bits.SPI4TXIF = 0;							// Clear the SPI TX interrupt flag
+	IFS4bits.DMA0IF = 0;							// Clear the DMA channel 0 interrupt flag
+	IEC4bits.DMA0IE = 1;							// Enable the DMA 0 interrupt
+	DCH0INTbits.CHBCIE = 1;							// Enable the Channel Block Transer Complete (CHBC) Interrupt
+
+//	DCH0ECONbits.CFORCE = 1;						// Force the start of the transfer now
+
+	DMACONSET = 0x8000;
+	// ------------------------------------------
+}
+
+void __ISR_AT_VECTOR(_DMA0_VECTOR, IPL3SRS) DMA0_handler(void) {
+    IFS4bits.DMA0IF = 0;	// Clear the DMA channel 0 interrupt flag
+//    IEC4bits.DMA0IE = 0;	// Disable the DMA 0 interrupt
+	IFS4bits.SPI2TXIF = 0;
+//	LATDINV = 1 << 3;
+}
+
+void __attribute__((vector(_DMA1_VECTOR), interrupt(IPL3SRS), nomips16)) DMA1_handler(){
+    IFS4bits.DMA1IF = 0;	// Clear the DMA channel 0 interrupt flag
+//    IEC4bits.DMA0IE = 0;	// Disable the DMA 0 interrupt
+	IFS4bits.SPI3TXIF = 0;
+//	LATDINV = 1 << 3;
+}
+
+void __attribute__((vector(_DMA2_VECTOR), interrupt(IPL3SRS), nomips16)) DMA2_handler(){
+    IFS4bits.DMA2IF = 0;	// Clear the DMA channel 0 interrupt flag
+//    IEC4bits.DMA2IE = 0;	// Disable the DMA 0 interrupt
+	IFS5bits.SPI4TXIF = 0;
+//	LATDINV = 1 << 3;
 }
 
 void SPI2_write(unsigned char data){

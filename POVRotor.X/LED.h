@@ -26,4 +26,8 @@ extern void writeLEDs_hue(led*, double);
 
 extern void led_test_loop(unsigned char, unsigned char);
 
+extern unsigned char LED_A_tx_buffer[BUFFER_LENGTH];
+extern unsigned char LED_B_tx_buffer[BUFFER_LENGTH];
+extern unsigned char LED_C_tx_buffer[BUFFER_LENGTH];
+
 #endif

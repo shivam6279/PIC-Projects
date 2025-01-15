@@ -22,50 +22,10 @@ led color_yellow = {255, 255, 0};
 
 led buffer[LED_LENGTH];
 
-static volatile char LED_A_tx_buffer[BUFFER_LENGTH], LED_B_tx_buffer[BUFFER_LENGTH], LED_C_tx_buffer[BUFFER_LENGTH];
-static volatile unsigned int LED_A_tx_buffer_index = 0, LED_B_tx_buffer_index = 0, LED_C_tx_buffer_index = 0;
+unsigned char __attribute__ ((coherent, aligned(8))) LED_A_tx_buffer[BUFFER_LENGTH];
+unsigned char __attribute__ ((coherent, aligned(8))) LED_B_tx_buffer[BUFFER_LENGTH];
+unsigned char __attribute__ ((coherent, aligned(8))) LED_C_tx_buffer[BUFFER_LENGTH];
 static float led_buffer_scaler[LED_LENGTH] = {1, 0.985263158, 0.970526316, 0.955789474, 0.941052632, 0.926315789, 0.911578947, 0.896842105, 0.882105263, 0.867368421, 0.852631579, 0.837894737, 0.823157895, 0.808421053, 0.793684211, 0.778947368, 0.764210526, 0.749473684, 0.734736842, 0.72, 0.705263158, 0.690526316, 0.675789474, 0.661052632, 0.646315789, 0.631578947, 0.616842105, 0.602105263, 0.587368421, 0.572631579, 0.557894737, 0.543157895, 0.528421053, 0.513684211, 0.498947368, 0.484210526, 0.469473684, 0.454736842, 0.44, 0.425263158, 0.410526316, 0.395789474, 0.381052632, 0.366315789, 0.351578947, 0.336842105, 0.322105263, 0.307368421, 0.3, 0.314736842, 0.329473684, 0.344210526, 0.358947368, 0.373684211, 0.388421053, 0.403157895, 0.417894737, 0.432631579, 0.447368421, 0.462105263, 0.476842105, 0.491578947, 0.506315789, 0.521052632, 0.535789474, 0.550526316, 0.565263158, 0.58, 0.594736842, 0.609473684, 0.624210526, 0.638947368, 0.653684211, 0.668421053, 0.683157895, 0.697894737, 0.712631579, 0.727368421, 0.742105263, 0.756842105, 0.771578947, 0.786315789, 0.801052632, 0.815789474, 0.830526316, 0.845263158, 0.86, 0.874736842, 0.889473684, 0.904210526, 0.918947368, 0.933684211, 0.948421053, 0.963157895, 0.977894737, 0.992631579};
-
-void __ISR_AT_VECTOR(_SPI4_TX_VECTOR, IPL6SRS) SPI_A_TX(void) {
-	IFS5bits.SPI4TXIF = 0;
-	if(LED_A_tx_buffer_index) {
-		while(!SPI4STATbits.SPITBF) {
-			SPI4BUF = LED_A_tx_buffer[LED_A_tx_buffer_index++];
-			if(LED_A_tx_buffer_index == BUFFER_LENGTH) {
-				LED_A_tx_buffer_index = 0;
-				LED_A_TX_INTERRUPT = 0;
-				break;
-			}
-		}
-	}
-}
-
-void __ISR_AT_VECTOR(_SPI3_TX_VECTOR, IPL6SRS) SPI_B_TX(void) {
-	IFS4bits.SPI3TXIF = 0;
-	if(LED_B_tx_buffer_index) {
-		while(!SPI3STATbits.SPITBF) {
-			SPI3BUF = LED_B_tx_buffer[LED_B_tx_buffer_index++];
-			if(LED_B_tx_buffer_index == BUFFER_LENGTH) {
-				LED_B_tx_buffer_index = 0;
-				LED_B_TX_INTERRUPT = 0;
-				break;
-			}
-		}
-	}
-}
-void __ISR_AT_VECTOR(_SPI2_TX_VECTOR, IPL6SRS) SPI_C_TX(void) {
-	IFS4bits.SPI2TXIF = 0;
-	if(LED_C_tx_buffer_index) {
-		while(!SPI2STATbits.SPITBF) {
-			SPI2BUF = LED_C_tx_buffer[LED_C_tx_buffer_index++];
-			if(LED_C_tx_buffer_index == BUFFER_LENGTH) {
-				LED_C_tx_buffer_index = 0;
-				LED_C_TX_INTERRUPT = 0;
-				break;
-			}
-		}
-	}
-}
 
 void start_frame2() {
 	SPI2_write(0);
@@ -231,7 +191,16 @@ inline void writeLEDs_ISR(led *buffer) {
 		LED_C_tx_buffer[i] = 255;
 	}
 	
-	LED_A_tx_buffer_index = 0;
+	DCH0CONbits.CHEN = 1;
+	DCH0ECONbits.CFORCE = 1;
+	
+	DCH1CONbits.CHEN = 1;
+	DCH1ECONbits.CFORCE = 1;
+	
+	DCH2CONbits.CHEN = 1;
+	DCH2ECONbits.CFORCE = 1;
+	
+	/*LED_A_tx_buffer_index = 0;
 	LED_B_tx_buffer_index = 0;
 	LED_C_tx_buffer_index = 0;
 	IFS4bits.SPI2TXIF = 0;
@@ -261,7 +230,7 @@ inline void writeLEDs_ISR(led *buffer) {
 //    }
 	LED_A_TX_INTERRUPT = 1;
 	LED_B_TX_INTERRUPT = 1;
-	LED_C_TX_INTERRUPT = 1;
+	LED_C_TX_INTERRUPT = 1;*/
 }
 
 void writeLEDs_hue(led *buffer, double hue) {

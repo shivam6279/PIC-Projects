@@ -3,6 +3,7 @@
 #include <stdbool.h>
 #include "pragma.h"
 #include <string.h>
+#include <inttypes.h>
 #include <sys/attribs.h>
 #include "pic32.h"
 #include "USART.h"
@@ -53,17 +54,14 @@ void __ISR_AT_VECTOR(_TIMER_3_VECTOR, IPL7SRS) speed_timer(void) {
 
 void __ISR_AT_VECTOR(_TIMER_4_VECTOR, IPL3SRS) LED_timer(void) {
 	static double angle;
-	static int a;
 	
 	IFS0bits.T4IF = 0;
-	if(!(LED_A_TX_INTERRUPT || LED_B_TX_INTERRUPT || LED_C_TX_INTERRUPT)) {
-		angle = 360.0 * ((double)speed_counter) / ((double)omega) - ANGLE_OFFSET;
-		
-		polar_image(buffer, cart_image, angle);
-		// scaleBrightness(buffer);
-		writeLEDs_ISR(buffer);
-		// writeLEDs_hue(buffer, time*50);
-	}
+	angle = 360.0 * ((double)speed_counter) / ((double)omega) - ANGLE_OFFSET;
+
+	polar_image(buffer, cart_image, angle);
+	// scaleBrightness(buffer);
+	writeLEDs_ISR(buffer);
+//		 writeLEDs_hue(buffer, time*50);
 }
 
 long int mag(long int a) {
@@ -74,7 +72,8 @@ long int mag(long int a) {
 }
 
 void main() {
-	int i;
+	int i, j;
+	uint32_t k;
 	float rpm;
 	unsigned char gif_frame = 0, max_frames;
 	
@@ -83,7 +82,7 @@ void main() {
 	
 	timer2_init(1000); 
 	timer3_init(RPM_TIMER_FREQ);
-	timer4_init(10000);
+	timer4_init(5000);
 	
 	timer5_init(1000000);
 	
@@ -95,12 +94,49 @@ void main() {
 	SPI4_init();
 	delay_ms(200);
 	
+	/*while(1) {
+		for(k = 0; k < 0xFFFFFF; k++) {
+			i = 0;
+			LED_C_tx_buffer[i++] = 0x00;
+			LED_C_tx_buffer[i++] = 0x00;
+			LED_C_tx_buffer[i++] = 0x00;
+			LED_C_tx_buffer[i++] = 0x00;
+			for(j = 0; j < LED_LENGTH/3; j++) {
+				LED_C_tx_buffer[i++] = 0xE5;
+				LED_C_tx_buffer[i++] = (k >> 16) & 0xFF;
+				LED_C_tx_buffer[i++] = (k >> 8) & 0xFF;
+				LED_C_tx_buffer[i++] = k & 0xFF;
+			}
+			LED_C_tx_buffer[i++] = 0xFF;
+			LED_C_tx_buffer[i++] = 0xFF;
+			LED_C_tx_buffer[i++] = 0xFF;
+			LED_C_tx_buffer[i++] = 0xFF;
+			LED_C_tx_buffer[i++] = 0xFF;
+			LED_C_tx_buffer[i++] = 0xFF;
+			LED_C_tx_buffer[i++] = 0xFF;
+			LED_C_tx_buffer[i++] = 0xFF;
+			
+//			for(j = 0; j < BUFFER_LENGTH; j++) {
+//				SPI2_write(LED_C_tx_buffer[j]);
+//			}
+//			DMACONbits.ON = 1;
+//			DCH0CONbits.CHEN = 1;
+//			DCH0ECONbits.CFORCE = 1;
+//			SPI2_write(0);
+			delay_ms(2);
+		}
+		
+	}*/
+	
 	led_test_loop(1, 100);
 	
 	for(i = 0; i < LED_LENGTH; i++){
 		buffer[i] = color_black;
 	}
-	writeLEDs_ISR(buffer);
+	for(i = 0; i < 10; i++){
+		writeLEDs_ISR(buffer);
+		delay_ms(1);
+	}
 	
 	rpm = 0.0;
 	do{
@@ -123,11 +159,10 @@ void main() {
 	gif_frame = 1;
 	
 	LED_TIMER_ON = 1;
-//    uS_TIMER_ON = 1;
 	
 	StartDelayCounter();
 	while(1) {
-		if(ms_counter2() > 1) {
+		if(ms_counter2() > 50) {
 			set_ms_counter2(0);
 			gif_get_frame(cart_image, gif_frame);
 			gif_frame = (gif_frame + 1) % max_frames;
