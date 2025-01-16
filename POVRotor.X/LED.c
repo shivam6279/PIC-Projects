@@ -156,10 +156,6 @@ void writeLEDs(led *buffer) {
 inline void writeLEDs_ISR(led *buffer) {
 	unsigned int i, j;
 	
-	LED_A_TX_INTERRUPT = 0;
-	LED_B_TX_INTERRUPT = 0;
-	LED_C_TX_INTERRUPT = 0;
-	
 	for(i = 0; i < 4; i++) {
 		LED_A_tx_buffer[i] = 0;
 		LED_B_tx_buffer[i] = 0;
@@ -199,38 +195,6 @@ inline void writeLEDs_ISR(led *buffer) {
 	
 	DCH2CONbits.CHEN = 1;
 	DCH2ECONbits.CFORCE = 1;
-	
-	/*LED_A_tx_buffer_index = 0;
-	LED_B_tx_buffer_index = 0;
-	LED_C_tx_buffer_index = 0;
-	IFS4bits.SPI2TXIF = 0;
-	IFS4bits.SPI3TXIF = 0;
-	IFS5bits.SPI4TXIF = 0;
-	
-	while(!SPI4STATbits.SPITBF) {
-		SPI4BUF = LED_A_tx_buffer[LED_A_tx_buffer_index++];
-	}
-	
-	while(!SPI3STATbits.SPITBF) {
-		SPI3BUF = LED_B_tx_buffer[LED_B_tx_buffer_index++];
-	}
-	
-	while(!SPI2STATbits.SPITBF) {
-		SPI2BUF = LED_C_tx_buffer[LED_C_tx_buffer_index++];
-	}
-	
-//    for(i = 0; i < 16; i++) {
-//        SPI4BUF = LED_A_tx_buffer[LED_A_tx_buffer_index++];
-//    }
-//    for(i = 0; i < 16; i++) {
-//        SPI3BUF = LED_B_tx_buffer[LED_B_tx_buffer_index++];
-//    }
-//    for(i = 0; i < 16; i++) {
-//        SPI2BUF = LED_C_tx_buffer[LED_C_tx_buffer_index++];
-//    }
-	LED_A_TX_INTERRUPT = 1;
-	LED_B_TX_INTERRUPT = 1;
-	LED_C_TX_INTERRUPT = 1;*/
 }
 
 void writeLEDs_hue(led *buffer, double hue) {
