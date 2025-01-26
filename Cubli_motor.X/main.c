@@ -40,9 +40,6 @@
  * E: Toggle auto-stop
  */
 
-const char rttll_metroid_save[] = {"Metroid_Save:d=4,o=5,b=200:d,f,d,c,a4,p,a4"};
-const char rttll_mario[] = {"Mario:d=4,o=6,b=180:8e,8e,8p,8e,8p,8c,e,g,p,g5,p"};
-
 unsigned char board_id = 0;
 
 void parse_rx_codes() {
@@ -89,7 +86,7 @@ void parse_rx_codes() {
 int main() {
 	int i, j;
 	signed int a = 0;
-	unsigned char mode_temp;
+	motor_mode mode_temp;
 	unsigned char temp_buffer[RX_BUFFER_SIZE];
 
 	PICInit();
@@ -103,12 +100,12 @@ int main() {
 
 	USART3_init(250000);    
 	timer2_init(KHZ(1));	// ms delay - P = 3
-	timer3_init(KHZ(100));	// us delay - P = 7
+	timer3_init(0);			// us delay - P = 7
 	timer4_init(KHZ(25));	// FOC      - P = 6
 	timer5_init(50);		// Speaker  - P = 2
 	timer6_init(500);		// RPM      - P = 4
-	timer7_init(KHZ(25));	// SPI data request
-	timer8_init(KHZ(100));	// Sensorless
+//	timer7_init(KHZ(25));	// SPI data request
+	timer8_init(0);			// Sensorless
 
 	EEPROM_init();
 	PwmInit(96000);
@@ -125,6 +122,13 @@ int main() {
 	PlayWav();
 	LED0 = 0;
 	
+//	while(1) {
+//		LED0 = 1;
+//		delay_ms(1000);
+//		LED0 = 0;
+//		delay_ms(1000);
+//	}
+	
 	/*FOC_TIMER_ON = 0;
 	float pp = 0.07;
 	while(1) {
@@ -134,16 +138,19 @@ int main() {
 				delay_ms(4);
 			}
 		}
-		MotorPhase(0, pp);
-		SensorlessStart(pp);
-		while(1) {
-			delay_ms(10);
-			SetPower(GetPower() + 0.001);
-			if(GetPower() > 0.95) {
-				break;
-			}
-		}
-		while(1);
+		
+//		MotorPhase(0, pp);
+//		SensorlessStart(pp);
+//		while(1);
+//		while(1) {
+//			delay_ms(100);
+//			SetPower(GetPower() + 0.001);
+//			if(GetPower() > 0.5) {
+//				break;
+//			}
+//		}
+//		while(1);
+		
 		IEC5bits.PWM4IE = 1;
 		phase_delay = 400;
 		StartDelaymsCounter();
@@ -151,22 +158,25 @@ int main() {
 			for(i = 0; i  < 6; i++) {
 				MotorPhase(i, pp);
 				StartDelayusCounter();
-				while(us_counter() < 6);
+				while(TMR3 < 3600);
 				while(!bemf_phase(i)); // Wait for back emf to rise/fall
-				phase_delay = LPF_PHASE * phase_delay + (1.0f - LPF_PHASE) * (float)us_counter();
-				while(us_counter() < 1.25*phase_delay);
+				LED0 = 1;
+				phase_delay = LPF_PHASE * phase_delay + (1.0f - LPF_PHASE) * (float)TMR3;
+//				phase_delay = TMR3;
+				while(TMR3 < 1.25*phase_delay);
+				LED0 = 0;
 			}
 			
 			if(ms_counter() > 10) {
 				reset_ms_counter();
 				if(pp < 1.0) {
-					pp += 0.0005;
+					pp += 0.0002;
 				}
 			}
 		}
 	}*/
 
-	motor_zero_angle = 24.2; //Read_Motor_Offset();
+	motor_zero_angle = 49.4; //Read_Motor_Offset();
 	
 	TMR7 = 50;
 	FOC_TIMER_ON = 1;
@@ -216,6 +226,7 @@ int main() {
 			mode = mode_temp;
 			play_tone = 0;
 			StartDelaymsCounter();
+			FOC_TIMER_ON = 1;
 		}
 		
 		// if(auto_stop) {

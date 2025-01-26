@@ -26,7 +26,7 @@ float wav_value;
 float wav_amplitude_correction = 1.0;
 volatile bool play_wav = false;
 
-float tone_power = 0.05;  //0.015
+float tone_power = 0.1;  //0.015
 unsigned char tone_phase = 0;
 volatile float sin_phase_delta;
 volatile unsigned int sin_index = 0;

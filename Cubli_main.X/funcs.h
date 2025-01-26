@@ -8,7 +8,7 @@
 #define UART_A 4
 #define UART_B 2
 #define UART_C 5
-#define ACC_LOOP_TIME 2000
+#define ACC_LOOP_TIME 2000 // 2000
 
 extern char xbee_mode;
 extern bool run_motor;

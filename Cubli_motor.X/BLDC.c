@@ -9,7 +9,7 @@
 #include "SPI.h"
 #include "pic32.h"
 
-float pole_pairs = 12;
+float pole_pairs = 7;
 
 // SVPWM
 float svpwm_max = 1000;
@@ -23,9 +23,10 @@ double encoder_LUT[(int)ENCODER_RES];
 // Sensorless
 volatile float phase_delay = 0;
 volatile uint8_t current_phase = 0;
-volatile uint32_t sensorless_counter = 0;
-volatile uint32_t sensorless_counter_target = 0;
 volatile bool sensorless_flag = false;
+volatile uint8_t comp_rshift, bemf_dir;
+
+volatile unsigned char comp_u, comp_v, comp_w, comparator = 0;
 
 volatile motor_mode mode = MODE_POWER;
 volatile motor_waveform_type waveform_mode = MOTOR_SVPWM;
@@ -96,44 +97,97 @@ void __ISR_AT_VECTOR(_TIMER_4_VECTOR, IPL6AUTO) FOC_loop(void){
 
 void SensorlessStart(float p) {
 	sensorless_flag = false;
-	sensorless_counter = 0;
 	power = p;
 	current_phase = 0;
+	waveform_mode = MODE_SENSORLESS;
+	
+	comp_rshift = 0;
+	bemf_dir = 1;
+	
+	IEC5bits.PWM4IE = 0;
+	
+	TMR8 = 0;
+	PR8 = 3600;
 	T8CONbits.ON = 1;
-//	IEC5bits.PWM4IE = 1;
 }
 
 void __ISR(_TIMER_8_VECTOR, IPL7SOFT) Sensorless_timer(void) {
 	IFS2bits.T8IF = 0;
-	sensorless_counter++;
-	if(sensorless_flag) {
-		if(sensorless_counter >= sensorless_counter_target) {
-			current_phase = (current_phase + 1) % 6;
-//			if(mode != MODE_OFF) {
-				MotorPhase(current_phase, power);
-//			}
-			sensorless_counter = 0;
-			sensorless_flag = false;
-			IEC5bits.PWM4IE = 1;
-		}
-
-	} else if(sensorless_counter >= 6) {
-		if(bemf_phase(current_phase)) {
-			phase_delay = (1.0f-LPF_PHASE)*phase_delay + LPF_PHASE*(float)sensorless_counter;
-//			phase_delay = sensorless_counter;
-			sensorless_counter = 0;
-			sensorless_counter_target = phase_delay;//(phase_delay * 1.25);
-			sensorless_flag = true;
-			IEC5bits.PWM4IE = 0;
-		}
-	}
+	
+	LATDINV |= 1 << 6;
+	PR8 = 0xFFFFFFFF;
+	T8CONbits.ON = 0;
+	
+//	if(sensorless_flag) {
+//		sensorless_flag = false;
+//		current_phase = (current_phase + 1) % 6;
+//		MotorPhase(current_phase, power);
+//		TMR8 = 0;
+//		PR8 = 3600;
+//	
+//	} else {
+//		IEC5bits.PWM4IE = 1;
+//		PR8 = 0xFFFFFFFF;
+//		TMR8 = 3600;
+//	}
 }
 
-void __ISR(_PWM4_VECTOR, IPL7SOFT) PWM_sync_timer(void) {
+volatile bool bemf_flag;
+volatile uint8_t pwm_odd = 0;
+void __ISR(_PWM4_VECTOR, IPL7AUTO) PWM_sync_timer(void) {
 //    PWMCON4bits.TRGIF = 0;
 	PWMCON4bits.PWMHIF = 0;
 	IFS5bits.PWM4IF = 0;
-	comparator = (PORTG >> 6) & 0b111;
+	
+	if(pwm_odd == 1) {
+		comparator = (PORTG >> 6) & 0b111;
+		comp_u = (comparator >> 2) & 1;
+		comp_v = (comparator >> 1) & 1;
+		comp_w = comparator & 1;
+
+//		LATDINV |= 1 << 6;
+	
+//		TMR8 = 0;
+//		PR8 = 10;
+//		T8CONbits.ON = 1;
+	
+//		if(waveform_mode == MODE_SENSORLESS) {
+//			if(current_phase == 0) {
+//				if(comparator & 1) {
+//					bemf_flag = true;
+//				}
+//			} else if(current_phase == 1) {
+//				if(!((comparator >> 1) & 1)) {
+//					bemf_flag = true;
+//				}
+//			} else if(current_phase == 2) {
+//				if((comparator >> 2) & 1) {
+//					bemf_flag = true;
+//				}
+//			} else if(current_phase == 3) {
+//				if(!(comparator & 1)) {
+//					bemf_flag = true;
+//				}
+//			} else if(current_phase == 4) {
+//				if((comparator >> 1) & 1) {
+//					bemf_flag = true;
+//				}
+//			} else if(current_phase == 5) {
+//				if(!((comparator >> 2) & 1)) {
+//					bemf_flag = true;
+//				}
+//			}
+//			if(bemf_flag) {
+//				IEC5bits.PWM4IE = 0;
+//				sensorless_flag = true;
+//				phase_delay = (1.0f-LPF_PHASE)*phase_delay + LPF_PHASE*(float)TMR8;
+//				TMR8 = 0;
+//				PR8 = phase_delay;
+//			}
+//		}
+	}
+	
+	pwm_odd = (pwm_odd + 1) % 2;
 }
 
 volatile float rpm_err, rpm_out, rpm_sum, p_rpm = 0.0, rpm_p_term;
@@ -348,6 +402,24 @@ void MotorPhase(signed char num, float val) {
 			PDC9 = PWM_MAX;
 			break;       
 	}
+}
+
+bool bemf_phase(unsigned char phase) {
+	phase = phase % 6;
+	if(phase == 0) {
+		return comp_w;
+	} else if(phase == 1) {
+		return !comp_v;
+	} else if(phase == 2) {
+		return comp_u;
+	} else if(phase == 3) {
+		return !comp_w;
+	} else if(phase == 4) {
+		return comp_v;
+	} else if(phase == 5) {
+		return !comp_u;
+	}
+	return false;
 }
 
 void MotorOff() {

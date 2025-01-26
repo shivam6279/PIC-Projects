@@ -15,9 +15,10 @@
 char xbee_mode = 'S';
 bool run_motor = true;
 
-static float edge_centerpoints[12][2] = {{44.0, -90}, {41.8, 180}, {49.0, 90}, {51.7, 0}, {-40.3, -90}, {-40.0, 180}, {-46.0, 90}, {-47.0, 0}, {0.0, -135.8}, {0.0, 142.0}, {0.0, 47.0}, {0.0, -51.7}};
+static float edge_centerpoints[12][2] = {{44.0, -90}, {41.8, 180}, {49.0, 90}, {51.7, 0}, {-40.3, -90}, {-40.0, 180}, {-46.0, 90}, {-47.0, 0}, {0.0, -135.8}, {0.0, 142.0}, {0.0, 49}, {0.0, -51.7}};
 static unsigned char edge_pitch_or_roll[12] = {0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1};
-static int edge_angle_signs[12] = {-1, 1, 1, -1, -1, 1, 1, -1, -1, -1, -1, -1};
+//static int edge_angle_signs[12] = {-1, 1, 1, -1, -1, 1, 1, -1, -1, -1, -1, -1};
+static int edge_angle_signs[12] = {1, -1, -1, 1, 1, -1, -1, 1, 1, 1, 1, 1};
 static unsigned char edge_motor[12] = {2, 1, 2, 1, 2, 1, 2, 1, 0, 0, 0, 0};
 
 float corner_centerpoints[8][2] = {{38.0, -51.6}, {33.7, -135.4}, {36.1, 142.3}, {41.0, 47.5}, {-33.0, -51.5}, {-29.7, -135.25}, {-32.8, 142.0}, {-36.7, 47.0}};
@@ -120,11 +121,12 @@ unsigned char get_corner(float pitch_angle, float roll_angle, float offset) {
     return 0;
 }
 
-#define OFFSET_LPF 0.93
+#define OFFSET_LPF 0.9
 
 bool balance_edge(float pitch_angle, float roll_angle, float loop_time, XYZ gyro, PID* motorA, PID* motorB, PID* motorC) {    
     float ks = 0.8;
-    float kv = 0.5;
+	float ko = -0.0000001;
+    float kv = 0.9;
     
     static unsigned char pre_edge = 0, pre_edge2 = 0;
     
@@ -151,9 +153,9 @@ bool balance_edge(float pitch_angle, float roll_angle, float loop_time, XYZ gyro
             USART_write_int(UART_C, 0);
             USART_send(UART_C, '\r');
 
-            USART_send_str(UART_A, "OO\r");
-            USART_send_str(UART_B, "OO\r");
-            USART_send_str(UART_C, "OO\r");
+            USART_send_str(UART_A, "O\r");
+            USART_send_str(UART_B, "O\r");
+            USART_send_str(UART_C, "O\r");
 
             motorA->integral = 0.0;
             motorB->integral = 0.0;
@@ -188,26 +190,26 @@ bool balance_edge(float pitch_angle, float roll_angle, float loop_time, XYZ gyro
 
             if(edge_motor[edge2-1] == 0) {
                 rpm = rpm_A;
-                motor->derivative = -gyro.x;
+                motor->derivative = gyro.x;
 
             } else if(edge_motor[edge2-1] == 1) {
                 rpm = rpm_B;
-                motor->derivative = -gyro.y;
+                motor->derivative = gyro.y;
             } else {
                 rpm = rpm_C;
-                motor->derivative = -gyro.z; 
+                motor->derivative = gyro.z; 
             }
 
             PIDIntegrate(motor, loop_time);
             
             pre_offset = motor->offset;
 //            motor->offset += edge_angle_signs[edge2-1] * ks * motor->error * loop_time;
-            motor->offset = (1.0 - OFFSET_LPF) * (motor->offset + edge_angle_signs[edge2-1]*ks*motor->error*loop_time) + OFFSET_LPF*pre_offset;
-            
+			motor->offset = (1.0 - OFFSET_LPF) * (motor->offset + edge_angle_signs[edge2-1]*ks*motor->error*loop_time + motor->output*ko) + OFFSET_LPF*pre_offset;
+			
             motor->offset = LimitValue(motor->offset, angle_offset-10.0, angle_offset+10.0);   
             PIDOutput(motor);            
-            motor->output += kv*rpm; 
-            motor->output = LimitValue(motor->output, -1000.0, 1000.0);  
+            motor->output += kv*rpm;
+            motor->output = LimitValue(motor->output, -1500.0, 1500.0);  
 
             if(run_motor) {
                 USART_write_int(port, motor->output);

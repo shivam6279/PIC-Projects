@@ -2,9 +2,12 @@
 #define _pic32_H_
 
 #include <xc.h>
+#include <inttypes.h>
 
 #define LED0 LATDbits.LATD6
 #define LED1 LATAbits.LATA8
+//LATDINV |= 1 << 6;
+//LATAINV |= 1 << 8;
 
 extern void PICInit();
 extern void GPIO_init();
@@ -23,9 +26,9 @@ extern void delay_ms(unsigned int);
 
 extern void StartDelayusCounter();
 extern void StopDelayusCounter();
-extern unsigned long int us_counter();
+extern uint32_t us_counter();
 extern void reset_us_counter();
-extern void delay_us(unsigned int);
+extern void delay_us(uint32_t);
 
 extern void calc_timer_period(float, unsigned int*, unsigned char*);
 extern void timer2_init(float);

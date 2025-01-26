@@ -1,21 +1,16 @@
 #include "pic32.h"
 #include <sys/attribs.h>
+#include <inttypes.h>
 #include <sys/kmem.h>
 #include <xc.h>
 
 volatile unsigned long int delay_ms_counter1 = 0, delay_ms_counter2 = 0, delay_ms_counter3 = 0;
-volatile unsigned long int delay_us_counter = 0;
 
 void __ISR(_TIMER_2_VECTOR, IPL4SOFT) delay_ms_timer(void) {
 	IFS0bits.T2IF = 0;
 	delay_ms_counter1++;
 	delay_ms_counter2++;
 	delay_ms_counter3++;
-}
-
-void __ISR_AT_VECTOR(_TIMER_3_VECTOR, IPL7SOFT) delay_us_timer(void) {
-	IFS0bits.T3IF = 0;
-	delay_us_counter++;
 }
 
 void PICInit() {
@@ -78,7 +73,8 @@ void PICInit() {
 	OSCCONbits.FRCDIV = 0;
 	OSCCONbits.COSC = 1;
 	OSCCONbits.SOSCEN = 0;
-   // OSCTUNbits.TUN = 0;
+//	OSCTUN = 0b000000; // Tuning doesn't work
+//	SYSKEY = 0x0; // Relock syskey
 	
 	PB2DIVbits.PBDIV = 1;   // PBCLK2 at 60mhz
 	PB3DIVbits.PBDIV = 1;   // PBCLK3 at 60mhz
@@ -199,7 +195,7 @@ void delay_ms(unsigned int x){
 }
 
 void StartDelayusCounter() {
-	delay_us_counter = 0;
+	TMR3 = 0;
 	T3CONbits.ON = 1;
 }
 
@@ -207,18 +203,20 @@ void StopDelayusCounter() {
 	T3CONbits.ON = 0;
 }
 
-unsigned long int us_counter() {
-	return delay_us_counter;
+uint32_t us_counter() {
+	return TMR3;
 }
 
 void reset_us_counter() {
-	delay_us_counter = 0;
+	TMR3 = 0;
 }
 
-void delay_us(unsigned int x) {
-	StartDelayusCounter();
-	while(delay_us_counter < x);
-	StopDelayusCounter();
+void delay_us(uint32_t x) {
+	x *= 60;
+	TMR3 = 0;
+	T3CONbits.ON = 1;
+	while(TMR3 < x);
+	T3CONbits.ON = 0;
 }
 
 void calc_timer_period(float freq, unsigned int *pr, unsigned char *pre) {
@@ -266,20 +264,12 @@ void timer2_init(float freq) {
 }
 
 void timer3_init(float freq) {
-	unsigned int pr;
-	unsigned char pre;
-	calc_timer_period(freq, &pr, &pre);
-
 	T3CONbits.ON = 0;
-	T3CONbits.T32 = 0;
-	T3CONbits.TCKPS = pre & 0b111;
+	T3CONbits.T32 = 1;
+	T3CONbits.TCKPS = 0x0; // 1x prescalar
 	T3CONbits.TCS = 0;
-	PR3 = pr;
+	PR3 = 0xFFFFFFFF;
 	TMR3 = 0;
-	
-	IPC3bits.T3IP = 7;
-	IFS0bits.T3IF = 0;
-	IEC0bits.T3IE = 1;
 }
 
 void timer4_init(float freq) {
@@ -342,14 +332,12 @@ void timer7_init(float freq) {
 	IEC2bits.T7IE = 1;
 }
 
-void timer8_init(float freq) {
-	unsigned int pr;
-	unsigned char pre;
-	calc_timer_period(freq, &pr, &pre);
-
+void timer8_init(float freq) {	
 	T8CONbits.ON = 0;
-	T8CONbits.TCKPS = pre & 0b111;
-	PR8 = pr;
+	T8CONbits.T32 = 1;
+	T8CONbits.TCKPS = 0;
+	T8CONbits.TCS = 0;
+	PR8 = 0xFFFFFFFF;
 	TMR8 = 0;
 	IPC21bits.T8IP = 7;
 	IFS2bits.T8IF = 0;

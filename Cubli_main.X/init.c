@@ -1,6 +1,6 @@
 #include "init.h"
 #include "pic32.h"
-#include "MPU9250.h"
+#include "MPU6050.h"
 #include "USART.h"
 #include "PID.h"
 #include "XBee.h"

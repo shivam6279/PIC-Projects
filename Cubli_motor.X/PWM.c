@@ -5,7 +5,12 @@
 
 #define DEAD_TIME 5
 
-volatile unsigned char comparator = 0;
+/*void __ISR(_PWM_PRI_VECTOR, IPL7SOFT) PWM_Primary_event(void) {
+	PTCONbits.SEIEN = 0;
+	IFS5bits.PWMPEVTIF = 0;
+	LATDINV |= 1 << 6;
+	PTCONbits.SEIEN = 1;
+}*/
 
 unsigned int PWM_MAX;
 void PwmInit(float freq) {
@@ -48,9 +53,9 @@ void PwmInit(float freq) {
 	PWMCON2 = 0;
 	PWMCON3 = 0;
 	
-	PWMCON1bits.ECAM = 0;
-	PWMCON2bits.ECAM = 0;
-	PWMCON3bits.ECAM = 0;
+	PWMCON1bits.ECAM = 1;
+	PWMCON2bits.ECAM = 1;
+	PWMCON3bits.ECAM = 1;
 	
 	IOCON1 = 0;
 	IOCON1bits.PENH = 1;
@@ -77,9 +82,9 @@ void PwmInit(float freq) {
 	PWMCON8 = 0;
 	PWMCON9 = 0;
 	
-	PWMCON7bits.ECAM = 0;
-	PWMCON8bits.ECAM = 0;
-	PWMCON9bits.ECAM = 0; 
+	PWMCON7bits.ECAM = 1;
+	PWMCON8bits.ECAM = 1;
+	PWMCON9bits.ECAM = 1; 
 	
 	IOCON7 = 0;
 	IOCON7bits.PENH = 1;
@@ -104,29 +109,39 @@ void PwmInit(float freq) {
 	PDC9 = 0;
 	DTR9 = DEAD_TIME;
 	ALTDTR9 = DEAD_TIME;
-
-	float temp = 120000000.0 / (freq * 1.0);
-	PWM_MAX = temp;
-	PTPERbits.PTPER = PWM_MAX;
-	
-//    SEVTCMP = 20;
-	
+		
+	PWMCON4bits.ECAM = 0;
+	IOCON4 = 0;
 	PWMCON4 = 0;
 	TRIG4 = 0;
 	TRGCON4 = 0;
-	
 //    TRGCON4bits.STRGIS = 1;
 //    PWMCON4bits.TRGIEN = 1;
 //    PWMCON4bits.TRGIF = 0;
-	PDC4 = 1;
+	PDC4 = 0;
 	PWMCON4bits.PWMHIEN = 1;
 	PWMCON4bits.PWMHIF = 0;
 	IPC44bits.PWM4IP = 7;
 	IPC44bits.PWM4IS = 0;
 	IFS5bits.PWM4IF = 0;
 	IEC5bits.PWM4IE = 1;
+	
+	float temp = 120000000.0 / (freq * 2.0); // 1,224.5
+	PWM_MAX = temp;
+	PTPERbits.PTPER = PWM_MAX;
+	
+	PHASE4 = temp - 100;
+	
+	PTCONbits.SEVTPS = 1;
+	SEVTCMP = 0;
+//	PTCONbits.SEIEN = 1;
+//	IPC42bits.PWMPEVTIP = 7;
+//	IPC42bits.PWMPEVTSIP = 0;
+//	IFS5bits.PWMPEVTIF = 0;
+//	IEC5bits.PWMPEVTIE = 1;
 
 	PTCONbits.PTEN = 1;
+	while(!PTCONbits.PWMRDY);
 }
 
 void WritePwm(int num, int val){
@@ -174,33 +189,4 @@ void WritePwm(int num, int val){
 			PDC12 = val;
 			break;
 	}
-}
-
-bool U_bemf() {
-	return (comparator >> 2) & 1;
-}
-bool V_bemf() {
-	return (comparator >> 1) & 1;
-}
-
-bool W_bemf() {
-	return comparator & 1;
-}
-
-bool bemf_phase(unsigned char phase) {
-	phase = phase % 6;
-	if(phase == 0) {
-		return W_bemf();
-	} else if(phase == 1) {
-		return !V_bemf();
-	} else if(phase == 2) {
-		return U_bemf();
-	} else if(phase == 3) {
-		return !W_bemf();
-	} else if(phase == 4) {
-		return V_bemf();
-	} else if(phase == 5) {
-		return !U_bemf();
-	}
-	return false;
 }

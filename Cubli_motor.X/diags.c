@@ -537,11 +537,16 @@ Read temp sensor TMP1075:\n\
 }
 
 bool diags_readADC(char *cmd) {
+	char ch;
+	float f;
+	static uint16_t delay = 1000;
 	float isns_u, isns_v, isns_w, isns_vbat, vsns_vbat, vsns_12v;
+	float vsns_u, vsns_v, vsns_w, vsns_x;
 	char arg_val[5];
 	
 	const char help_str[] = "\
 Read ADC data\n\
+stream -[i/v] -f: Stream all adc data. -i: motor phase currents -v: motor phase voltages -f [x]: Set streaming frequency to f [1, 10000] (Hz)\
 -r : Output raw data. No scaling applied.\n";
 	
 	if(str_getArgValue(cmd, "-h", arg_val) || str_getArgValue(cmd, "--help", arg_val)) {
@@ -550,35 +555,164 @@ Read ADC data\n\
 	}
 
 	adc_readAll();
+	
+	if(str_getArgValue(cmd, "-f", arg_val)) {
+		f = str_toFloat(arg_val);
+		if(f < 1.0 || f > 1000.0) {
+			USART3_send_str("Invalid frequency\n");
+		} else {
+			USART3_send_str("Set streaming fequency to ");
+			USART3_write_float(f, 4);
+			USART3_send_str(" Hz\n");
+			delay = 1000000 / f;
+		}
+	}
 
 	if(str_getArgValue(cmd, "-r", arg_val)) {
-		USART3_send_str("ADC1: "); 
+		USART3_send_str("ADC0: "); 
 		USART3_write_int(adc_data[0]);
 		USART3_send('\n');
-
-		USART3_send_str("ADC3: "); 
+		
+		USART3_send_str("ADC1: "); 
 		USART3_write_int(adc_data[1]);
-		USART3_send('\n'); 
-
-		USART3_send_str("ADC4: "); 
+		USART3_send('\n');
+		
+		USART3_send_str("ADC2: "); 
 		USART3_write_int(adc_data[2]);
 		USART3_send('\n');
 
-		USART3_send_str("AN7: "); 
+		USART3_send_str("ADC3: "); 
 		USART3_write_int(adc_data[3]);
+		USART3_send('\n'); 
+
+		USART3_send_str("ADC4: "); 
+		USART3_write_int(adc_data[4]);
+		USART3_send('\n');
+		
+		USART3_send_str("ADC5: "); 
+		USART3_write_int(adc_data[5]);
+		USART3_send('\n');
+
+		USART3_send_str("AN7: "); 
+		USART3_write_int(adc_data[7]);
+		USART3_send('\n');
+		
+		USART3_send_str("AN8: "); 
+		USART3_write_int(adc_data[8]);
 		USART3_send('\n');
 		
 		USART3_send_str("AN27: "); 
-		USART3_write_int(adc_data[4]);
+		USART3_write_int(adc_data[27]);
 		USART3_send('\n');
+	} if(str_getArgValue(cmd, "stream", arg_val)) {
+		if(str_getArgValue(cmd, "-i", arg_val)) {
+			while(1) {
+				StartDelayusCounter();
+				isns_u = ((float)adc_buffer[1][0][0] * ADC_CONV_FACTOR - 1.65) / 50.0f / ISNS_UVW_R * 1000.0f;
+				isns_v = ((float)adc_buffer[4][0][0] * ADC_CONV_FACTOR - 1.65) / 50.0f / ISNS_UVW_R * 1000.0f;
+				isns_w = -(isns_u + isns_v);
+				USART3_write_float(isns_u, 2);
+				USART3_send_str(", ");
+				USART3_write_float(isns_v, 2);
+				USART3_send_str(", ");
+				USART3_write_float(isns_w, 2);
+				USART3_send('\n');
+				while(us_counter() < delay);
+
+				if(rx_rdy) {
+					ch = read_rx_char();
+					if(ch == 'x') {
+						return true;
+					}
+				}
+			}
+		} else if(str_getArgValue(cmd, "-v", arg_val)) {
+			while(1) {
+				StartDelayusCounter();
+				vsns_u = (float)adc_buffer[2][0][0] * ADC_CONV_FACTOR / MOTOR_VSNS_DIVIDER;
+				vsns_v = (float)adc_buffer[3][0][0] * ADC_CONV_FACTOR / MOTOR_VSNS_DIVIDER;
+				vsns_w = (float)adc_buffer[0][0][0] * ADC_CONV_FACTOR / MOTOR_VSNS_DIVIDER;
+				vsns_x = (float)adc_buffer[5][0][0] * ADC_CONV_FACTOR / MOTOR_VSNS_DIVIDER;
+				USART3_write_float(vsns_u, 2);
+				USART3_send_str(", ");
+				USART3_write_float(vsns_v, 2);
+				USART3_send_str(", ");
+				USART3_write_float(vsns_w, 2);
+				USART3_send_str(", ");
+				USART3_write_float(vsns_x, 2);
+				USART3_send('\n');
+				while(us_counter() < delay);
+
+				if(rx_rdy) {
+					ch = read_rx_char();
+					if(ch == 'x') {
+						return true;
+					}
+				}
+			}
+		} else {
+			while(1) {
+				StartDelayusCounter();
+				isns_u = ((float)adc_buffer[1][0][0] * ADC_CONV_FACTOR - 1.65) / 50.0f / ISNS_UVW_R * 1000.0f;
+				isns_v = ((float)adc_buffer[4][0][0] * ADC_CONV_FACTOR - 1.65) / 50.0f / ISNS_UVW_R * 1000.0f;
+				isns_w = -(isns_u + isns_v);
+				vsns_u = (float)adc_buffer[2][0][0] * ADC_CONV_FACTOR / MOTOR_VSNS_DIVIDER;
+				vsns_v = (float)adc_buffer[3][0][0] * ADC_CONV_FACTOR / MOTOR_VSNS_DIVIDER;
+				vsns_w = (float)adc_buffer[0][0][0] * ADC_CONV_FACTOR / MOTOR_VSNS_DIVIDER;
+				vsns_x = (float)adc_buffer[5][0][0] * ADC_CONV_FACTOR / MOTOR_VSNS_DIVIDER;
+				USART3_write_float(vsns_u, 2);
+				USART3_send_str(", ");
+				USART3_write_float(vsns_v, 2);
+				USART3_send_str(", ");
+				USART3_write_float(vsns_w, 2);
+				USART3_send_str(", ");
+				USART3_write_float(vsns_x, 2);
+				USART3_send_str(", ");
+				USART3_write_float(isns_u, 2);
+				USART3_send_str(", ");
+				USART3_write_float(isns_v, 2);
+				USART3_send_str(", ");
+				USART3_write_float(isns_w, 2);
+				USART3_send('\n');
+				while(us_counter() < delay);
+
+				if(rx_rdy) {
+					ch = read_rx_char();
+					if(ch == 'x') {
+						return true;
+					}
+				}
+			}
+		}
 	} else {
-		isns_u = ((float)adc_data[0] * ADC_CONV_FACTOR - 1.65) / 50.0f / ISNS_UVW_R * 1000.0f;
-		isns_v = ((float)adc_data[2] * ADC_CONV_FACTOR - 1.65) / 50.0f / ISNS_UVW_R * 1000.0f;
+		isns_u = ((float)adc_data[4] * ADC_CONV_FACTOR - 1.65) / 50.0f / ISNS_UVW_R * 1000.0f;
+		isns_v = ((float)adc_data[1] * ADC_CONV_FACTOR - 1.65) / 50.0f / ISNS_UVW_R * 1000.0f;
 		isns_w = -(isns_u + isns_v);
 		
-		isns_vbat = (float)(adc_data[4]) * ADC_CONV_FACTOR / 50.0f / ISNS_VBAT_R * 1000.0f;
-		vsns_vbat = (float)adc_data[3] * ADC_CONV_FACTOR / VSNS_VBAT_DIVIDER;
-		vsns_12v = (float)adc_data[1] * ADC_CONV_FACTOR / VSNS_12V_DIVIDER;
+		vsns_u = (float)adc_data[2] * ADC_CONV_FACTOR;
+		vsns_v = (float)adc_data[3] * ADC_CONV_FACTOR;
+		vsns_w = (float)adc_data[0] * ADC_CONV_FACTOR;
+		vsns_x = (float)adc_data[5] * ADC_CONV_FACTOR;
+		
+		isns_vbat = (float)(adc_data[27]) * ADC_CONV_FACTOR / 50.0f / ISNS_VBAT_R * 1000.0f;
+		vsns_vbat = (float)adc_data[7] * ADC_CONV_FACTOR / VSNS_VBAT_DIVIDER;
+		vsns_12v = (float)adc_data[8] * ADC_CONV_FACTOR / VSNS_12V_DIVIDER;
+		
+		USART3_send_str("VSNS U: "); 
+		USART3_write_float(vsns_u, 2);
+		USART3_send_str(" V\n");
+		
+		USART3_send_str("VSNS V: "); 
+		USART3_write_float(vsns_w, 2);
+		USART3_send_str(" V\n");
+		
+		USART3_send_str("VSNS W: "); 
+		USART3_write_float(vsns_v, 2);
+		USART3_send_str(" V\n");
+		
+		USART3_send_str("VSNS X: "); 
+		USART3_write_float(vsns_x, 2);
+		USART3_send_str(" V\n");
 		
 		USART3_send_str("ISNS U: "); 
 		USART3_write_float(isns_u, 2);
@@ -592,6 +726,10 @@ Read ADC data\n\
 		USART3_write_float(isns_w, 2);
 		USART3_send_str(" mA\n");
 		
+		USART3_send_str("VSNS 12V: "); 
+		USART3_write_float(vsns_12v, 2);
+		USART3_send_str(" V\n");
+		
 		USART3_send_str("VSNS VBAT: "); 
 		USART3_write_float(vsns_vbat, 2);
 		USART3_send_str(" V\n");
@@ -599,10 +737,6 @@ Read ADC data\n\
 		USART3_send_str("ISNS VBAT: "); 
 		USART3_write_float(isns_vbat, 2);
 		USART3_send_str(" mA\n");
-		
-		USART3_send_str("VSNS 12V: "); 
-		USART3_write_float(vsns_12v, 2);
-		USART3_send_str(" V\n");
 	}
 	
 	return true;

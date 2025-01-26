@@ -3,6 +3,7 @@
 #include <xc.h>
 #include <math.h>
 #include <sys/attribs.h>
+#include <inttypes.h>
 #include <stdbool.h>
 #include "pic32.h"
 #include "BLDC.h"
@@ -101,8 +102,8 @@ void USART3_send_str(const char *str) {
 	}
 }
 
-void USART3_write_int(long int a) {
-	long int tens;
+void USART3_write_int(int64_t a) {
+	int64_t tens;
 
 	if(a < 0) {
 		a = fabs(a);

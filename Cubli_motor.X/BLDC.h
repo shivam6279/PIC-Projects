@@ -3,6 +3,7 @@
 
 #include <math.h>
 #include <inttypes.h>
+#include <stdbool.h>
 
 #define ENCODER_RES 4096.0f
 #define ENCODER_RES_MASK 0xFFF
@@ -33,11 +34,13 @@ extern volatile motor_waveform_type waveform_mode;
 extern volatile motor_mode mode;
 
 extern volatile float phase_delay;
-#define LPF_PHASE 0.1f
+#define LPF_PHASE 0.5f
 
 extern volatile float motor_zero_angle;
 extern double encoder_LUT[];
 extern double encoder_calib_data[32];
+
+extern volatile unsigned char comparator, comp_u, comp_v, comp_w;
 
 extern float pole_pairs;
 
@@ -46,8 +49,8 @@ extern void interpolate_encoder_lut(double[], unsigned int);
 
 extern void MotorPhase(signed char, float);
 extern void MotorOff();
-extern unsigned char GetHallPhase();
-extern unsigned char TestPhase(int, int);
+
+extern bool bemf_phase(unsigned char);
 
 extern void SensorlessStart(float);
 

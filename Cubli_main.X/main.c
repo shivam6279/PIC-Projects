@@ -22,7 +22,7 @@
 #define B_SETPOINT -45.2
 #define C_SETPOINT -45.6
 
-#define GYRO_LPF 0.1
+#define GYRO_LPF 0.9
 
 void ResetQuaternion(float q[]){
     q[0] = 1;
@@ -66,9 +66,12 @@ void main() {
     MPU6050Init();
     
     //Set PID gains
-    PIDSet(&motorA, 275, 0, 45);
-    PIDSet(&motorB, 175, 0, 25);
-    PIDSet(&motorC, 175, 0, 25);
+//    PIDSet(&motorA, 275, 0, 45);
+//    PIDSet(&motorB, 175, 0, 25);
+//    PIDSet(&motorC, 175, 0, 25);
+	PIDSet(&motorA, 125, 0, 50);
+    PIDSet(&motorB, 125, 0, 50);
+    PIDSet(&motorC, 125, 0, 50);
     motorA.offset = A_SETPOINT;
     motorB.offset = B_SETPOINT;
     motorC.offset = C_SETPOINT;
