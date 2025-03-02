@@ -101,7 +101,7 @@ int main() {
 	USART3_init(250000);    
 	timer2_init(KHZ(1));	// ms delay - P = 3
 	timer3_init(0);			// us delay - P = 7
-	timer4_init(KHZ(25));	// FOC      - P = 6
+	timer4_init(KHZ(50));	// FOC      - P = 6
 	timer5_init(50);		// Speaker  - P = 2
 	timer6_init(500);		// RPM      - P = 4
 //	timer7_init(KHZ(25));	// SPI data request
@@ -111,7 +111,7 @@ int main() {
 	PwmInit(96000);
 	MotorOff();
 	
-//	interpolate_encoder_lut(encoder_calib_data, 32);
+	interpolate_encoder_lut(encoder_calib_data, 12);
 
 	delay_ms(200);
 	TMP1075Init();
@@ -176,7 +176,7 @@ int main() {
 		}
 	}*/
 
-	motor_zero_angle = 49.4; //Read_Motor_Offset();
+	motor_zero_angle = 0.7;//11.5; //Read_Motor_Offset();
 	
 	TMR7 = 50;
 	FOC_TIMER_ON = 1;

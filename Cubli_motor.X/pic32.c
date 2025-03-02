@@ -134,6 +134,9 @@ void QEI_init() {
 	QEI1CON = 0;    
 	QEI1IOC = 0;    
 	QEI1CONbits.PIMOD = 0b001;
+	
+//	QEI1IOCbits.SWPAB = 1;
+	
 	QEI1CONbits.QEIEN = 1;
 }
 

@@ -7,12 +7,12 @@
 #define ADC_CONV_FACTOR (3.3f / 4095.0f)
 
 #define VSNS_VBAT_DIVIDER (4.7f/(4.7f + 33.0f))
-#define VSNS_12V_DIVIDER (4.7f/(4.7f + 33.0f))
+#define VSNS_12V_DIVIDER (10.0f/(10.0f + 33.0f))
 
 #define MOTOR_VSNS_DIVIDER (10.0f / (33.0f + 10.0f))
 
-#define ISNS_UVW_R 0.01f
-#define ISNS_VBAT_R 0.01f
+#define ISNS_UVW_R 0.005f
+#define ISNS_VBAT_R 0.005f
 
 #define ADC_BUFFER_LEN 16
 

@@ -69,9 +69,9 @@ void main() {
 //    PIDSet(&motorA, 275, 0, 45);
 //    PIDSet(&motorB, 175, 0, 25);
 //    PIDSet(&motorC, 175, 0, 25);
-	PIDSet(&motorA, 125, 0, 50);
-    PIDSet(&motorB, 125, 0, 50);
-    PIDSet(&motorC, 125, 0, 50);
+	PIDSet(&motorA, 70, 0, 25);
+    PIDSet(&motorB, 70, 0, 25);
+    PIDSet(&motorC, 70, 0, 25);
     motorA.offset = A_SETPOINT;
     motorB.offset = B_SETPOINT;
     motorC.offset = C_SETPOINT;
@@ -79,10 +79,10 @@ void main() {
     USART_send_str(UART_A, "0\r");
     USART_send_str(UART_B, "0\r");
     USART_send_str(UART_C, "0\r"); 
-    delay_ms(50);
-    USART_send_str(UART_A, "T\r");
-    USART_send_str(UART_B, "T\r");
-    USART_send_str(UART_C, "T\r"); 
+//    delay_ms(50);
+//    USART_send_str(UART_A, "T\r");
+//    USART_send_str(UART_B, "T\r");
+//    USART_send_str(UART_C, "T\r"); 
     delay_ms(1000);
     CalibrateGyro();
     ResetQuaternion(q);    

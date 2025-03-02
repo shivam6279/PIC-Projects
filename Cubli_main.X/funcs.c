@@ -126,7 +126,7 @@ unsigned char get_corner(float pitch_angle, float roll_angle, float offset) {
 bool balance_edge(float pitch_angle, float roll_angle, float loop_time, XYZ gyro, PID* motorA, PID* motorB, PID* motorC) {    
     float ks = 0.8;
 	float ko = -0.0000001;
-    float kv = 0.9;
+    float kv = 0.4;
     
     static unsigned char pre_edge = 0, pre_edge2 = 0;
     

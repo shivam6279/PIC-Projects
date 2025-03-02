@@ -294,9 +294,8 @@ calib [on/off] : Enable/disable encoder calibration correction\n";
 		while(1) {
 			pos_cnt = POS1CNT;
 			ind_cnt = INDX1CNT;
-			pos = pos_cnt * 360.0f / ENCODER_RES;
 			
-			USART3_write_float(pos, 4);
+			USART3_write_int(pos_cnt);
 			USART3_send('\n');
 			delay_ms(50);
 
