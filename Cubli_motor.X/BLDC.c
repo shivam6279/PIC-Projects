@@ -9,6 +9,8 @@
 #include "SPI.h"
 #include "pic32.h"
 
+#define DEAD_TIME 25
+
 float pole_pairs = 12;
 
 // SVPWM
@@ -260,14 +262,30 @@ void setPhaseVoltage(float p, float angle_el) {
 		index = (index + SVPWM_INCREMENT) % SVPWM_SIZE;
 		pwm_c = (float)PWM_table[index]/svpwm_max * p;
 		
-		PDC1 = pwm_a;
-		PDC7 = pwm_a;
+		
+		if(pwm_a) {
+			PDC1 = pwm_a;
+			PDC7 = pwm_a + DEAD_TIME;
+		} else {
+			PDC1 = pwm_a;
+			PDC7 = pwm_a;
+		}
+		
+		if(pwm_b) {
+			PDC2 = pwm_b;
+			PDC8 = pwm_b + DEAD_TIME;
+		} else {
+			PDC2 = pwm_b;
+			PDC8 = pwm_b ;
+		}
 
-		PDC2 = pwm_b;
-		PDC8 = pwm_b;
-
-		PDC3 = pwm_c;
-		PDC9 = pwm_c;
+		if(pwm_c) {
+			PDC3 = pwm_c;
+			PDC9 = pwm_c + DEAD_TIME;
+		} else {
+			PDC3 = pwm_c;
+			PDC9 = pwm_c;
+		}
 		
 	} else if(waveform_mode == MOTOR_TRAPEZOID) {
 		p = fabs(p);

@@ -356,7 +356,7 @@ void timer9_init(float freq) {
 	T9CONbits.TCKPS = pre & 0b111;
 	PR9 = pr;
 	TMR9 = 0;
-	IPC22bits.T9IP = 5;
+	IPC22bits.T9IP = 2;
 	IFS2bits.T9IF = 0;
 	IEC2bits.T9IE = 1;
 }

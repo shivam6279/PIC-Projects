@@ -10,6 +10,7 @@
 
 #include "pic32.h"
 #include "PWM.h"
+#include "servo.h"
 #include "ADC.h"
 #include "BLDC.h"
 #include "diags.h"
@@ -106,7 +107,9 @@ int main() {
 	timer6_init(500);		// RPM      - P = 4
 //	timer7_init(KHZ(25));	// SPI data request
 	timer8_init(0);			// Sensorless
-
+	
+	servoInit(1500);
+	
 	EEPROM_init();
 	PwmInit(96000);
 	MotorOff();
@@ -121,6 +124,8 @@ int main() {
 //	MetroidSaveTheme(board_id);
 	PlayWav();
 	LED0 = 0;
+	
+	servoOff();
 	
 //	while(1) {
 //		LED0 = 1;

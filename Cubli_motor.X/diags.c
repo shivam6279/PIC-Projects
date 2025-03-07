@@ -11,6 +11,7 @@
 #include "string_utils.h"
 #include "BLDC.h"
 #include "PWM.h"
+#include "servo.h"
 #include "TMP1075.h"
 #include "bitbang_I2C.h"
 #include "tones.h"
@@ -29,6 +30,7 @@ bool diags_tone(char*);
 bool diags_comp(char*);
 bool diags_reset(char*);
 bool diags_LED(char *cmd);
+bool diags_servo(char *cmd);
 
 typedef bool (*diags_function)(char*);
 
@@ -49,6 +51,7 @@ const diags_menu_item diags_list[] = {
 	{ .name = "Generate tones from the motor",	.cmd = "tone",	.func = diags_tone				},
 	{ .name = "Comparator readings",			.cmd = "comp",	.func = diags_comp				},
 	{ .name = "Turn LEDs on or off",			.cmd = "led",	.func = diags_LED				},
+	{ .name = "Servo contorls",					.cmd = "servo",	.func = diags_servo				},
 	{ .name = "Perform a software reset",		.cmd = "reset",	.func = diags_reset				}
 };
 
@@ -165,11 +168,13 @@ bool diags_spinMotor(char *cmd) {
 bool diags_motor(char *cmd) {
 	unsigned char ch;
 	static float diags_power = 0.03;
+	static float diags_acceleration = 1, set_power, power, acceleration;
 	char arg_val[20];
 	
 	const char help_str[] = "\
 Commands to control the BLDC motor with the parameters:\n\
 -p [x] : Set motor power to x (-2000, 2000)\n\
+ramp [x] (-a [y]): Ramp motor power to x (-2000, 2000) an acceleration y\n\
 -e [x] : Move motor to electrical degree x\n\
 -s [x] : Move motor to six step phase x\n\
 off : Turn motor off (coast)\n\
@@ -188,6 +193,36 @@ setpower [x] : Set power level for other commands to x (-1.0, 1.0)\n";
 		USART3_write_float(str_toFloat(arg_val), 4);
 		USART3_send('\n');
 		SetPower(str_toFloat(arg_val) / 2000.0);
+
+	} else if(str_getArgValue(cmd, "ramp", arg_val)) {
+		set_power = str_toFloat(arg_val);
+		acceleration = diags_acceleration;
+		if(str_getArgValue(cmd, "-a", arg_val)) {
+			acceleration = str_toFloat(arg_val);
+		}
+
+		USART3_send_str("Ramping motor power to: ");
+		USART3_write_float(set_power, 4);
+		USART3_send_str("\nAt an acceleration of ");
+		USART3_write_float(acceleration, 2);
+		USART3_send_str(" per ms");
+		USART3_send('\n');
+
+		power = GetPower() * 2000;
+		if(set_power > power) {
+			do {
+				delay_ms(1);
+				power += diags_acceleration;
+				SetPower(power / 2000.0);
+			} while(power < set_power);
+		} else {
+			do {
+				delay_ms(1);
+				power -= diags_acceleration;
+				SetPower(power / 2000.0);
+			} while(power > set_power);
+		}
+		USART3_send_str("Done\n");
 
 	} else if(str_getArgValue(cmd, "-e", arg_val)) {
 		USART3_send_str("Motor set to electrical angle: ");
@@ -915,6 +950,42 @@ led <led no> <state>:\n\
 	}
 	
 	return true;
+}
+
+bool diags_servo(char *cmd) {
+	char arg_val[50];
+	
+	const char help_str[] = "\
+Control servo:\n\
+us [pulse width] : Length of servo pulse in microseconds (int)\n\
+brake : Coast BLDC, then apply the brakes\n\
+off : Set servo pin to LOW\n";
+	
+	if(str_getArgValue(cmd, "-h", arg_val) || str_getArgValue(cmd, "--help", arg_val)) {
+		USART3_send_str(help_str);
+		return true;
+	}
+	
+	if(str_getArgValue(cmd, "us", arg_val)) {
+		USART3_send_str("Setting servo pulse width to ");
+		USART3_write_int(str_toInt(arg_val));
+		USART3_send_str(" microseconds\n");
+		setServo_us(str_toInt(arg_val));
+
+	} else if(str_getArgValue(cmd, "brake", arg_val)) {
+		USART3_send_str("Braking flywheel\n");
+		servoBrake();
+
+	} else if(str_getArgValue(cmd, "off", arg_val)) {
+		USART3_send_str("Servo off\n");
+		servoOff();
+
+	} else {
+		USART3_send_str(help_str);
+		return true;
+	}
+
+	return true;	
 }
 
 bool diags_comp(char *cmd) {
