@@ -117,8 +117,8 @@ void USART1_init(unsigned long int baud_rate) {
     TRISDbits.TRISD11 = 0;
     U1MODEbits.ON = 0;
     CFGCONbits.IOLOCK = 0;
-    U1RXRbits.U1RXR = 0b0011;
-    RPD11Rbits.RPD11R = 0b0001;
+    U1RXRbits.U1RXR = 0b0100;	// RF1
+    RPD11Rbits.RPD11R = 0b0001;	// RD11
     CFGCONbits.IOLOCK = 1;
     
     U1BRG = (100000000.0f / (float)baud_rate / 4.0f) - 1;
@@ -160,8 +160,8 @@ void USART2_init(unsigned long int baud_rate) {
     TRISBbits.TRISB6 = 0;
     U3MODEbits.ON = 0;
     CFGCONbits.IOLOCK = 0;
-    U2RXRbits.U2RXR = 0b0111;
-    RPB6Rbits.RPB6R = 0b0010;
+    U2RXRbits.U2RXR = 0b0111;	// RB7
+    RPB6Rbits.RPB6R = 0b0010;	// RB6
     CFGCONbits.IOLOCK = 1;
     
     U2BRG = (100000000.0f / (float)baud_rate / 16.0f) - 1;
@@ -184,13 +184,13 @@ void USART2_init(unsigned long int baud_rate) {
 }
 
 void USART3_init(unsigned long int baud_rate) {
-//    TRISBbits.TRISB3 = 1;
-//    TRISBbits.TRISB5 = 0;
-//    U3MODEbits.ON = 0;
-//    CFGCONbits.IOLOCK = 0;
-//    U3RXRbits.U3RXR = 0b1000;
-//    RPB5Rbits.RPB5R = 0b0001;
-//    CFGCONbits.IOLOCK = 1;
+    TRISBbits.TRISB3 = 1;
+    TRISBbits.TRISB5 = 0;
+    U3MODEbits.ON = 0;
+    CFGCONbits.IOLOCK = 0;
+    U3RXRbits.U3RXR = 0b0001;	// RG7
+    RPG8Rbits.RPG8R = 0b0001;	// RG8
+    CFGCONbits.IOLOCK = 1;
     
     U3BRG = (100000000.0f / (float)baud_rate / 16.0f) - 1;
     
@@ -216,8 +216,8 @@ void USART4_init(unsigned long int baud_rate) {
     TRISBbits.TRISB8 = 0;
     U3MODEbits.ON = 0;
     CFGCONbits.IOLOCK = 0;
-    U4RXRbits.U4RXR = 0b0010;
-    RPB8Rbits.RPB8R = 0b0010;
+    U4RXRbits.U4RXR = 0b0010;	// RB14
+    RPB8Rbits.RPB8R = 0b0010;	// RB8
     CFGCONbits.IOLOCK = 1;
     
     U4BRG = (100000000.0f / (float)baud_rate / 16.0f) - 1;
@@ -244,8 +244,8 @@ void USART5_init(unsigned long int baud_rate) {
     TRISBbits.TRISB10 = 1;
     U3MODEbits.ON = 0;
     CFGCONbits.IOLOCK = 0;
-    U5RXRbits.U5RXR = 0b0110;
-    RPB3Rbits.RPB3R = 0b0011;
+    U5RXRbits.U5RXR = 0b1000;	// RB5
+    RPG6Rbits.RPG6R = 0b0011;	// RG6
     CFGCONbits.IOLOCK = 1;
     
     U5BRG = (100000000.0f / (float)baud_rate / 4.0f) - 1;

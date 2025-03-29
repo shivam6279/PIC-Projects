@@ -180,6 +180,7 @@ ramp [x] (-a [y]): Ramp motor power to x (-2000, 2000) an acceleration y\n\
 off : Turn motor off (coast)\n\
 wave [s] : Display waveform type. Set waveform type to \"svpwm\", \"sin\", or \"trapezoid\"\n\
 polepairs [p] : Display pole pairs. Optionally set to p.\n\
+advance [a] : Display foc degree advance. Optionally set to a.\n\
 setpower [x] : Set power level for other commands to x (-1.0, 1.0)\n";
 	
 	if(str_getArgValue(cmd, "-h", arg_val) || str_getArgValue(cmd, "--help", arg_val)) {
@@ -255,7 +256,8 @@ setpower [x] : Set power level for other commands to x (-1.0, 1.0)\n";
 		USART3_send_str("Power set to: ");
 		USART3_write_float(diags_power, 4);
 		USART3_send('\n');
-		
+	
+	// Set motor pole pairs
 	} else if(str_getArgValue(cmd, "polepairs", arg_val)) {
 		if(char_isDigit(arg_val[0])) {
 			pole_pairs = str_toInt(arg_val);
@@ -265,6 +267,19 @@ setpower [x] : Set power level for other commands to x (-1.0, 1.0)\n";
 		} else {
 			USART3_send_str("Current motor pole pairs: \n");
 			USART3_write_int(pole_pairs);
+			USART3_send('\n');
+		}
+	
+	// Set foc degree advance
+	} else if(str_getArgValue(cmd, "advance", arg_val)) {
+		if(char_isDigit(arg_val[0])) {
+			foc_degree_advance = str_toInt(arg_val);
+			USART3_send_str("FOC degree advance set to: \n");
+			USART3_write_float(foc_degree_advance, 2);
+			USART3_send('\n');
+		} else {
+			USART3_send_str("Current foc degree advance: \n");
+			USART3_write_float(foc_degree_advance, 2);
 			USART3_send('\n');
 		}
 

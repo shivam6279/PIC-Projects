@@ -1,5 +1,5 @@
-#include <xc.h>
 #include "pragma.h"
+#include <xc.h>
 #include <math.h>
 #include <string.h>
 #include <stdbool.h>
@@ -57,13 +57,19 @@ void main() {
 //    timer5_init(10.0);      // GPS timer - 10Hz
 //    timer6_init(312500.0);  // XBee tx timer - 312.5kHz
     
-    USART1_init(115200);
-    USART2_init(250000);  
-    USART4_init(250000);  
-    USART5_init(250000);  
+    USART1_init(115200);	// XBee
+    USART2_init(250000);	// ESC_B
+	USART3_init(250000);	// ESC_C
+    USART4_init(250000);	// ESC_A
+//    USART5_init(115200);	// ESP
     
     delay_ms(200);    
     MPU6050Init();
+	
+	LDO_ESP = 0;
+	LDO_XBEE = 1;
+	
+	while(1);
     
     //Set PID gains
 //    PIDSet(&motorA, 275, 0, 45);

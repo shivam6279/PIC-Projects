@@ -3,6 +3,8 @@
 #include <inttypes.h>
 #include <sys/attribs.h>
 #include <stdbool.h>
+#include "BLDC.h"
+#include "pic32.h"
 
 #define SERVO_TRIS TRISGbits.TRISG9
 #define SERVO_PIN LATGbits.LATG9

@@ -9,7 +9,7 @@
 //LATDINV |= 1 << 6;
 //LATAINV |= 1 << 8;
 
-#define ENC_VCC LATAbits.LATA8
+#define ENC_VCC LATCbits.LATC6
 
 extern void PICInit();
 extern void GPIO_init();

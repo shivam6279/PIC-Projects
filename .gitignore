@@ -72,4 +72,4 @@ funclist
 *.xml~
 *.i
 *.flag
-POVRotor.X/queuelogs/debugtool.txt
+/queuelogs

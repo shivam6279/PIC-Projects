@@ -4,7 +4,7 @@
 #pragma config FNOSC = SPLL 
 #pragma config FSOSCEN = OFF    
 #pragma config POSCMOD = OFF    
-#pragma config OSCIOFNC = ON        
+#pragma config OSCIOFNC = ON
 #pragma config FPLLICLK = PLL_FRC   
 #pragma config FPLLIDIV = DIV_1 
 #pragma config FPLLMULT = MUL_50    
@@ -24,5 +24,6 @@
 #pragma config PGL1WAY = OFF
 #pragma config PMDL1WAY = OFF
 #pragma config IOL1WAY = OFF
+#pragma config FUSBIDIO = OFF
 
 #endif

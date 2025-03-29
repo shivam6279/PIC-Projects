@@ -115,9 +115,11 @@ int main() {
 	MotorOff();
 	
 	interpolate_encoder_lut(encoder_calib_data, 12);
-
+	
+	ENC_VCC = 0;
 	delay_ms(200);
 	TMP1075Init();
+	ENC_VCC = 1;
 	
 	board_id = 1;//EEPROM_read(ID_ADDR);
 	LED0 = 1;
@@ -181,7 +183,7 @@ int main() {
 		}
 	}*/
 
-	motor_zero_angle = 0.7;//11.5; //Read_Motor_Offset();
+	motor_zero_angle = 50.5;//11.5; //Read_Motor_Offset();
 	
 	TMR7 = 50;
 	FOC_TIMER_ON = 1;

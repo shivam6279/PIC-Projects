@@ -11,7 +11,8 @@
 
 #define DEAD_TIME 25
 
-float pole_pairs = 12;
+float pole_pairs = POLE_PAIRS;
+float foc_degree_advance = FOC_DEGREE_ADVANCE;
 
 // SVPWM
 float svpwm_max = 1000;
@@ -93,7 +94,7 @@ void __ISR_AT_VECTOR(_TIMER_4_VECTOR, IPL6AUTO) FOC_loop(void){
 	}
 	
 	if(mode != MODE_OFF) {
-		setPhaseVoltage(power, position*pole_pairs + power/fabs(power)*FOC_DEGREE_ADVANCE);
+		setPhaseVoltage(power, position*pole_pairs + power/fabs(power)*foc_degree_advance);
 	}
 }
 

@@ -8,7 +8,8 @@
 #define ENCODER_RES 4096.0f
 #define ENCODER_RES_MASK 0xFFF
 
-#define FOC_DEGREE_ADVANCE 100.0f
+#define POLE_PAIRS 7
+#define FOC_DEGREE_ADVANCE 90.0f
 #define RPM_ADVANCE_FACTOR 0//0.0002f
 
 #define SVPWM_SIZE 1440
@@ -42,7 +43,7 @@ extern double encoder_calib_data[32];
 
 extern volatile unsigned char comparator, comp_u, comp_v, comp_w;
 
-extern float pole_pairs;
+extern float pole_pairs, foc_degree_advance;
 
 extern void init_encoder_lut();
 extern void interpolate_encoder_lut(double[], unsigned int);

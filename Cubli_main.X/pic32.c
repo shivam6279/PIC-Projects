@@ -16,6 +16,31 @@ void PICInit(){
     TRISE = 0xFFFFFFFF; 
     TRISF = 0xFFFFFFFF;
     TRISG = 0xFFFFFFFF;
+	
+	LED0 = 0;
+	LED1 = 0;
+	TRISCbits.TRISC14 = 0; // LED0
+	TRISBbits.TRISB11 = 0; // LED1
+	
+	LED_ESC_A = 0;
+	LED_ESC_B = 0;
+	LED_ESC_C = 0;
+	TRISEbits.TRISE0 = 0; // LED_ESC_A
+	TRISFbits.TRISF0 = 0; // LED_ESC_B
+	TRISDbits.TRISD4 = 0; // LED_ESC_C
+	
+	LDO_XBEE = 0;
+	LDO_ESP = 0;
+	TRISFbits.TRISF3 = 0; // LDO_XBEE
+	TRISBbits.TRISB2 = 0; // LDO_ESP
+	
+	// H Bridge pins
+	TRISEbits.TRISE2 = 0;
+	TRISEbits.TRISE3 = 0;
+	TRISEbits.TRISE4 = 0;
+	TRISEbits.TRISE5 = 0;
+	TRISEbits.TRISE6 = 0;
+	TRISEbits.TRISE7 = 0;
     
     ANSELB = 0;
     ANSELE = 0;

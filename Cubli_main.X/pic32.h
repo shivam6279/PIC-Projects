@@ -8,6 +8,16 @@
 #define LOOP_TIMER_ON T4CONbits.ON 
 #define GPS_TIMER_ON T5CONbits.ON
 
+#define LED0 LATCbits.LATC14
+#define LED1 LATBbits.LATB11
+
+#define LED_ESC_A LATEbits.LATE0
+#define LED_ESC_B LATFbits.LATF0
+#define LED_ESC_C LATDbits.LATD4
+
+#define LDO_XBEE LATFbits.LATF3
+#define LDO_ESP LATBbits.LATB2
+
 extern void PICInit();
 
 extern void StartDelayCounter();

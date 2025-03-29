@@ -122,7 +122,6 @@ void ChangeNotificationInit() {
 }
 
 void QEI_init() {
-	TRISCbits.TRISC6 = 1;
 	TRISCbits.TRISC7 = 1;
 	TRISCbits.TRISC8 = 1;
 	TRISBbits.TRISB6 = 1;
@@ -141,8 +140,10 @@ void QEI_init() {
 }
 
 void GPIO_init() {
-	TRISAbits.TRISA8 = 0;
-	TRISDbits.TRISD6 = 0;
+	TRISAbits.TRISA8 = 0;	// LED 1
+	TRISDbits.TRISD6 = 0;	// LED 0
+	
+	TRISCbits.TRISC6 = 0;	// ENCODER VCC
 	
 	TRISGbits.TRISG6 = 1;   // W
 	TRISGbits.TRISG7 = 1;   // V
