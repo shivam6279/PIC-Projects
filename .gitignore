@@ -72,4 +72,6 @@ funclist
 *.xml~
 *.i
 *.flag
-/queuelogs
+queuelogs/
+*.yml
+*.mc3
