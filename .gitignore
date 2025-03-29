@@ -1,3 +1,6 @@
+# Retroactively apply gitignore
+# git rm -r --cached .
+
 *
 !/**/
 !*.*
