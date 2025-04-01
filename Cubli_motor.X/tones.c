@@ -42,7 +42,7 @@ void __ISR_AT_VECTOR(_TIMER_5_VECTOR, IPL2AUTO) tone(void){
 	IFS0bits.T5IF = 0;
 	
 	if(play_wav) {
-		setPhaseVoltage(tone_power, wav_value * tone_amplitude * wav_amplitude_correction);
+		setPhaseVoltage(tone_power, 0, wav_value * tone_amplitude * wav_amplitude_correction);
 #if WAV_FILE_BIT_DEPTH == 16
 		wav_index += 2;
 		wav_value = (int16_t)(wav[wav_index+1] << 8 | wav[wav_index]);
@@ -65,13 +65,13 @@ void __ISR_AT_VECTOR(_TIMER_5_VECTOR, IPL2AUTO) tone(void){
 			if(tone_square_phase == SIX_STEP) {
 				MotorPhase(tone_phase, tone_power);
 			} else if(tone_square_phase == FOC) {
-				setPhaseVoltage(tone_power, tone_phase * tone_amplitude);
+				setPhaseVoltage(tone_power, 0, tone_phase * tone_amplitude);
 			}
 
 		} else if(tone_waveform == SIN) {
-			sin_phase_delta = (float)SIN_TABLE_SIZE * sin_frequency / SIN_ISR_FREQ / 2.0;
+			sin_phase_delta = (float)SIN_TABLE_SIZE * sin_frequency / SIN_ISR_FREQ / 4.0;
 			sin_index = (uint32_t)(sin_index + sin_phase_delta) % SIN_TABLE_SIZE;
-			setPhaseVoltage(tone_power, tone_amplitude * sin_table[sin_index]);
+			setPhaseVoltage(tone_power, 0, tone_amplitude * sin_table[sin_index]);
 		}
 	}
 }
@@ -110,7 +110,7 @@ void PlayWav() {
 	PlayTone(440);
 	while(play_wav);
 	for(i = 0, p = tone_power; i < 5; i++, p /= 2) {
-		setPhaseVoltage(p, tone_amplitude * sin_table[sin_index]);
+		setPhaseVoltage(p, 0, tone_amplitude * sin_table[sin_index]);
 		delay_ms(10);
 	}
 	StopTone();

@@ -8,7 +8,7 @@
 #define ENCODER_RES 4096.0f
 #define ENCODER_RES_MASK 0xFFF
 
-#define POLE_PAIRS 7
+#define POLE_PAIRS 12
 #define FOC_DEGREE_ADVANCE 90.0f
 #define RPM_ADVANCE_FACTOR 0//0.0002f
 
@@ -20,6 +20,7 @@
 typedef enum {
 	MOTOR_SVPWM,
 	MOTOR_SIN,
+	MOTOR_FOC,
 	MOTOR_TRAPEZOID,
 	MODE_SENSORLESS
 } motor_waveform_type;
@@ -45,6 +46,8 @@ extern volatile unsigned char comparator, comp_u, comp_v, comp_w;
 
 extern float pole_pairs, foc_degree_advance;
 
+extern volatile float i_d, i_q;
+
 extern void init_encoder_lut();
 extern void interpolate_encoder_lut(double[], unsigned int);
 
@@ -55,7 +58,8 @@ extern bool bemf_phase(unsigned char);
 
 extern void SensorlessStart(float);
 
-extern void setPhaseVoltage(float, float);
+extern void setPhaseVoltage(float, float, float);
+extern void foc_current_calc(float);
 extern float normalizeAngle(float);
 
 extern void ResetMotorPID();

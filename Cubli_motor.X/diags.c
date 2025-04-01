@@ -145,7 +145,7 @@ bool diags_spinMotor(char *cmd) {
 	mode = MODE_OFF;
 	while(1) {
 		for(i = 0; i < 360; i += 60) {
-			setPhaseVoltage(0.03, (float)i);
+			setPhaseVoltage(0.03, 0, (float)i);
 			delay_ms(500);
 			USART3_write_float(GetPosition(), 2);
 			USART3_send('\n');
@@ -168,7 +168,7 @@ bool diags_spinMotor(char *cmd) {
 bool diags_motor(char *cmd) {
 	unsigned char ch;
 	static float diags_power = 0.03;
-	static float diags_acceleration = 1, set_power, power, acceleration;
+	static float diags_acceleration = 0.5, set_power, power, acceleration;
 	char arg_val[20];
 	
 	const char help_str[] = "\
@@ -178,7 +178,7 @@ ramp [x] (-a [y]): Ramp motor power to x (-2000, 2000) an acceleration y\n\
 -e [x] : Move motor to electrical degree x\n\
 -s [x] : Move motor to six step phase x\n\
 off : Turn motor off (coast)\n\
-wave [s] : Display waveform type. Set waveform type to \"svpwm\", \"sin\", or \"trapezoid\"\n\
+wave [s] : Display waveform type. Set waveform type to \"foc\", \"svpwm\", \"sin\", or \"trapezoid\"\n\
 polepairs [p] : Display pole pairs. Optionally set to p.\n\
 advance [a] : Display foc degree advance. Optionally set to a.\n\
 setpower [x] : Set power level for other commands to x (-1.0, 1.0)\n";
@@ -232,7 +232,7 @@ setpower [x] : Set power level for other commands to x (-1.0, 1.0)\n";
 		USART3_write_float(diags_power, 2);
 		USART3_send('\n');
 		mode = MODE_OFF;
-		setPhaseVoltage(diags_power, str_toFloat(arg_val));
+		setPhaseVoltage(diags_power, 0, str_toFloat(arg_val));
 
 	// Set 6 step phase
 	} else if(str_getArgValue(cmd, "-s", arg_val)) {
@@ -287,7 +287,9 @@ setpower [x] : Set power level for other commands to x (-1.0, 1.0)\n";
 	} else if(str_getArgValue(cmd, "wave", arg_val)) {
 		if(str_isEqual(arg_val, "")) {
 			USART3_send_str("Current motor waveform type: ");
-			if(waveform_mode == MOTOR_SVPWM) {
+			if(waveform_mode == MOTOR_FOC) {
+				USART3_send_str("FOC\n");
+			} else if(waveform_mode == MOTOR_SVPWM) {
 				USART3_send_str("SVPWM\n");
 			} else if(waveform_mode == MOTOR_SIN) {
 				USART3_send_str("SIN\n");
@@ -295,6 +297,10 @@ setpower [x] : Set power level for other commands to x (-1.0, 1.0)\n";
 				USART3_send_str("TRAPEZOID\n");
 			}
 			
+		} else if(str_isEqual(arg_val, "foc")) {
+			waveform_mode = MOTOR_FOC;
+			USART3_send_str("Waveform type set to: FOC\n");
+
 		} else if(str_isEqual(arg_val, "svpwm")) {
 			waveform_mode = MOTOR_SVPWM;
 			USART3_send_str("Waveform type set to: SVPWM\n");
@@ -416,7 +422,7 @@ bool diags_calibrateEncoder(char *cmd) {
 	mode = MODE_OFF;
 	while(1) {
 		for(i = 0; i <= 360; i += 60) {
-			setPhaseVoltage(power, (float)i);
+			setPhaseVoltage(power, 0, (float)i);
 			delay_ms(100);
 			
 			if(rx_rdy) {
@@ -450,7 +456,7 @@ bool diags_calibrateEncoder(char *cmd) {
 	arr_indx = 0;
 	for(j = 0; j < pole_pairs; j++) {
 		for(i = 0; i < 360; i += 60) {
-			setPhaseVoltage(power, (float)i);
+			setPhaseVoltage(power, 0, (float)i);
 			delay_ms(500);
 
 			pos_cnt = POS1CNT;
@@ -657,14 +663,14 @@ stream -[i/v] -f: Stream all adc data. -i: motor phase currents -v: motor phase 
 		if(str_getArgValue(cmd, "-i", arg_val)) {
 			while(1) {
 				StartDelayusCounter();
-				isns_u = ((float)adc_buffer[1][0][0] * ADC_CONV_FACTOR - 1.65) / 50.0f / ISNS_UVW_R * 1000.0f;
-				isns_v = ((float)adc_buffer[4][0][0] * ADC_CONV_FACTOR - 1.65) / 50.0f / ISNS_UVW_R * 1000.0f;
+				isns_u = ((float)adc_buffer[1][0][0] * ADC_CONV_FACTOR - 1.65) / 20.0f / ISNS_UVW_R;
+				isns_v = ((float)adc_buffer[4][0][0] * ADC_CONV_FACTOR - 1.65) / 20.0f / ISNS_UVW_R;
 				isns_w = -(isns_u + isns_v);
-				USART3_write_float(isns_u, 2);
+				USART3_write_float(isns_u, 3);
 				USART3_send_str(", ");
-				USART3_write_float(isns_v, 2);
+				USART3_write_float(isns_v, 3);
 				USART3_send_str(", ");
-				USART3_write_float(isns_w, 2);
+				USART3_write_float(isns_w, 3);
 				USART3_send('\n');
 				while(us_counter() < delay);
 
@@ -702,8 +708,8 @@ stream -[i/v] -f: Stream all adc data. -i: motor phase currents -v: motor phase 
 		} else {
 			while(1) {
 				StartDelayusCounter();
-				isns_u = ((float)adc_buffer[1][0][0] * ADC_CONV_FACTOR - 1.65) / 50.0f / ISNS_UVW_R * 1000.0f;
-				isns_v = ((float)adc_buffer[4][0][0] * ADC_CONV_FACTOR - 1.65) / 50.0f / ISNS_UVW_R * 1000.0f;
+				isns_u = ((float)adc_buffer[1][0][0] * ADC_CONV_FACTOR - 1.65) / 20.0f / ISNS_UVW_R;
+				isns_v = ((float)adc_buffer[4][0][0] * ADC_CONV_FACTOR - 1.65) / 20.0f / ISNS_UVW_R;
 				isns_w = -(isns_u + isns_v);
 				vsns_u = (float)adc_buffer[2][0][0] * ADC_CONV_FACTOR / MOTOR_VSNS_DIVIDER;
 				vsns_v = (float)adc_buffer[3][0][0] * ADC_CONV_FACTOR / MOTOR_VSNS_DIVIDER;
@@ -717,11 +723,11 @@ stream -[i/v] -f: Stream all adc data. -i: motor phase currents -v: motor phase 
 				USART3_send_str(", ");
 				USART3_write_float(vsns_x, 2);
 				USART3_send_str(", ");
-				USART3_write_float(isns_u, 2);
+				USART3_write_float(isns_u, 3);
 				USART3_send_str(", ");
-				USART3_write_float(isns_v, 2);
+				USART3_write_float(isns_v, 3);
 				USART3_send_str(", ");
-				USART3_write_float(isns_w, 2);
+				USART3_write_float(isns_w, 3);
 				USART3_send('\n');
 				while(us_counter() < delay);
 
@@ -734,8 +740,8 @@ stream -[i/v] -f: Stream all adc data. -i: motor phase currents -v: motor phase 
 			}
 		}
 	} else {
-		isns_u = ((float)adc_data[4] * ADC_CONV_FACTOR - 1.65) / 50.0f / ISNS_UVW_R * 1000.0f;
-		isns_v = ((float)adc_data[1] * ADC_CONV_FACTOR - 1.65) / 50.0f / ISNS_UVW_R * 1000.0f;
+		isns_u = ((float)adc_data[4] * ADC_CONV_FACTOR - 1.63) / 20.0f / ISNS_UVW_R;
+		isns_v = ((float)adc_data[1] * ADC_CONV_FACTOR - 1.63) / 20.0f / ISNS_UVW_R;
 		isns_w = -(isns_u + isns_v);
 		
 		vsns_u = (float)adc_data[2] * ADC_CONV_FACTOR;
@@ -743,7 +749,7 @@ stream -[i/v] -f: Stream all adc data. -i: motor phase currents -v: motor phase 
 		vsns_w = (float)adc_data[0] * ADC_CONV_FACTOR;
 		vsns_x = (float)adc_data[5] * ADC_CONV_FACTOR;
 		
-		isns_vbat = (float)(adc_data[27]) * ADC_CONV_FACTOR / 50.0f / ISNS_VBAT_R * 1000.0f;
+		isns_vbat = ((float)(adc_data[27]) * ADC_CONV_FACTOR - 1.105) / 50.0f / ISNS_VBAT_R;
 		vsns_vbat = (float)adc_data[7] * ADC_CONV_FACTOR / VSNS_VBAT_DIVIDER;
 		vsns_12v = (float)adc_data[8] * ADC_CONV_FACTOR / VSNS_12V_DIVIDER;
 		
@@ -764,16 +770,16 @@ stream -[i/v] -f: Stream all adc data. -i: motor phase currents -v: motor phase 
 		USART3_send_str(" V\n");
 		
 		USART3_send_str("ISNS U: "); 
-		USART3_write_float(isns_u, 2);
-		USART3_send_str(" mA\n");
+		USART3_write_float(isns_u, 3);
+		USART3_send_str(" A\n");
 
 		USART3_send_str("ISNS V: "); 
-		USART3_write_float(isns_v, 2);
-		USART3_send_str(" mA\n");
+		USART3_write_float(isns_v, 3);
+		USART3_send_str(" A\n");
 
 		USART3_send_str("ISNS W: "); 
-		USART3_write_float(isns_w, 2);
-		USART3_send_str(" mA\n");
+		USART3_write_float(isns_w, 3);
+		USART3_send_str(" A\n");
 		
 		USART3_send_str("VSNS 12V: "); 
 		USART3_write_float(vsns_12v, 2);
@@ -784,8 +790,8 @@ stream -[i/v] -f: Stream all adc data. -i: motor phase currents -v: motor phase 
 		USART3_send_str(" V\n");
 		
 		USART3_send_str("ISNS VBAT: "); 
-		USART3_write_float(isns_vbat, 2);
-		USART3_send_str(" mA\n");
+		USART3_write_float(isns_vbat, 3);
+		USART3_send_str(" A\n");
 	}
 	
 	return true;

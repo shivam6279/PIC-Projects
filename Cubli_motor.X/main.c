@@ -102,7 +102,7 @@ int main() {
 	USART3_init(250000);    
 	timer2_init(KHZ(1));	// ms delay - P = 3
 	timer3_init(0);			// us delay - P = 7
-	timer4_init(KHZ(50));	// FOC      - P = 6
+	timer4_init(KHZ(25));	// FOC      - P = 6
 	timer5_init(50);		// Speaker  - P = 2
 	timer6_init(500);		// RPM      - P = 4
 //	timer7_init(KHZ(25));	// SPI data request
@@ -183,8 +183,9 @@ int main() {
 		}
 	}*/
 
-	motor_zero_angle = 50.5;//11.5; //Read_Motor_Offset();
+	motor_zero_angle = 13.9; //Read_Motor_Offset();
 	
+	waveform_mode = MOTOR_FOC;
 	TMR7 = 50;
 	FOC_TIMER_ON = 1;
 	MotorOff();
@@ -244,9 +245,14 @@ int main() {
 		
 		if(ms_counter2() >= 2) {
 			reset_ms_counter2();
-			USART3_write_float(GetRPM(), 2);
+//			USART3_write_float(GetRPM(), 2);
 			// USART3_send_str(", ");
 			// USART3_write_float(GetRPM_der(), 2);
+			USART3_write_float(i_q, 5);
+			USART3_send_str(", ");
+			USART3_write_float(i_d, 5);
+			USART3_send_str(", ");
+			USART3_write_float(GetRPM()/1000.0, 5);
 			USART3_send('\n');
 		}
 	}
