@@ -9,6 +9,7 @@
 #include "SPI.h"
 #include "ADC.h"
 #include "pic32.h"
+#include "PID.h"
 
 #define _SQRT3_2 0.86602540378443864676372317075294
 #define _1_SQRT3 0.57735026918962576450914878050196
@@ -34,7 +35,7 @@ double encoder_LUT[(int)ENCODER_RES];
 
 // FOC
 volatile float i_d = 0, i_q = 0;
-volatile float foc_kp = 15, foc_ki = 20;
+volatile float foc_kp = 5, foc_ki = 5;
 volatile float foc_sum = 0, foc_output = 0;
 
 // Sensorless
@@ -331,6 +332,11 @@ void setPhaseVoltage(float p, float p_d, float angle_el) {
 //		pwm_v -= Umin;
 //		pwm_w -= Umin;
 		
+		// Clamp PWM to [0, PWM_MAX - DEAD_TIME]
+		pwm_u = pwm_u > (PWM_MAX - DEAD_TIME) ? (PWM_MAX - DEAD_TIME): pwm_u < 0 ? 0: pwm_u;
+		pwm_v = pwm_v > (PWM_MAX - DEAD_TIME) ? (PWM_MAX - DEAD_TIME): pwm_v < 0 ? 0: pwm_v;
+		pwm_w = pwm_w > (PWM_MAX - DEAD_TIME) ? (PWM_MAX - DEAD_TIME): pwm_w < 0 ? 0: pwm_w;
+		
 		if(pwm_u) {
 			PDC1 = pwm_u;
 			PDC7 = pwm_u + DEAD_TIME;
@@ -429,8 +435,8 @@ void foc_current_calc(float angle_el) {
 	isns_w = -(isns_u + isns_v);
 
 	// Clarke Transform
-	i_alpha = isns_w; //w
-	i_beta = _1_SQRT3 * isns_v + _2_SQRT3 * isns_v; //v
+	i_alpha = isns_u;
+	i_beta = _1_SQRT3 * isns_u + _2_SQRT3 * isns_v;
 
 	// Park Transform
 //	i_q = -i_alpha * s + i_beta * c;

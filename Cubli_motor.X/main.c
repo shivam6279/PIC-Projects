@@ -9,6 +9,7 @@
 #include <stdio.h>
 
 #include "pic32.h"
+#include "PID.h"
 #include "PWM.h"
 #include "servo.h"
 #include "ADC.h"
@@ -185,7 +186,7 @@ int main() {
 
 	motor_zero_angle = 13.9; //Read_Motor_Offset();
 	
-	waveform_mode = MOTOR_FOC;
+//	waveform_mode = MOTOR_FOC;
 	TMR7 = 50;
 	FOC_TIMER_ON = 1;
 	MotorOff();
@@ -251,8 +252,8 @@ int main() {
 			USART3_write_float(i_q, 5);
 			USART3_send_str(", ");
 			USART3_write_float(i_d, 5);
-			USART3_send_str(", ");
-			USART3_write_float(GetRPM()/1000.0, 5);
+//			USART3_send_str(", ");
+//			USART3_write_float(GetRPM()/1000.0, 5);
 			USART3_send('\n');
 		}
 	}
