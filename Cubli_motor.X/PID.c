@@ -18,6 +18,8 @@ void PID_init(PID *pid) {
 
 	pid->constrain_integral = false;
 	pid->constrain_output = false;
+
+	pid->lpf = 0;
 }
 
 void PID_reset(PID *pid) {
@@ -36,27 +38,58 @@ void PID_setGain(PID *pid, float kp, float ki, float kd) {
 }
 
 void PID_integrate(PID *pid, float deltat) {
-	pid->integral += pid->error * deltat;
+	float error = pid->error;
+	if(pid->constrain_error) {
+		error = pid->error > pid->error_max ? pid->error_max: pid->error < pid->error_min ? pid->error_min: pid->error;
+	}
+	pid->integral += error * deltat;
 	if(pid->constrain_integral) {
 		pid->integral = pid->integral > pid->integral_max ? pid->integral_max: pid->integral < pid->integral_min ? pid->integral_min: pid->integral;
 	}
 }
 
 void PID_differentiate(PID *pid, float deltat) {
-	pid->derivative += (pid->input - pid->p_input) / deltat;
+	pid->derivative += (pid->p_input - pid->input) / deltat;
 	pid->p_input = pid->input;
 }
 
 float PID_compute(PID *pid, float input, float deltat) {
+	float temp_output;
 	pid->input = input;
-	pid->error = pid->input - pid->setpoint;
-	PID_integrate(pid, deltat);
-	PID_differentiate(pid, deltat);
-	pid->output = pid->kp * pid->error + pid->ki * pid->integral - pid->kd * pid->derivative;
+	pid->error = pid->setpoint - pid->input;
+	// P
+	temp_output = pid->kp * pid->error;
+	// I
+	if(pid->ki) {
+		PID_integrate(pid, deltat);
+		temp_output += pid->ki * pid->integral;
+	}
+	// D
+	if(pid->kd) {
+		PID_differentiate(pid, deltat);
+		temp_output += pid->kd * pid->derivative;
+	}
+
+	pid->output = pid->lpf * pid->output + (1.0f-pid->lpf) * temp_output;
+
 	if(pid->constrain_output) {
 		pid->output = pid->output > pid->output_max ? pid->output_max: pid->output < pid->output_min ? pid->output_min: pid->output;
 	}
 	return pid->output;
+}
+
+// Max error to integrate constrain
+void PID_enableErrorConstrain(PID *pid) {
+	pid->constrain_error = true;
+}
+
+void PID_disablerrorConstrain(PID *pid) {
+	pid->constrain_error = false;
+}
+
+void PID_seterrorLimits(PID *pid, float min, float max) {
+	pid->error_min = min;
+	pid->error_max = max;
 }
 
 // Integral constrain
@@ -85,4 +118,8 @@ void PID_disableOutputConstrain(PID *pid) {
 void PID_setOutputLimits(PID *pid, float min, float max) {
 	pid->output_min = min;
 	pid->output_max = max;
+}
+
+void PID_setLPF(PID *pid, float lpf) {
+	pid->lpf = lpf;
 }

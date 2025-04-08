@@ -38,7 +38,7 @@ extern volatile motor_mode mode;
 extern volatile float phase_delay;
 #define LPF_PHASE 0.5f
 
-extern volatile float motor_zero_angle;
+extern float motor_zero_angle;
 extern double encoder_LUT[];
 extern double encoder_calib_data[32];
 
@@ -53,6 +53,7 @@ extern void interpolate_encoder_lut(double[], unsigned int);
 
 extern void MotorPhase(signed char, float);
 extern void MotorOff();
+extern void MotorShort(float)
 
 extern bool bemf_phase(unsigned char);
 

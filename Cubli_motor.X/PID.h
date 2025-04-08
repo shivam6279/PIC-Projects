@@ -12,9 +12,11 @@ typedef struct {
 	float integral, derivative;
 	float output;
 
+	float error_min, error_max;
 	float integral_max, integral_min;
 	float output_max, output_min;
 	bool constrain_integral;
+	bool constrain_error;
 	bool constrain_output;
 } PID;
 
@@ -24,11 +26,18 @@ extern void PID_setGain(PID*, float, float, float);
 extern void PID_integrate(PID *pid, float);
 extern void PID_differentiate(PID*, float);
 extern float PID_compute(PID*, float, float);
+
+extern void PID_enableErrorConstrain(PID*);
+extern void PID_disableErrorConstrain(PID*);
+extern void PID_setErrorLimits(PID*, float, float);
+
 extern void PID_enableIntegralConstrain(PID*);
 extern void PID_disableIntegralConstrain(PID*);
 extern void PID_setIntegralLimits(PID*, float, float);
+
 extern void PID_enableOutputConstrain(PID*);
 extern void PID_disableOutputConstrain(PID*);
 extern void PID_setOutputLimits(PID*, float, float);
+extern void PID_setLPF(PID*, float);
 
 #endif

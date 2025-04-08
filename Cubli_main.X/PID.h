@@ -11,6 +11,7 @@ typedef struct {
     float integral_bound;
     float integral_max_diff;
     float output;
+    float lpf;
 } PID;
 
 extern volatile unsigned long int esc_counter;
