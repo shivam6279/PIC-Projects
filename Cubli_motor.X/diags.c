@@ -594,7 +594,7 @@ Read temp sensor TMP1075:\n\
 bool diags_readADC(char *cmd) {
 	char ch;
 	float f;
-	static uint16_t delay = 1000;
+	static uint16_t delay = 10;
 	float isns_u, isns_v, isns_w, isns_vbat, vsns_vbat, vsns_12v;
 	float vsns_u, vsns_v, vsns_w, vsns_x;
 	char arg_val[5];
@@ -663,8 +663,8 @@ stream -[i/v] -f: Stream all adc data. -i: motor phase currents -v: motor phase 
 		if(str_getArgValue(cmd, "-i", arg_val)) {
 			while(1) {
 				StartDelayusCounter();
-				isns_u = ((float)adc_buffer[1][0][0] * ADC_CONV_FACTOR - 1.65) / 20.0f / ISNS_UVW_R;
-				isns_v = ((float)adc_buffer[4][0][0] * ADC_CONV_FACTOR - 1.65) / 20.0f / ISNS_UVW_R;
+				isns_u = ((float)adc_buffer[1][0][0] * ADC_CONV_FACTOR - isns_u_offset) / 20.0f / ISNS_UVW_R;
+				isns_v = ((float)adc_buffer[4][0][0] * ADC_CONV_FACTOR - isns_v_offset) / 20.0f / ISNS_UVW_R;
 				isns_w = -(isns_u + isns_v);
 				USART3_write_float(isns_u, 3);
 				USART3_send_str(", ");
@@ -708,8 +708,8 @@ stream -[i/v] -f: Stream all adc data. -i: motor phase currents -v: motor phase 
 		} else {
 			while(1) {
 				StartDelayusCounter();
-				isns_u = ((float)adc_buffer[1][0][0] * ADC_CONV_FACTOR - 1.65) / 20.0f / ISNS_UVW_R;
-				isns_v = ((float)adc_buffer[4][0][0] * ADC_CONV_FACTOR - 1.65) / 20.0f / ISNS_UVW_R;
+				isns_u = ((float)adc_buffer[1][0][0] * ADC_CONV_FACTOR - isns_u_offset) / 20.0f / ISNS_UVW_R;
+				isns_v = ((float)adc_buffer[4][0][0] * ADC_CONV_FACTOR - isns_v_offset) / 20.0f / ISNS_UVW_R;
 				isns_w = -(isns_u + isns_v);
 				vsns_u = (float)adc_buffer[2][0][0] * ADC_CONV_FACTOR / MOTOR_VSNS_DIVIDER;
 				vsns_v = (float)adc_buffer[3][0][0] * ADC_CONV_FACTOR / MOTOR_VSNS_DIVIDER;
@@ -740,8 +740,8 @@ stream -[i/v] -f: Stream all adc data. -i: motor phase currents -v: motor phase 
 			}
 		}
 	} else {
-		isns_u = ((float)adc_data[4] * ADC_CONV_FACTOR - 1.63) / 20.0f / ISNS_UVW_R;
-		isns_v = ((float)adc_data[1] * ADC_CONV_FACTOR - 1.63) / 20.0f / ISNS_UVW_R;
+		isns_u = ((float)adc_buffer[1][0][0] * ADC_CONV_FACTOR - isns_u_offset) / 20.0f / ISNS_UVW_R;
+		isns_v = ((float)adc_buffer[4][0][0] * ADC_CONV_FACTOR - isns_v_offset) / 20.0f / ISNS_UVW_R;
 		isns_w = -(isns_u + isns_v);
 		
 		vsns_u = (float)adc_data[2] * ADC_CONV_FACTOR;

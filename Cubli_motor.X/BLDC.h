@@ -4,6 +4,8 @@
 #include <math.h>
 #include <inttypes.h>
 #include <stdbool.h>
+#include <xc.h>
+#include "PID.h"
 
 #define ENCODER_RES 4096.0f
 #define ENCODER_RES_MASK 0xFFF
@@ -35,6 +37,8 @@ typedef enum {
 extern volatile motor_waveform_type waveform_mode;
 extern volatile motor_mode mode;
 
+extern PID pid_angle, pid_rpm, pid_focIq, pid_focId;
+
 extern volatile float phase_delay;
 #define LPF_PHASE 0.5f
 
@@ -46,14 +50,15 @@ extern volatile unsigned char comparator, comp_u, comp_v, comp_w;
 
 extern float pole_pairs, foc_degree_advance;
 
-extern volatile float i_d, i_q;
+extern volatile float foc_id, foc_iq;
 
 extern void init_encoder_lut();
 extern void interpolate_encoder_lut(double[], unsigned int);
 
+extern void MotorPIDInit();
 extern void MotorPhase(signed char, float);
 extern void MotorOff();
-extern void MotorShort(float)
+extern void MotorShort(float);
 
 extern bool bemf_phase(unsigned char);
 

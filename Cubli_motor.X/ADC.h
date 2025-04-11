@@ -20,6 +20,9 @@ extern unsigned int adc_data[49];
 extern uint16_t adc_buffer[6][2][ADC_BUFFER_LEN];
 extern uint8_t adc_cnt_buffer[6][2];
 
+extern volatile float isns_u_offset, isns_v_offset;
+
+extern void ADCCalib();
 extern void ADCInit();
 extern void adc_readAll();
 

@@ -3,6 +3,9 @@
 #include <sys/kmem.h>
 #include <inttypes.h>
 #include <xc.h>
+#include "pic32.h"
+
+volatile float isns_u_offset = 1.65, isns_v_offset = 1.65;
 
 unsigned int adc_data[49] = {4};
 
@@ -11,6 +14,19 @@ uint8_t __attribute__ ((coherent, aligned(8))) adc_cnt_buffer[6][2];
 
 extern __inline__ unsigned int __attribute__((always_inline)) virt_to_phys(const void* p) { 
 	return (int)p<0?((int)p&0x1fffffffL):(unsigned int)((unsigned char*)p+0x40000000L); 
+}
+
+void ADCCalib() {
+	uint16_t i;
+	const float avg_num = 1000;
+	float isns_u = 0, isns_v = 0;
+	for(i = 0; i < avg_num; i++) {
+		isns_u += ((float)adc_buffer[1][0][0] * ADC_CONV_FACTOR) / avg_num;
+		isns_v += ((float)adc_buffer[4][0][0] * ADC_CONV_FACTOR) / avg_num;
+		delay_ms(1);
+	}
+	isns_u_offset = isns_u;
+	isns_v_offset = isns_v;
 }
 
 void ADCInit() {

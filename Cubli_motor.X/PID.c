@@ -83,11 +83,11 @@ void PID_enableErrorConstrain(PID *pid) {
 	pid->constrain_error = true;
 }
 
-void PID_disablerrorConstrain(PID *pid) {
+void PID_disablErrorConstrain(PID *pid) {
 	pid->constrain_error = false;
 }
 
-void PID_seterrorLimits(PID *pid, float min, float max) {
+void PID_setErrorLimits(PID *pid, float min, float max) {
 	pid->error_min = min;
 	pid->error_max = max;
 }

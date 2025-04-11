@@ -109,6 +109,8 @@ int main() {
 //	timer7_init(KHZ(25));	// SPI data request
 	timer8_init(0);			// Sensorless
 	
+	MotorPIDInit();
+	
 	servoInit(1500);
 	
 	EEPROM_init();
@@ -121,6 +123,8 @@ int main() {
 	delay_ms(200);
 	TMP1075Init();
 	ENC_VCC = 1;
+
+	ADCCalib();
 	
 	board_id = 1;//EEPROM_read(ID_ADDR);
 	LED0 = 1;
@@ -184,9 +188,9 @@ int main() {
 		}
 	}*/
 
-	motor_zero_angle = 13.9; //Read_Motor_Offset();
+	motor_zero_angle = 15.2; //Read_Motor_Offset();
 	
-//	waveform_mode = MOTOR_FOC;
+	waveform_mode = MOTOR_FOC;
 	TMR7 = 50;
 	FOC_TIMER_ON = 1;
 	MotorOff();
@@ -209,6 +213,7 @@ int main() {
 
 				if(mode == MODE_POWER) {
 					SetPower((float)a / 2000.0);
+					pid_focIq.setpoint = (float)a / 10000;
 				} else if(mode == MODE_RPM) {
 					SetRPM(a);
 				} else if(mode == MODE_POS) {
@@ -247,13 +252,13 @@ int main() {
 		if(ms_counter2() >= 2) {
 			reset_ms_counter2();
 //			USART3_write_float(GetRPM(), 2);
-			// USART3_send_str(", ");
-			// USART3_write_float(GetRPM_der(), 2);
-			USART3_write_float(i_q, 5);
-			USART3_send_str(", ");
-			USART3_write_float(i_d, 5);
 //			USART3_send_str(", ");
-//			USART3_write_float(GetRPM()/1000.0, 5);
+//			USART3_write_float(GetRPM_der(), 2);
+			USART3_write_float(foc_iq, 5);
+			USART3_send_str(", ");
+			USART3_write_float(foc_id, 5);
+			USART3_send_str(", ");
+			USART3_write_float(GetRPM()/1000.0, 5);
 			USART3_send('\n');
 		}
 	}

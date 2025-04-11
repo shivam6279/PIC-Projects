@@ -11,6 +11,7 @@ typedef struct {
 	float error, setpoint;
 	float integral, derivative;
 	float output;
+	float lpf;
 
 	float error_min, error_max;
 	float integral_max, integral_min;

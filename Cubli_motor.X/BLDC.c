@@ -78,6 +78,7 @@ void __ISR_AT_VECTOR(_TIMER_4_VECTOR, IPL6AUTO) FOC_loop(void){
 
 	if(mode != MODE_OFF) {
 		if(power) {
+			PID_compute(&pid_focIq, foc_iq, 0.00004);
 			PID_compute(&pid_focId, foc_id, 0.00004);
 		} else {
 			PID_reset(&pid_focIq);
@@ -153,8 +154,8 @@ void setPhaseVoltage(float p, float p_d, float angle_el) {
 		index = (index + SVPWM_SIZE/4) % SVPWM_SIZE;
 		c = (sin_lut[index] - 128.0) / 128.0;
 
-		Uq = p;
-		Ud = -pid_focId.output;
+		Uq = p;//-pid_focIq.output;
+		Ud = 0;//pid_focId.output;
 
 		// Inverse Park Transform
 		Ualpha = c * Ud - s * Uq;
@@ -256,17 +257,17 @@ void foc_current_calc(float angle_el) {
 	c = (sin_lut[angle_index] - 128.0) / 128.0;
 
 	// Get phase current readings from ADC
-	isns_u = ((float)adc_buffer[1][0][0] * ADC_CONV_FACTOR - 1.65) / 20.0f / ISNS_UVW_R;
-	isns_v = ((float)adc_buffer[4][0][0] * ADC_CONV_FACTOR - 1.65) / 20.0f / ISNS_UVW_R;
+	isns_u = ((float)adc_buffer[1][0][0] * ADC_CONV_FACTOR - isns_u_offset) / 20.0f / ISNS_UVW_R;
+	isns_v = ((float)adc_buffer[4][0][0] * ADC_CONV_FACTOR - isns_v_offset) / 20.0f / ISNS_UVW_R;
 	isns_w = -(isns_u + isns_v);
 
 	// Clarke Transform
 	i_alpha = isns_u;
-	i_beta = _1_SQRT3 * isns_u + _2_SQRT3 * isns_v;
+	i_beta = _1_SQRT3 * isns_u + _2_SQRT3 * isns_w;
 
 	// Park Transform
-	foc_iq = FOC_IQ_LPF*foc_iq + (1.0-FOC_IQ_LPF) * (-i_alpha * s + i_beta * c);
-	foc_id = FOC_IQ_LPF*foc_id + (1.0-FOC_IQ_LPF) * (i_alpha * c + i_beta * s);
+	foc_iq = FOC_IQ_LPF*foc_iq + (1.0-FOC_IQ_LPF) * (-i_alpha* s + i_beta* c);
+	foc_id = FOC_IQ_LPF*foc_id + (1.0-FOC_IQ_LPF) * (i_alpha* c + i_beta* s);
 }
 
 
@@ -475,8 +476,8 @@ void MotorPIDInit() {
 
 	PID_setGain(&pid_angle,	8,		1.25,	6		);
 	PID_setGain(&pid_rpm,	0.0002,	0.005,	0.008	);
-	PID_setGain(&pid_focIq,	10,		10,		0		);
-	PID_setGain(&pid_focId,	10,		10,		0		);
+	PID_setGain(&pid_focIq,	100,	100,	0		);
+	PID_setGain(&pid_focId,	20,		20,		0		);
 
 	PID_setLPF(&pid_angle,	0.8);
 	PID_setLPF(&pid_rpm,	0.8);
@@ -487,11 +488,15 @@ void MotorPIDInit() {
 	PID_enableErrorConstrain(&pid_rpm);
 	PID_setErrorLimits(&pid_rpm,	-500,	500);
 
-	// PID_enableIntegralConstrain(&pid_focIq);
-	// PID_setOutputLimits(&pid_focIq, -400, 400);
-
-	// PID_enableIntegralConstrain(pid_focId);
-	// PID_setOutputLimits(&pid_focId, -400, 400);
+	PID_enableErrorConstrain(&pid_focIq);
+	PID_setErrorLimits(&pid_focIq, -1, 1);
+	PID_enableOutputConstrain(&pid_focIq);
+	PID_setOutputLimits(&pid_focIq, -1000, 1000);
+	
+	PID_enableErrorConstrain(&pid_focId);
+	PID_setErrorLimits(&pid_focId, -1, 1);
+	PID_enableIntegralConstrain(&pid_focId);
+	PID_setOutputLimits(&pid_focId, -1000, 1000);
 }
 
 void ResetMotorPID() {
