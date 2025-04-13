@@ -14,6 +14,7 @@
 #include "servo.h"
 #include "TMP1075.h"
 #include "bitbang_I2C.h"
+#include "EEPROM.h"
 #include "tones.h"
 
 void printDiagsMenu();
@@ -52,6 +53,7 @@ const diags_menu_item diags_list[] = {
 	{ .name = "Comparator readings",			.cmd = "comp",	.func = diags_comp				},
 	{ .name = "Turn LEDs on or off",			.cmd = "led",	.func = diags_LED				},
 	{ .name = "Servo contorls",					.cmd = "servo",	.func = diags_servo				},
+	{ .name = "Save/read from eeprom",			.cmd = "eep",	.func = diags_eeprom			},
 	{ .name = "Perform a software reset",		.cmd = "reset",	.func = diags_reset				}
 };
 
@@ -1007,6 +1009,235 @@ off : Set servo pin to LOW\n";
 	}
 
 	return true;	
+}
+
+bool diags_eeprom(char *cmd) {
+	char arg_val[50];
+	uint16_t i;
+	
+	const char help_str[] = "\
+write/read from the eeprom:\n\
+save : Save all variables\n\
+restore : Restore all variables from epprom\n\
+read [x] [b]: Read b bytes at address x\n\
+write [x] [b]: Write b bytes at address x\n\
+disp : Display all keys stored\n";
+	
+	if(str_getArgValue(cmd, "-h", arg_val) || str_getArgValue(cmd, "--help", arg_val)) {
+		USART3_send_str(help_str);
+		return true;
+	}
+
+	if(str_getArgValue(cmd, "read", arg_val)) {
+		nop();
+	
+	} else if(str_getArgValue(cmd, "write", arg_val)) {
+		nop();
+	
+	} else if(str_getArgValue(cmd, "save", arg_val)) {
+		disp_eeprom_diff();
+
+		eeprom_board_id = board_id;
+		eeprom_zero_offset = motor_zero_angle;
+		for(i = 0; i < 32; i++) {
+			eeprom_encoder_calib_data[i] = encoder_calib_data[i];
+		}
+		eeprom_pid_angle[0] = pid_angle.kp;
+		eeprom_pid_angle[1] = pid_angle.ki;
+		eeprom_pid_angle[2] = pid_angle.kd;
+
+		eeprom_pid_rpm[0] = pid_rpm.kp;
+		eeprom_pid_rpm[1] = pid_rpm.ki;
+		eeprom_pid_rpm[2] = pid_rpm.kd;
+
+		eeprom_pid_foc_iq[0] = pid_foc_iq.kp;
+		eeprom_pid_foc_iq[1] = pid_foc_iq.ki;
+		eeprom_pid_foc_iq[2] = pid_foc_iq.kd;
+
+		eeprom_pid_foc_id[0] = pid_foc_id.kp;
+		eeprom_pid_foc_id[1] = pid_foc_id.ki;
+		eeprom_pid_foc_id[2] = pid_foc_id.kd;
+
+		EEPROM_writeAll();
+
+	} else if(str_getArgValue(cmd, "restore", arg_val)) {
+		disp_eeprom_diff();
+
+		board_id = eeprom_board_id;
+		motor_zero_angle = eeprom_zero_offset;
+		for(i = 0; i < 32; i++) {
+			encoder_calib_data[i] = eeprom_encoder_calib_data[i];
+		}
+		pid_angle.kp = eeprom_pid_angle[0];
+		pid_angle.ki = eeprom_pid_angle[1];
+		pid_angle.kd = eeprom_pid_angle[2];
+
+		pid_rpm.kp = eeprom_pid_rpm[0];
+		pid_rpm.ki = eeprom_pid_rpm[1];
+		pid_rpm.kd = eeprom_pid_rpm[2];
+
+		pid_foc_iq.kp = eeprom_pid_foc_iq[0];
+		pid_foc_iq.ki = eeprom_pid_foc_iq[1];
+		pid_foc_iq.kd = eeprom_pid_foc_iq[2];
+
+		pid_foc_id.kp = eeprom_pid_foc_id[0];
+		pid_foc_id.ki = eeprom_pid_foc_id[1];
+		pid_foc_id.kd = eeprom_pid_foc_id[2];
+
+	} else if(str_getArgValue(cmd, "disp", arg_val)) {
+		EEPROM_readAll();
+
+		USART3_send_str("Board ID: ");
+		USART3_write_int(eeprom_board_id);
+
+		USART3_send_str("Zero offset: ");
+		USART3_write_float(eeprom_zero_offset, 2);
+
+		USART3_send_str("\nAngle pid gains: ");
+		USART3_write_float(eeprom_pid_angle[0], 2);
+		USART3_send_str(", ");
+		USART3_write_float(eeprom_pid_angle[1], 2);
+		USART3_send_str(", ");
+		USART3_write_float(eeprom_pid_angle[2], 2);
+
+		USART3_send_str("\nRPM pid gains: ");
+		USART3_write_float(eeprom_rpm_angle[0], 2);
+		USART3_send_str(", ");
+		USART3_write_float(eeprom_rpm_angle[1], 2);
+		USART3_send_str(", ");
+		USART3_write_float(eeprom_rpm_angle[2], 2);
+
+		USART3_send_str("\nFOC Iq pid gains: ");
+		USART3_write_float(eeprom_foc_iq_angle[0], 2);
+		USART3_send_str(", ");
+		USART3_write_float(eeprom_foc_iq_angle[1], 2);
+		USART3_send_str(", ");
+		USART3_write_float(eeprom_foc_iq_angle[2], 2);
+
+		USART3_send_str("\nFOC Id pid gains: ");
+		USART3_write_float(eeprom_foc_id_angle[0], 2);
+		USART3_send_str(", ");
+		USART3_write_float(eeprom_foc_id_angle[1], 2);
+		USART3_send_str(", ");
+		USART3_write_float(eeprom_foc_id_angle[2], 2);
+
+		USART3_send_str("\n");
+
+	} else {
+		USART3_send_str(help_str);
+		return true;
+	}
+
+	return true;	
+}
+
+void disp_eeprom_diff() {
+	EEPROM_readAll();
+	USART3_send_str("Deltas\n");
+	USART3_send_str("Keyname: current, EEPROM");
+
+	if(board_id != eeprom_board_id) {
+		USART3_send_str("Board ID: ");
+		USART3_write_int(board_id);
+		USART3_send_str(", ");
+		USART3_write_int(eeprom_board_id);
+		USART3_send_str("\n");
+	}
+	if(motor_zero_angle != eeprom_zero_offset) {
+		USART3_send_str("Zero offset: ");
+		USART3_write_float(motor_zero_angle, 2);
+		USART3_send_str(", ");
+		USART3_write_float(eeprom_zero_offset, 2);
+		USART3_send_str("\n");
+	}
+
+	if(pid_angle.kp != eeprom_pid_angle[0]) {
+		USART3_send_str("Angle PID kp: ");
+		USART3_write_float(pid_angle.kp, 2);
+		USART3_send_str(", ");
+		USART3_write_float(eeprom_pid_angle[0], 2);
+		USART3_send_str("\n");
+	}
+	if(pid_angle.ki != eeprom_pid_angle[1]) {
+		USART3_send_str("Angle PID ki: ");
+		USART3_write_float(pid_angle.ki, 2);
+		USART3_send_str(", ");
+		USART3_write_float(eeprom_pid_angle[1], 2);
+		USART3_send_str("\n");
+	}
+	if(pid_angle.kd != eeprom_pid_angle[2]) {
+		USART3_send_str("Angle PID kd: ");
+		USART3_write_float(pid_angle.kd, 2);
+		USART3_send_str(", ");
+		USART3_write_float(eeprom_pid_angle[2], 2);
+		USART3_send_str("\n");
+	}
+
+	if(pid_rpm.kp != eeprom_pid_rpm[0]) {
+		USART3_send_str("RPM PID kp: ");
+		USART3_write_float(pid_rpm.kp, 2);
+		USART3_send_str(", ");
+		USART3_write_float(eeprom_pid_rpm[0], 2);
+		USART3_send_str("\n");
+	}
+	if(pid_rpm.ki != eeprom_pid_rpm[1]) {
+		USART3_send_str("RPM PID ki: ");
+		USART3_write_float(pid_rpm.ki, 2);
+		USART3_send_str(", ");
+		USART3_write_float(eeprom_pid_rpm[1], 2);
+		USART3_send_str("\n");
+	}
+	if(pid_rpm.kd != eeprom_pid_rpm[2]) {
+		USART3_send_str("RPM PID kd: ");
+		USART3_write_float(pid_rpm.kd, 2);
+		USART3_send_str(", ");
+		USART3_write_float(eeprom_pid_rpm[2], 2);
+		USART3_send_str("\n");
+	}
+
+	if(pid_foc_iq.kp != eeprom_pid_foc_iq[0]) {
+		USART3_send_str("FOC Iq PID kp: ");
+		USART3_write_float(pid_foc_iq.kp, 2);
+		USART3_send_str(", ");
+		USART3_write_float(eeprom_pid_foc_iq[0], 2);
+		USART3_send_str("\n");
+	}
+	if(pid_foc_iq.ki != eeprom_pid_foc_iq[1]) {
+		USART3_send_str("FOC Iq PID ki: ");
+		USART3_write_float(pid_foc_iq.ki, 2);
+		USART3_send_str(", ");
+		USART3_write_float(eeprom_pid_foc_iq[1], 2);
+		USART3_send_str("\n");
+	}
+	if(pid_foc_iq.kd != eeprom_pid_foc_iq[2]) {
+		USART3_send_str("FOC Iq PID kp: ");
+		USART3_write_float(pid_foc_iq.kd, 2);
+		USART3_send_str(", ");
+		USART3_write_float(eeprom_pid_foc_iq[2], 2);
+		USART3_send_str("\n");
+	}
+
+	if(pid_foc_id.kp != eeprom_pid_foc_id[0]) {
+		USART3_send_str("FOC Id PID kp: ");
+		USART3_write_float(pid_foc_id.kp, 2);
+		USART3_send_str(", ");
+		USART3_write_float(eeprom_pid_foc_id[0], 2);
+		USART3_send_str("\n");
+	}
+	if(pid_foc_id.ki != eeprom_pid_foc_id[1]) {
+		USART3_send_str("FOC Id PID ki: ");
+		USART3_write_float(pid_foc_id.ki, 2);
+		USART3_send_str(", ");
+		USART3_write_float(eeprom_pid_foc_id[1], 2);
+		USART3_send_str("\n");
+	}
+	if(pid_foc_id.kd != eeprom_pid_foc_id[2]) {
+		USART3_send_str("FOC Id PID kd: ");
+		USART3_write_float(pid_foc_id.kd, 2);
+		USART3_send_str(", ");
+		USART3_write_float(eeprom_pid_foc_id[2], 2);
+		USART3_send_str("\n");
+	}
 }
 
 bool diags_comp(char *cmd) {

@@ -125,21 +125,15 @@ int main() {
 	ENC_VCC = 1;
 
 	ADCCalib();
+	EEPROM_readALL();
 	
-	board_id = 1;//EEPROM_read(ID_ADDR);
+	board_id = 1; //eeprom_board_id
 	LED0 = 1;
 //	MetroidSaveTheme(board_id);
 	PlayWav();
 	LED0 = 0;
 	
 	servoOff();
-	
-//	while(1) {
-//		LED0 = 1;
-//		delay_ms(1000);
-//		LED0 = 0;
-//		delay_ms(1000);
-//	}
 	
 	/*FOC_TIMER_ON = 0;
 	float pp = 0.07;
@@ -188,7 +182,7 @@ int main() {
 		}
 	}*/
 
-	motor_zero_angle = 15.2; //Read_Motor_Offset();
+	motor_zero_angle = eeprom_zero_offset;
 	
 	waveform_mode = MOTOR_FOC;
 	TMR7 = 50;
@@ -257,8 +251,8 @@ int main() {
 			USART3_write_float(foc_iq, 5);
 			USART3_send_str(", ");
 			USART3_write_float(foc_id, 5);
-			USART3_send_str(", ");
-			USART3_write_float(GetRPM()/1000.0, 5);
+			// USART3_send_str(", ");
+			// USART3_write_float(GetRPM()/1000.0, 5);
 			USART3_send('\n');
 		}
 	}
