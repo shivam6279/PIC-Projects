@@ -26,6 +26,8 @@
 #define MHZ(x) x * 1000000.0f
 #define KHZ(x) x * 1000.0f
 
+float save_data[1000][6];
+
 /* 
  * UART CODES:
  * 
@@ -41,8 +43,6 @@
  * D: Test Menu
  * E: Toggle auto-stop
  */
-
-unsigned char board_id = 0;
 
 void parse_rx_codes() {
 	if(rx_buffer[0] == 'I') {
@@ -115,6 +115,7 @@ int main() {
 	
 	EEPROM_init();
 	PwmInit(96000);
+//	MotorShort(1);
 	MotorOff();
 	
 	interpolate_encoder_lut(encoder_calib_data, 12);
@@ -123,17 +124,20 @@ int main() {
 	delay_ms(200);
 	TMP1075Init();
 	ENC_VCC = 1;
-
-	ADCCalib();
-	EEPROM_readALL();
 	
-	board_id = 1; //eeprom_board_id
+//	ADCCalib();
+	isns_u_offset = 1.63;
+	isns_v_offset = 1.645;
+	EEPROM_readAll();
+	
+	board_id = eeprom_board_id;
 	LED0 = 1;
 //	MetroidSaveTheme(board_id);
 	PlayWav();
 	LED0 = 0;
 	
 	servoOff();
+	motor_zero_angle = eeprom_zero_offset;
 	
 	/*FOC_TIMER_ON = 0;
 	float pp = 0.07;
@@ -181,13 +185,50 @@ int main() {
 			}
 		}
 	}*/
-
-	motor_zero_angle = eeprom_zero_offset;
 	
 	waveform_mode = MOTOR_FOC;
 	TMR7 = 50;
 	FOC_TIMER_ON = 1;
+//	MotorOff();
+	
+	/*SetPower(250 / 2000.0);
+	delay_ms(1000);
+	SetPower(500 / 2000.0);
+	delay_ms(1000);
+	SetPower(1000 / 2000.0);
+	delay_ms(1000);
+//	float isns_u, isns_v, isns_w;
+	for(i = 0; i < 1000; i++) {
+//		isns_u = ((float)adc_buffer[1][0][0] * ADC_CONV_FACTOR - isns_u_offset) / 20.0f / ISNS_UVW_R;
+//		isns_v = ((float)adc_buffer[4][0][0] * ADC_CONV_FACTOR - isns_v_offset) / 20.0f / ISNS_UVW_R;
+//		isns_w = -(isns_u + isns_v);
+	
+		save_data[i][0] = normalizeAngle(GetPosition()*pole_pairs);
+		save_data[i][1] = isns_u;
+		save_data[i][2] = isns_v;
+		save_data[i][3] = isns_w;
+		save_data[i][4] = foc_iq;
+		save_data[i][5] = foc_id;
+		delay_us(40);
+	}
+	FOC_TIMER_ON = 0;
 	MotorOff();
+	for(i = 0; i < 1000; i++) {
+		USART3_write_float(save_data[i][0]/100, 6);
+		USART3_send_str(", ");
+		USART3_write_float(save_data[i][1], 6);
+		USART3_send_str(", ");
+		USART3_write_float(save_data[i][2], 6);
+		USART3_send_str(", ");
+		USART3_write_float(save_data[i][3], 6);
+		USART3_send_str(", ");
+		USART3_write_float(save_data[i][4], 6);
+		USART3_send_str(", ");
+		USART3_write_float(save_data[i][5], 6);
+		USART3_send_str("\n");
+		delay_us(100);
+	}
+	while(1);*/
 	
 	delay_ms(200);
 
@@ -248,11 +289,16 @@ int main() {
 //			USART3_write_float(GetRPM(), 2);
 //			USART3_send_str(", ");
 //			USART3_write_float(GetRPM_der(), 2);
+//			USART3_send_str(", ");
 			USART3_write_float(foc_iq, 5);
 			USART3_send_str(", ");
 			USART3_write_float(foc_id, 5);
-			// USART3_send_str(", ");
-			// USART3_write_float(GetRPM()/1000.0, 5);
+			USART3_send_str(", ");
+//			USART3_write_float(pid_focId.output, 2);
+//			USART3_send_str(", ");
+//			USART3_write_float(GetPower(), 2);
+//			USART3_send_str(", ");
+			USART3_write_float(sqrt(GetPower()*GetPower() + pid_focId.output*pid_focId.output), 5);
 			USART3_send('\n');
 		}
 	}

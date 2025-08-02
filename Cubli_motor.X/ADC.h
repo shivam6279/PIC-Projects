@@ -14,11 +14,11 @@
 #define ISNS_UVW_R 0.005f
 #define ISNS_VBAT_R 0.005f
 
-#define ADC_BUFFER_LEN 16
+#define ADC_BUFFER_LEN 1
 
 extern unsigned int adc_data[49];
-extern uint16_t adc_buffer[6][2][ADC_BUFFER_LEN];
-extern uint8_t adc_cnt_buffer[6][2];
+extern volatile uint16_t adc_buffer[6][2][ADC_BUFFER_LEN];
+extern volatile uint8_t adc_cnt_buffer[6][2];
 
 extern volatile float isns_u_offset, isns_v_offset;
 

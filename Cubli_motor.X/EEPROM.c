@@ -8,19 +8,23 @@
 
 #define EEPROM_BOARD_ID_ADDR 0x04
 #define EEPROM_MOTOR_OFFSET_ADDR 0x14
-#define EEPROM_PID_ANGLE_ADDR 0x18
-#define EEPROM_PID_RPM_ADDR 0x24
-#define EEPROM_PID_FOC_IQ_ADDR 0x30
-#define EEPROM_PID_FOC_ID_ADDR 0x3C
+#define EEPROM_MOTOR_POLEPAIRS_ADDR 0x18
+#define EEPROM_PID_ANGLE_ADDR 0x22
+#define EEPROM_PID_RPM_ADDR 0x28
+#define EEPROM_PID_FOC_IQ_ADDR 0x34
+#define EEPROM_PID_FOC_ID_ADDR 0x40
 #define EEPROM_ENCODER_CALIB_ADDR 0xA0
 
 uint8_t eeprom_board_id;
 float eeprom_zero_offset;
+uint8_t eeprom_polepairs;
 float eeprom_encoder_calib_data[32];
 float eeprom_pid_angle[3];
 float eeprom_pid_rpm[3];
 float eeprom_pid_foc_iq[3];
 float eeprom_pid_foc_id[3];
+
+unsigned char board_id = 0;
 
 void EEPROM_init() {
 	
@@ -108,8 +112,11 @@ void EEPROM_writeFloat(uint32_t ee_addr, float ee_data) {
 
 void EEPROM_readAll() {
 	uint8_t i;
+	
+	eeprom_board_id = EEPROM_read(EEPROM_BOARD_ID_ADDR);
 
 	eeprom_zero_offset = EEPROM_readFloat(EEPROM_MOTOR_OFFSET_ADDR);
+	eeprom_polepairs = EEPROM_read(EEPROM_MOTOR_POLEPAIRS_ADDR);
 
 	eeprom_pid_angle[0] = EEPROM_readFloat(EEPROM_PID_ANGLE_ADDR);
 	eeprom_pid_angle[1] = EEPROM_readFloat(EEPROM_PID_ANGLE_ADDR + 4);
@@ -134,8 +141,11 @@ void EEPROM_readAll() {
 
 void EEPROM_writeAll() {
 	uint8_t i;
-
+	
+	EEPROM_write(EEPROM_BOARD_ID_ADDR, eeprom_board_id);
+	
 	EEPROM_writeFloat(EEPROM_MOTOR_OFFSET_ADDR, eeprom_zero_offset);
+	EEPROM_write(EEPROM_MOTOR_POLEPAIRS_ADDR, eeprom_polepairs);
 
 	EEPROM_writeFloat(EEPROM_PID_ANGLE_ADDR, eeprom_pid_angle[0]);
 	EEPROM_writeFloat(EEPROM_PID_ANGLE_ADDR + 4, eeprom_pid_angle[1]);
@@ -160,8 +170,8 @@ void EEPROM_writeAll() {
 
 void write_encoderCalibration(float arr[], unsigned int len) {
 	unsigned int i;
-	EEPROM_write(ENCODER_CALIB_ADDR, *(uint32_t*)(char*)&len);
+	EEPROM_write(EEPROM_ENCODER_CALIB_ADDR, *(uint32_t*)(char*)&len);
 	for(i = 0; i < len; i++) {
-		EEPROM_write(ENCODER_CALIB_ADDR + (i+1), *(uint32_t*)(char*)&arr[i]);
+		EEPROM_write(EEPROM_ENCODER_CALIB_ADDR + (i+1), *(uint32_t*)(char*)&arr[i]);
 	}
 }

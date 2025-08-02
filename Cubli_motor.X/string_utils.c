@@ -125,6 +125,9 @@ bool str_isInt(char *str) {
 	if(str[0] == '+' || str[0] == '-') {
 		i++;
 	}
+	if( str[i] == '\0') {
+		return false;
+	}
 	for(; str[i] != '\0'; i++) {
 		if(!char_isDigit(str[i])) {
 			return false;

@@ -9,8 +9,8 @@ volatile float isns_u_offset = 1.65, isns_v_offset = 1.65;
 
 unsigned int adc_data[49] = {4};
 
-uint16_t __attribute__ ((coherent, aligned(16))) adc_buffer[6][2][ADC_BUFFER_LEN];
-uint8_t __attribute__ ((coherent, aligned(8))) adc_cnt_buffer[6][2];
+volatile uint16_t __attribute__ ((coherent, aligned(16))) adc_buffer[6][2][ADC_BUFFER_LEN];
+volatile uint8_t __attribute__ ((coherent, aligned(8))) adc_cnt_buffer[6][2];
 
 extern __inline__ unsigned int __attribute__((always_inline)) virt_to_phys(const void* p) { 
 	return (int)p<0?((int)p&0x1fffffffL):(unsigned int)((unsigned char*)p+0x40000000L); 
@@ -18,7 +18,7 @@ extern __inline__ unsigned int __attribute__((always_inline)) virt_to_phys(const
 
 void ADCCalib() {
 	uint16_t i;
-	const float avg_num = 1000;
+	const float avg_num = 100;
 	float isns_u = 0, isns_v = 0;
 	for(i = 0; i < avg_num; i++) {
 		isns_u += ((float)adc_buffer[1][0][0] * ADC_CONV_FACTOR) / avg_num;
@@ -95,7 +95,11 @@ void ADCInit() {
 	ADCFLTR2 = 0;
 	ADCFLTR3 = 0;
 	ADCFLTR4 = 0;
-
+	
+	// Tclk = Tsysclk
+	ADCCON3bits.ADCSEL = 0b11;
+	ADCCON3bits.CONCLKDIV = 0b000000;
+	
 	// Primary Special Event trigger
 	ADCTRG1bits.TRGSRC0 = 0x8;
 	ADCTRG1bits.TRGSRC1 = 0x8;
@@ -103,6 +107,13 @@ void ADCInit() {
 	ADCTRG1bits.TRGSRC3 = 0x8;
 	ADCTRG2bits.TRGSRC4 = 0x8;
 	ADCTRG2bits.TRGSRC5 = 0x8;
+	// Primary Special Event trigger
+//	ADCTRG1bits.TRGSRC0 = 0x3;
+//	ADCTRG1bits.TRGSRC1 = 0x3;
+//	ADCTRG1bits.TRGSRC2 = 0x3;
+//	ADCTRG1bits.TRGSRC3 = 0x3;
+//	ADCTRG2bits.TRGSRC4 = 0x3;
+//	ADCTRG2bits.TRGSRC5 = 0x3;
 	// Software edge trigger
 	ADCTRG2bits.TRGSRC7 = 0b00001;
 	ADCTRG3bits.TRGSRC8 = 0b00001;
@@ -121,6 +132,20 @@ void ADCInit() {
 	ADC3TIMEbits.SELRES = 0b11;
 	ADC4TIMEbits.SELRES = 0b11;
 	ADC5TIMEbits.SELRES = 0b11;
+	
+	ADC0TIMEbits.ADCDIV = 1;
+	ADC1TIMEbits.ADCDIV = 1;
+	ADC2TIMEbits.ADCDIV = 1;
+	ADC3TIMEbits.ADCDIV = 1;
+	ADC4TIMEbits.ADCDIV = 1;
+	ADC5TIMEbits.ADCDIV = 1;
+	
+	ADC0TIMEbits.SAMC = 512;
+	ADC1TIMEbits.SAMC = 512;
+	ADC2TIMEbits.SAMC = 512;
+	ADC3TIMEbits.SAMC = 512;
+	ADC4TIMEbits.SAMC = 512;
+	ADC5TIMEbits.SAMC = 512;
 	
 	ADC0TIMEbits.BCHEN = 1;
 	ADC1TIMEbits.BCHEN = 1;
