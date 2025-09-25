@@ -56,7 +56,7 @@ const diags_menu_item diags_list[] = {
 	{ .name = "Generate tones from the motor",	.cmd = "tone",	.func = diags_tone				},
 	{ .name = "Comparator readings",			.cmd = "comp",	.func = diags_comp				},
 	{ .name = "Turn LEDs on or off",			.cmd = "led",	.func = diags_LED				},
-	{ .name = "Servo contorls",					.cmd = "servo",	.func = diags_servo				},
+	{ .name = "Servo controls",					.cmd = "servo",	.func = diags_servo				},
 	{ .name = "Save/read from eeprom",			.cmd = "eep",	.func = diags_eeprom			},
 	{ .name = "Perform a software reset",		.cmd = "reset",	.func = diags_reset				}
 };
@@ -204,7 +204,8 @@ id [x] : Display board id. Optionally set to x.\n";
 
 bool diags_motor(char *cmd) {
 	unsigned char ch;
-	static float diags_power = 0.03;
+	uint8_t i;
+	static float diags_power = 0.05;
 	static float diags_acceleration = 0.5, set_power, power, acceleration;
 	char arg_val[20];
 	
@@ -213,7 +214,9 @@ Commands to control the BLDC motor with the parameters:\n\
 -p [x] : Set motor power to x (-2000, 2000)\n\
 ramp [x] (-a [y]): Ramp motor power to x (-2000, 2000) an acceleration y\n\
 -e [x] : Move motor to electrical degree x\n\
+zero [x] : Move to zero (space vector: 100) x\n\
 -s [x] : Move motor to six step phase x\n\
+spin : Slowly spin the motor in 6 step commutation\n\
 off : Turn motor off (coast)\n\
 wave [s] : Display waveform type. Set waveform type to \"foc\", \"svpwm\", \"sin\", \"saddle\", or \"trapezoid\"\n\
 polepairs [p] : Display pole pairs. Optionally set to p.\n\
@@ -270,7 +273,18 @@ setpower [x] : Set power level for other commands to x (-1.0, 1.0)\n";
 		USART3_send('\n');
 		mode = MODE_OFF;
 		setPhaseVoltage(diags_power, 0, str_toFloat(arg_val));
-
+		
+	} else if(str_getArgValue(cmd, "zero", arg_val)) {
+		USART3_send_str("Moved to zero (space vector: 100)");
+		USART3_send_str("\nAt power: ");
+		USART3_write_float(diags_power, 2);
+		USART3_send('\n');
+		mode = MODE_OFF;
+		setPhaseVoltage(diags_power, 0, str_toFloat(arg_val));
+		
+		// Set phase voltages to (1, 0, 0)
+		MotorPhasePWM(diags_power, 0, 0);
+	
 	// Set 6 step phase
 	} else if(str_getArgValue(cmd, "-s", arg_val)) {
 		USART3_send_str("Move motor to six step phase: ");
@@ -280,6 +294,25 @@ setpower [x] : Set power level for other commands to x (-1.0, 1.0)\n";
 		USART3_send('\n');
 		mode = MODE_OFF;
 		MotorPhase(str_toInt(arg_val), diags_power);
+		
+	// Spin in 6 step
+	} else if(str_getArgValue(cmd, "spin", arg_val)) {
+		for(i = 0; i < 360; i += 60) {
+			setPhaseVoltage(diags_power, 0, (float)i);
+			delay_ms(500);
+			USART3_write_float(GetPosition(), 2);
+			USART3_send('\n');
+			delay_ms(250);
+
+			if(rx_rdy) {
+				ch = read_rx_char();
+				if(ch == 'x') {
+					mode = MODE_OFF;
+					MotorOff();
+					return true;
+				}
+			}
+		}
 
 	// Turn off motor
 	} else if(str_getArgValue(cmd, "off", arg_val)) {
@@ -297,13 +330,13 @@ setpower [x] : Set power level for other commands to x (-1.0, 1.0)\n";
 	// Set motor pole pairs
 	} else if(str_getArgValue(cmd, "polepairs", arg_val)) {
 		if(char_isDigit(arg_val[0])) {
-			pole_pairs = str_toInt(arg_val);
+			motor_pole_pairs = str_toInt(arg_val);
 			USART3_send_str("Motor pole pairs set to: \n");
-			USART3_write_int(pole_pairs);
+			USART3_write_int(motor_pole_pairs);
 			USART3_send('\n');
 		} else {
 			USART3_send_str("Current motor pole pairs: \n");
-			USART3_write_int(pole_pairs);
+			USART3_write_int(motor_pole_pairs);
 			USART3_send('\n');
 		}
 	
@@ -494,10 +527,10 @@ bool diags_calibrateEncoder(char *cmd) {
 		}
 	}
 
-	float output[(int)pole_pairs*6][2];
+	float output[(int)motor_pole_pairs*6][2];
 
 	arr_indx = 0;
-	for(j = 0; j < pole_pairs; j++) {
+	for(j = 0; j < motor_pole_pairs; j++) {
 		for(i = 0; i < 360; i += 60) {
 			setPhaseVoltage(power, 0, (float)i);
 			delay_ms(500);
@@ -512,7 +545,7 @@ bool diags_calibrateEncoder(char *cmd) {
 				pos -= 360.0;
 			}
 
-			output[arr_indx][0] = (360.0 * j + i) / (float)pole_pairs;
+			output[arr_indx][0] = (360.0 * j + i) / (float)motor_pole_pairs;
 			output[arr_indx][1] = pos;
 			arr_indx++;
 
@@ -529,7 +562,7 @@ bool diags_calibrateEncoder(char *cmd) {
 	
 	float zero_offset = output[0][1];
 	
-	for(arr_indx = 0; arr_indx < (pole_pairs*6); arr_indx++) {
+	for(arr_indx = 0; arr_indx < (motor_pole_pairs*6); arr_indx++) {
 		output[arr_indx][1] -= zero_offset;
 		while(output[arr_indx][1] < 0.0) {
 			output[arr_indx][1] += 360.0;
@@ -542,7 +575,7 @@ bool diags_calibrateEncoder(char *cmd) {
 	USART3_write_float(zero_offset, 4);
 	USART3_send('\n');
 
-	for(arr_indx = 0; arr_indx < (pole_pairs*6); arr_indx++) {
+	for(arr_indx = 0; arr_indx < (motor_pole_pairs*6); arr_indx++) {
 		USART3_write_float(output[arr_indx][0], 4);
 		USART3_send(',');
 		USART3_write_float(output[arr_indx][1], 4);
@@ -706,8 +739,8 @@ stream -[i/v] -f: Stream all adc data. -i: motor phase currents -v: motor phase 
 		if(str_getArgValue(cmd, "-i", arg_val)) {
 			while(1) {
 				StartDelayusCounter();
-				isns_u = ((float)adc_buffer[1][0][0] * ADC_CONV_FACTOR - isns_u_offset) / 20.0f / ISNS_UVW_R;
-				isns_v = ((float)adc_buffer[4][0][0] * ADC_CONV_FACTOR - isns_v_offset) / 20.0f / ISNS_UVW_R;
+				isns_u = ((float)adc_buffer[4][0][0] * ADC_CONV_FACTOR - isns_u_offset) / 20.0f / ISNS_UVW_R;
+				isns_v = ((float)adc_buffer[1][0][0] * ADC_CONV_FACTOR - isns_v_offset) / 20.0f / ISNS_UVW_R;
 				isns_w = -(isns_u + isns_v);
 				USART3_write_float(isns_u, 3);
 				USART3_send_str(", ");
@@ -1059,7 +1092,7 @@ bool diags_eeprom(char *cmd) {
 	const char help_str[] = "\
 write/read from the eeprom:\n\
 save : Save all variables\n\
-restore : Restore all variables from epprom\n\
+restore : Restore all variables from eeprom\n\
 read [x] [b]: Read b bytes at address x\n\
 write [x] [b]: Write b bytes at address x\n\
 disp : Display all keys stored\n";
@@ -1080,7 +1113,7 @@ disp : Display all keys stored\n";
 
 		eeprom_board_id = board_id;
 		eeprom_zero_offset = motor_zero_angle;
-		eeprom_polepairs = pole_pairs;
+		eeprom_pole_pairs = motor_pole_pairs;
 		for(i = 0; i < 32; i++) {
 			eeprom_encoder_calib_data[i] = encoder_calib_data[i];
 		}
@@ -1107,7 +1140,7 @@ disp : Display all keys stored\n";
 
 		board_id = eeprom_board_id;
 		motor_zero_angle = eeprom_zero_offset;
-		pole_pairs = eeprom_polepairs;
+		motor_pole_pairs = eeprom_pole_pairs;
 		for(i = 0; i < 32; i++) {
 			encoder_calib_data[i] = eeprom_encoder_calib_data[i];
 		}
@@ -1136,7 +1169,7 @@ disp : Display all keys stored\n";
 		USART3_send_str("\nZero offset: ");
 		USART3_write_float(eeprom_zero_offset, 2);
 		USART3_send_str("\nPole Pairs: ");
-		USART3_write_int(eeprom_polepairs);
+		USART3_write_int(eeprom_pole_pairs);
 
 		USART3_send_str("\nAngle pid gains: ");
 		USART3_write_float(eeprom_pid_angle[0], 2);
@@ -1195,11 +1228,11 @@ void disp_eeprom_diff() {
 		USART3_write_float(eeprom_zero_offset, 2);
 		USART3_send_str("\n");
 	}
-	if(pole_pairs != eeprom_polepairs) {
+	if(motor_pole_pairs != eeprom_pole_pairs) {
 		USART3_send_str("Pole pairs: ");
-		USART3_write_int(pole_pairs);
+		USART3_write_int(motor_pole_pairs);
 		USART3_send_str(", ");
-		USART3_write_int(eeprom_polepairs);
+		USART3_write_int(eeprom_pole_pairs);
 		USART3_send_str("\n");
 	}
 	if(pid_angle.kp != eeprom_pid_angle[0]) {

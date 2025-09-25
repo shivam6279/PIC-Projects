@@ -17,7 +17,7 @@
 
 uint8_t eeprom_board_id;
 float eeprom_zero_offset;
-uint8_t eeprom_polepairs;
+uint8_t eeprom_pole_pairs;
 float eeprom_encoder_calib_data[32];
 float eeprom_pid_angle[3];
 float eeprom_pid_rpm[3];
@@ -116,7 +116,7 @@ void EEPROM_readAll() {
 	eeprom_board_id = EEPROM_read(EEPROM_BOARD_ID_ADDR);
 
 	eeprom_zero_offset = EEPROM_readFloat(EEPROM_MOTOR_OFFSET_ADDR);
-	eeprom_polepairs = EEPROM_read(EEPROM_MOTOR_POLEPAIRS_ADDR);
+	eeprom_pole_pairs = EEPROM_read(EEPROM_MOTOR_POLEPAIRS_ADDR);
 
 	eeprom_pid_angle[0] = EEPROM_readFloat(EEPROM_PID_ANGLE_ADDR);
 	eeprom_pid_angle[1] = EEPROM_readFloat(EEPROM_PID_ANGLE_ADDR + 4);
@@ -145,7 +145,7 @@ void EEPROM_writeAll() {
 	EEPROM_write(EEPROM_BOARD_ID_ADDR, eeprom_board_id);
 	
 	EEPROM_writeFloat(EEPROM_MOTOR_OFFSET_ADDR, eeprom_zero_offset);
-	EEPROM_write(EEPROM_MOTOR_POLEPAIRS_ADDR, eeprom_polepairs);
+	EEPROM_write(EEPROM_MOTOR_POLEPAIRS_ADDR, eeprom_pole_pairs);
 
 	EEPROM_writeFloat(EEPROM_PID_ANGLE_ADDR, eeprom_pid_angle[0]);
 	EEPROM_writeFloat(EEPROM_PID_ANGLE_ADDR + 4, eeprom_pid_angle[1]);

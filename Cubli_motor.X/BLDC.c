@@ -17,7 +17,7 @@
 
 #define DEAD_TIME 25
 
-float pole_pairs = POLE_PAIRS;
+float motor_pole_pairs = 7;
 float foc_degree_advance = FOC_DEGREE_ADVANCE;
 
 // SVPWM
@@ -75,9 +75,10 @@ void __ISR_AT_VECTOR(_TIMER_4_VECTOR, IPL6AUTO) FOC_loop(void){
 		position -= 360.0;
 	}
 
-	foc_current_calc(position*pole_pairs);
-//	foc_current_calc(position*pole_pairs + power/fabs(power)*foc_degree_advance);
-
+	foc_current_calc(position*motor_pole_pairs);
+//	foc_current_calc(position*motor_pole_pairs + power/fabs(power)*foc_degree_advance);
+	
+	pid_focId.setpoint = 0;
 	if(mode != MODE_OFF) {
 		if(power) {
 			PID_compute(&pid_focIq, foc_iq, 0.00004);
@@ -86,8 +87,8 @@ void __ISR_AT_VECTOR(_TIMER_4_VECTOR, IPL6AUTO) FOC_loop(void){
 			PID_reset(&pid_focIq);
 			PID_reset(&pid_focId);
 		}
-		setPhaseVoltage(power, 0, position*pole_pairs);
-//		setPhaseVoltage(power, 0, position*pole_pairs + power/fabs(power)*foc_degree_advance);
+		setPhaseVoltage(power, -pid_focId.output * (float)PWM_MAX/2, position*motor_pole_pairs);
+//		setPhaseVoltage(power, -pid_focId.output * (float)PWM_MAX/2, position*motor_pole_pairs + power/fabs(power)*foc_degree_advance);
 	}
 	LED0 = 0;
 }
@@ -131,7 +132,7 @@ void __ISR_AT_VECTOR(_TIMER_6_VECTOR, IPL4AUTO) RPM(void){
 	}
 }
 
-void setPhaseVoltage(float p, float p_d, float angle_el) {
+void setPhaseVoltage(float p, float u_d, float angle_el) {
 	float pwm_u, pwm_v, pwm_w;
 	float s, c;
 
@@ -144,11 +145,27 @@ void setPhaseVoltage(float p, float p_d, float angle_el) {
 
 	static float *PWM_table;
 	int index;
-
+	
 	p = p < -1.0 ? -1.0 : p > 1.0 ? 1.0 : p;
 	
 	if(waveform_mode == MOTOR_FOC) {
-		p *= -(float)PWM_MAX/2;
+		
+		/*if(p < 0) {
+			p = -p;
+			u_d = -u_d;
+			angle_el -= 90;
+		} else {
+			angle_el += 90;
+		}*/
+		
+//		if(pid_focIq.output < 0) {
+//			pid_focIq.output = -pid_focIq.output;
+//			u_d = -u_d;
+//			angle_el -= 90;
+//		} else {
+//			angle_el += 90;
+//		}
+		
 		angle_el = normalizeAngle(angle_el);
 		
 		index = (int)(angle_el * 4)  % LUT_SIZE;
@@ -156,19 +173,22 @@ void setPhaseVoltage(float p, float p_d, float angle_el) {
 		index = (index + LUT_SIZE/4) % LUT_SIZE;
 		c = sin_lut[index];
 		
-		Uq = p;//-pid_focIq.output;
-		Ud = -pid_focId.output * (float)PWM_MAX/2;
+		Uq = -pid_focIq.output * 0.5f;
+		Uq = p * 0.5f;
+//		Ud = -pid_focId.output * (float)PWM_MAX/2;
+		Ud = -u_d;
+//		Ud = 0;
 
 		// Inverse Park Transform
-		Ualpha = c * Ud - s * Uq;
-		Ubeta = s * Ud + c * Uq;
+		Ualpha = Ud*c - Uq*s;
+		Ubeta  = Ud*s + Uq*c;
 
 		// Inverse Clarke Transform
 		pwm_u = Ualpha;
-		pwm_v = -0.5f * Ualpha - _SQRT3_2 * Ubeta;
-		pwm_w = -0.5f * Ualpha + _SQRT3_2 * Ubeta;
+		pwm_v = -0.5f * Ualpha + _SQRT3_2 * Ubeta;
+		pwm_w = -0.5f * Ualpha - _SQRT3_2 * Ubeta;
 
-		center = PWM_MAX/2;
+		center = 0.5;
 		
 		// SVPWM
 		pwm_min = fmin(pwm_u, fmin(pwm_v, pwm_w));
@@ -189,19 +209,19 @@ void setPhaseVoltage(float p, float p_d, float angle_el) {
 			angle_el += 180;
 			p = -p;
 		}
-		p *= (float)PWM_MAX;
-		angle_el = normalizeAngle(angle_el);
+//		p *= (float)PWM_MAX;
+		angle_el = normalizeAngle(-angle_el);
 		
 		if(waveform_mode == MOTOR_SIN) {
 			PWM_table = sin_lut;
 			p /= 2;
-			offset = 0.5;
+			offset = 1;
 		} else if(waveform_mode == MOTOR_SVPWM){
 			PWM_table = SVPWM_table;
-			offset = 0;
+			offset = 0.5;
 		} else if(waveform_mode == MOTOR_SADDLE){
 			PWM_table = saddle_lut;
-			offset = 0;
+			offset = 0.5;
 		}
 		
 		index = angle_el * 4;
@@ -216,41 +236,17 @@ void setPhaseVoltage(float p, float p_d, float angle_el) {
 		pwm_w = ((float)PWM_table[index] + offset) * p;
 		
 	} else if(waveform_mode == MOTOR_TRAPEZOID) {
-		p = fabs(p);
-		angle_el = normalizeAngle(angle_el);
-		angle_el = round(angle_el / 60);
+		if(p < 0) {
+			angle_el += 180;
+			p = -p;
+		}
+		
+		angle_el = round(normalizeAngle(angle_el) / 60);
 		MotorPhase((signed char)angle_el, p);
 	}
 
 	if(waveform_mode != MOTOR_TRAPEZOID) {
-		// Clamp PWM to [0, PWM_MAX - DEAD_TIME]
-		pwm_u = pwm_u > (PWM_MAX - DEAD_TIME) ? (PWM_MAX - DEAD_TIME): pwm_u < 0 ? 0: pwm_u;
-		pwm_v = pwm_v > (PWM_MAX - DEAD_TIME) ? (PWM_MAX - DEAD_TIME): pwm_v < 0 ? 0: pwm_v;
-		pwm_w = pwm_w > (PWM_MAX - DEAD_TIME) ? (PWM_MAX - DEAD_TIME): pwm_w < 0 ? 0: pwm_w;
-		
-		if(pwm_u) {
-			PDC1 = pwm_u;
-			PDC7 = pwm_u + DEAD_TIME;
-		} else {
-			PDC1 = pwm_u;
-			PDC7 = pwm_u;
-		}
-		
-		if(pwm_v) {
-			PDC2 = pwm_v;
-			PDC8 = pwm_v + DEAD_TIME;
-		} else {
-			PDC2 = pwm_v;
-			PDC8 = pwm_v ;
-		}
-
-		if(pwm_w) {
-			PDC3 = pwm_w;
-			PDC9 = pwm_w + DEAD_TIME;
-		} else {
-			PDC3 = pwm_w;
-			PDC9 = pwm_w;
-		}
+		MotorPhasePWM(pwm_u, pwm_v, pwm_w);
 	}
 }
 
@@ -268,11 +264,13 @@ void foc_current_calc(float angle_el) {
 	c = sin_lut[angle_index];
 
 	// Get phase current readings from ADC
-	temp_isns_u = ((float)adc_buffer[1][0][0] * ADC_CONV_FACTOR);
-	temp_isns_v = ((float)adc_buffer[4][0][0] * ADC_CONV_FACTOR);
+	temp_isns_u = ((float)adc_buffer[4][0][0] * ADC_CONV_FACTOR);
+	temp_isns_v = ((float)adc_buffer[1][0][0] * ADC_CONV_FACTOR);
 	
 	isns_u_offset = ISNS_OFFSET_LPF * isns_u_offset + (1.0 - ISNS_OFFSET_LPF) * temp_isns_u;
 	isns_v_offset = ISNS_OFFSET_LPF * isns_v_offset + (1.0 - ISNS_OFFSET_LPF) * temp_isns_v;
+	isns_u_offset = isns_u_offset < 1.55 ? 1.55 : isns_u_offset > 1.75 ? 1.75 : isns_u_offset;
+	isns_v_offset = isns_v_offset < 1.55 ? 1.55 : isns_v_offset > 1.75 ? 1.75 : isns_v_offset;
 	
 	isns_u = (temp_isns_u - isns_u_offset) / 20.0f / ISNS_UVW_R;
 	isns_v = (temp_isns_v - isns_v_offset) / 20.0f / ISNS_UVW_R;
@@ -280,7 +278,7 @@ void foc_current_calc(float angle_el) {
 
 	// Clarke Transform
 	i_alpha = isns_u;
-	i_beta = _1_SQRT3 * isns_u + _2_SQRT3 * isns_w;
+	i_beta = _1_SQRT3 * isns_u + _2_SQRT3 * isns_v;
 
 	// Park Transform
 	foc_iq = FOC_IQ_LPF*foc_iq + (1.0-FOC_IQ_LPF) * (-i_alpha* s + i_beta* c);
@@ -493,8 +491,8 @@ void MotorPIDInit() {
 
 	PID_setGain(&pid_angle,	8,		1.25,	6		);
 	PID_setGain(&pid_rpm,	0.0002,	0.005,	0.008	);
-	PID_setGain(&pid_focIq,	1.0,	1.0,	0		);
-	PID_setGain(&pid_focId,	1.0,	1.0,	0		);
+	PID_setGain(&pid_focIq,	5.0,	6.0,	0		);
+	PID_setGain(&pid_focId,	0.01,	0.01,	0		);
 
 	PID_setLPF(&pid_angle,	0.8);
 	PID_setLPF(&pid_rpm,	0.8);
@@ -504,17 +502,22 @@ void MotorPIDInit() {
 
 	PID_enableErrorConstrain(&pid_rpm);
 	PID_setErrorLimits(&pid_rpm,	-500,	500);
-
-	PID_enableErrorConstrain(&pid_focIq);
-	PID_setErrorLimits(&pid_focIq, -1, 1);
-	PID_enableOutputConstrain(&pid_focIq);
-	PID_setOutputLimits(&pid_focIq, -0.5, 0.5);
 	
-	PID_enableErrorConstrain(&pid_focId);
-	PID_setErrorLimits(&pid_focId, -0.5, 0.5);
+	// Iq
+	PID_enableErrorConstrain(&pid_focIq);
+	PID_setErrorLimits(&pid_focIq, -0.5, 0.5);
+	PID_enableIntegralConstrain(&pid_focIq);
+	PID_setIntegralLimits(&pid_focIq, -1, 1);
+	PID_enableOutputConstrain(&pid_focIq);
+	PID_setOutputLimits(&pid_focIq, -1, 1);
+	
+	// Id
+//	PID_enableErrorConstrain(&pid_focId);
+//	PID_setErrorLimits(&pid_focId, -0.8, 0.8);
+//	PID_enableIntegralConstrain(&pid_focId);
+//	PID_setIntegralLimits(&pid_focId, -1, 1);
 	PID_enableOutputConstrain(&pid_focId);
 	PID_setOutputLimits(&pid_focId, -0.5, 0.5);
-//	PID_setLPF(&pid_focId,	0.8);
 }
 
 void ResetMotorPID() {
@@ -574,6 +577,41 @@ void MotorOff() {
 	PDC9 = PWM_MAX;
 }
 
+void MotorPhasePWM(float pwm_u, float pwm_v, float pwm_w) {
+	// Inputs shoule be within [0, 1.0]
+	pwm_u *= PWM_MAX;
+	pwm_v *= PWM_MAX;
+	pwm_w *= PWM_MAX;
+	
+	pwm_u = pwm_u > (PWM_MAX - DEAD_TIME) ? (PWM_MAX - DEAD_TIME): pwm_u < 0 ? 0: pwm_u;
+	pwm_v = pwm_v > (PWM_MAX - DEAD_TIME) ? (PWM_MAX - DEAD_TIME): pwm_v < 0 ? 0: pwm_v;
+	pwm_w = pwm_w > (PWM_MAX - DEAD_TIME) ? (PWM_MAX - DEAD_TIME): pwm_w < 0 ? 0: pwm_w;
+
+	if(pwm_u) {
+		PDC3 = pwm_u;
+		PDC9 = pwm_u + DEAD_TIME;
+	} else {
+		PDC3 = pwm_u;
+		PDC9 = pwm_u;
+	}
+
+	if(pwm_v) {
+		PDC2 = pwm_v;
+		PDC8 = pwm_v + DEAD_TIME;
+	} else {
+		PDC2 = pwm_v;
+		PDC8 = pwm_v ;
+	}
+
+	if(pwm_w) {
+		PDC1 = pwm_w;
+		PDC7 = pwm_w + DEAD_TIME;
+	} else {
+		PDC1 = pwm_w;
+		PDC7 = pwm_w;
+	}
+}
+
 void MotorShort(float p) {
 	p = fabs(p) * PWM_MAX;
 
@@ -597,7 +635,7 @@ void init_encoder_lut() {
 void interpolate_encoder_lut(double in[], unsigned int len) {
 	int i, j, k;
 	double delta;
-	double arr[(int)pole_pairs*6][2];
+	double arr[(int)motor_pole_pairs*6][2];
 	
 	for(i = 0; i < len; i++) {
 		arr[i][0] = in[i] * ENCODER_RES / 360.0;

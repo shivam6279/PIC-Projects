@@ -26,7 +26,7 @@
 #define MHZ(x) x * 1000000.0f
 #define KHZ(x) x * 1000.0f
 
-float save_data[1000][6];
+float save_data[1500][10];
 
 /* 
  * UART CODES:
@@ -138,6 +138,7 @@ int main() {
 	
 	servoOff();
 	motor_zero_angle = eeprom_zero_offset;
+	motor_pole_pairs = eeprom_pole_pairs;
 	
 	/*FOC_TIMER_ON = 0;
 	float pp = 0.07;
@@ -195,38 +196,55 @@ int main() {
 	delay_ms(1000);
 	SetPower(500 / 2000.0);
 	delay_ms(1000);
-	SetPower(1000 / 2000.0);
+	SetPower(750 / 2000.0);
 	delay_ms(1000);
-//	float isns_u, isns_v, isns_w;
-	for(i = 0; i < 1000; i++) {
+	float vsns_u, vsns_v, vsns_w, vsns_x;
+	for(i = 0; i < 1500; i++) {
 //		isns_u = ((float)adc_buffer[1][0][0] * ADC_CONV_FACTOR - isns_u_offset) / 20.0f / ISNS_UVW_R;
 //		isns_v = ((float)adc_buffer[4][0][0] * ADC_CONV_FACTOR - isns_v_offset) / 20.0f / ISNS_UVW_R;
 //		isns_w = -(isns_u + isns_v);
+		
+		vsns_u = (float)adc_buffer[2][0][0] * ADC_CONV_FACTOR / MOTOR_VSNS_DIVIDER;
+		vsns_v = (float)adc_buffer[3][0][0] * ADC_CONV_FACTOR / MOTOR_VSNS_DIVIDER;
+		vsns_w = (float)adc_buffer[0][0][0] * ADC_CONV_FACTOR / MOTOR_VSNS_DIVIDER;
+		vsns_x = (float)adc_buffer[5][0][0] * ADC_CONV_FACTOR / MOTOR_VSNS_DIVIDER;
 	
 		save_data[i][0] = normalizeAngle(GetPosition()*pole_pairs);
-		save_data[i][1] = isns_u;
-		save_data[i][2] = isns_v;
-		save_data[i][3] = isns_w;
-		save_data[i][4] = foc_iq;
-		save_data[i][5] = foc_id;
+		save_data[i][1] = vsns_u;
+		save_data[i][2] = vsns_v;
+		save_data[i][3] = vsns_w;
+		save_data[i][4] = vsns_x;
+		save_data[i][5] = isns_u;
+		save_data[i][6] = isns_v;
+		save_data[i][7] = isns_w;
+		save_data[i][8] = foc_iq;
+		save_data[i][9] = foc_id;
 		delay_us(40);
 	}
 	FOC_TIMER_ON = 0;
 	MotorOff();
-	for(i = 0; i < 1000; i++) {
-		USART3_write_float(save_data[i][0]/100, 6);
+	for(i = 0; i < 1500; i++) {
+		USART3_write_float(save_data[i][0], 2);
 		USART3_send_str(", ");
-		USART3_write_float(save_data[i][1], 6);
+		USART3_write_float(save_data[i][1], 4);
 		USART3_send_str(", ");
-		USART3_write_float(save_data[i][2], 6);
+		USART3_write_float(save_data[i][2], 4);
 		USART3_send_str(", ");
-		USART3_write_float(save_data[i][3], 6);
+		USART3_write_float(save_data[i][3], 4);
 		USART3_send_str(", ");
-		USART3_write_float(save_data[i][4], 6);
+		USART3_write_float(save_data[i][4], 4);
 		USART3_send_str(", ");
-		USART3_write_float(save_data[i][5], 6);
+		USART3_write_float(save_data[i][5], 4);
+		USART3_send_str(", ");
+		USART3_write_float(save_data[i][6], 4);
+		USART3_send_str(", ");
+		USART3_write_float(save_data[i][7], 4);
+		USART3_send_str(", ");
+		USART3_write_float(save_data[i][8], 4);
+		USART3_send_str(", ");
+		USART3_write_float(save_data[i][9], 4);
 		USART3_send_str("\n");
-		delay_us(100);
+		delay_ms(10);
 	}
 	while(1);*/
 	
@@ -248,7 +266,7 @@ int main() {
 
 				if(mode == MODE_POWER) {
 					SetPower((float)a / 2000.0);
-					pid_focIq.setpoint = (float)a / 10000;
+					pid_focIq.setpoint = (float)a / 500.0f;
 				} else if(mode == MODE_RPM) {
 					SetRPM(a);
 				} else if(mode == MODE_POS) {
@@ -298,7 +316,8 @@ int main() {
 //			USART3_send_str(", ");
 //			USART3_write_float(GetPower(), 2);
 //			USART3_send_str(", ");
-			USART3_write_float(sqrt(GetPower()*GetPower() + pid_focId.output*pid_focId.output), 5);
+			USART3_write_float(pid_focId.output, 5);
+//			USART3_write_float(sqrt(pid_focIq.output*pid_focIq.output + pid_focId.output*pid_focId.output), 5);
 			USART3_send('\n');
 		}
 	}

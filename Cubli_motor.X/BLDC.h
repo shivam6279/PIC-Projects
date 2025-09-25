@@ -10,9 +10,8 @@
 #define ENCODER_RES 4096.0f
 #define ENCODER_RES_MASK 0xFFF
 
-#define POLE_PAIRS 7
 #define FOC_DEGREE_ADVANCE 90.0f
-#define RPM_ADVANCE_FACTOR 0//0.0002f
+#define RPM_ADVANCE_FACTOR 0.0002f
 
 #define LUT_SIZE 1440
 #define LUT_120_SHIFT (LUT_SIZE / 3)
@@ -49,7 +48,7 @@ extern double encoder_calib_data[32];
 
 extern volatile unsigned char comparator, comp_u, comp_v, comp_w;
 
-extern float pole_pairs, foc_degree_advance;
+extern float motor_pole_pairs, foc_degree_advance;
 
 extern volatile float foc_id, foc_iq;
 extern volatile float isns_u, isns_v, isns_w;
@@ -59,6 +58,7 @@ extern void interpolate_encoder_lut(double[], unsigned int);
 
 extern void MotorPIDInit();
 extern void MotorPhase(signed char, float);
+extern void MotorPhasePWM(float, float, float);
 extern void MotorOff();
 extern void MotorShort(float);
 

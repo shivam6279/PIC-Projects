@@ -15,7 +15,8 @@ void PID_init(PID *pid) {
 	pid->integral_min = 0;
 	pid->output_max = 0;
 	pid->output_min = 0;
-
+	
+	pid->constrain_error = false;
 	pid->constrain_integral = false;
 	pid->constrain_output = false;
 
