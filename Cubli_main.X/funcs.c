@@ -126,7 +126,7 @@ unsigned char get_corner(float pitch_angle, float roll_angle, float offset) {
 bool balance_edge(float pitch_angle, float roll_angle, float loop_time, XYZ gyro, PID* motorA, PID* motorB, PID* motorC) {    
     float ks = 0.8;
 	float ko = -0.0000001;
-    float kv = 0.4;
+    float kv = 0.0; // 0.4
     
     static unsigned char pre_edge = 0, pre_edge2 = 0;
     
@@ -145,13 +145,10 @@ bool balance_edge(float pitch_angle, float roll_angle, float loop_time, XYZ gyro
     if(!edge2) {    
         if(!edge2 && pre_edge2) {
             balance = false;
-
-            USART_write_int(UART_A, 0);
-            USART_send(UART_A, '\r');
-            USART_write_int(UART_B, 0);
-            USART_send(UART_B, '\r');
-            USART_write_int(UART_C, 0);
-            USART_send(UART_C, '\r');
+			
+			USART_send_str(UART_A, "0\r");
+			USART_send_str(UART_B, "0\r");
+			USART_send_str(UART_C, "0\r");
 
             USART_send_str(UART_A, "O\r");
             USART_send_str(UART_B, "O\r");
@@ -159,18 +156,25 @@ bool balance_edge(float pitch_angle, float roll_angle, float loop_time, XYZ gyro
 
             motorA->integral = 0.0;
             motorB->integral = 0.0;
-            motorC->integral = 0.0;        
+            motorC->integral = 0.0;
+			
+			LED_ESC_A = 0;
+			LED_ESC_B = 0;
+			LED_ESC_C = 0;
         }
     } else {    
         if(edge_motor[edge2-1] == 0) {
             port = UART_A;
-            motor = motorA;        
+            motor = motorA;
+			LED_ESC_A = 1;
         } else if(edge_motor[edge2-1] == 1) {
             port = UART_B;
-            motor = motorB;        
+            motor = motorB;
+			LED_ESC_B = 1;
         } else {
             port = UART_C;
             motor = motorC;
+			LED_ESC_C = 1;
         }        
         angle_offset = edge_centerpoints[edge2-1][edge_pitch_or_roll[edge2-1]]; 
         
@@ -214,7 +218,7 @@ bool balance_edge(float pitch_angle, float roll_angle, float loop_time, XYZ gyro
             if(run_motor) {
                 USART_write_int(port, motor->output);
                 USART_send(port, '\r');                
-            }            
+            }
         }
     }
     pre_edge = edge;

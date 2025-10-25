@@ -11,9 +11,9 @@
 #define LED0 LATCbits.LATC14
 #define LED1 LATBbits.LATB11
 
-#define LED_ESC_A LATEbits.LATE0
+#define LED_ESC_A LATDbits.LATD4
 #define LED_ESC_B LATFbits.LATF0
-#define LED_ESC_C LATDbits.LATD4
+#define LED_ESC_C LATEbits.LATE0
 
 #define LDO_XBEE LATFbits.LATF3
 #define LDO_ESP LATBbits.LATB2

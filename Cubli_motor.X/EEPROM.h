@@ -6,6 +6,7 @@
 extern uint8_t eeprom_board_id;
 extern float eeprom_zero_offset;
 extern uint8_t eeprom_pole_pairs;
+extern uint8_t eeprom_polarity;
 extern float eeprom_encoder_calib_data[32];
 extern float eeprom_pid_angle[3];
 extern float eeprom_pid_rpm[3];

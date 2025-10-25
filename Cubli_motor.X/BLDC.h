@@ -13,7 +13,7 @@
 #define FOC_DEGREE_ADVANCE 90.0f
 #define RPM_ADVANCE_FACTOR 0.0002f
 
-#define LUT_SIZE 1440
+#define LUT_SIZE 720 // For one quadrant of a time period
 #define LUT_120_SHIFT (LUT_SIZE / 3)
 
 #define FOC_TIMER_ON T4CONbits.ON
@@ -80,5 +80,6 @@ extern float GetPower();
 extern void ResetPosition();
 extern float GetRPM();
 extern float GetRPM_der();
+extern float wave_lut(uint16_t*, float);
 
 #endif

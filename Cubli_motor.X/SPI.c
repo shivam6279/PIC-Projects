@@ -22,7 +22,8 @@ void __ISR_AT_VECTOR(_SPI1_RX_VECTOR, IPL5SOFT) SPI_RX(void) {
 void __ISR(_TIMER_7_VECTOR, IPL5SOFT) SPI_timer(void) {
 	IFS2bits.T7IF = 0;
 //	T7CONbits.ON = 0;
-	SPI1BUF = 0x20 << 8;
+//	SPI1BUF = 0x20 << 8;
+	LATDINV |= 1 << 6;
 }
 
 void SPI1_init(float freq) {

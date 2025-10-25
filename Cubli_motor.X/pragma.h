@@ -8,9 +8,9 @@
 #pragma config IOL1WAY = OFF
 #pragma config FUSBIDIO1 = OFF
 #pragma config FPLLIDIV = DIV_1
-#pragma config FPLLRNG = RANGE_5_10_MHZ
-#pragma config FPLLICLK = PLL_FRC
-#pragma config FPLLMULT = MUL_60 // 120 MHz
+#pragma config FPLLRNG = RANGE_21_42_MHZ
+#pragma config FPLLICLK = PLL_POSC
+#pragma config FPLLMULT = MUL_20 // 120 MHz
 #pragma config FPLLODIV = DIV_4
 #pragma config VBATBOREN = OFF
 #pragma config DSBOREN = OFF
@@ -20,7 +20,7 @@
 #pragma config FNOSC = SPLL
 #pragma config FSOSCEN = OFF
 #pragma config IESO = OFF
-#pragma config POSCMOD = OFF
+#pragma config POSCMOD = HS
 #pragma config OSCIOFNC = OFF
 #pragma config FCKSM = CSECMD
 #pragma config DMTCNT = DMT31

@@ -16,6 +16,9 @@ void PID_init(PID *pid) {
 	pid->output_max = 0;
 	pid->output_min = 0;
 	
+	pid->compute_integral = true;
+	pid->compute_derivative = true;
+	
 	pid->constrain_error = false;
 	pid->constrain_integral = false;
 	pid->constrain_output = false;
@@ -62,12 +65,16 @@ float PID_compute(PID *pid, float input, float deltat) {
 	temp_output = pid->kp * pid->error;
 	// I
 	if(pid->ki) {
-		PID_integrate(pid, deltat);
+		if(pid->compute_integral) {
+			PID_integrate(pid, deltat);
+		}
 		temp_output += pid->ki * pid->integral;
 	}
 	// D
 	if(pid->kd) {
-		PID_differentiate(pid, deltat);
+		if(pid->compute_derivative) {
+			PID_differentiate(pid, deltat);
+		}
 		temp_output += pid->kd * pid->derivative;
 	}
 
@@ -77,6 +84,23 @@ float PID_compute(PID *pid, float input, float deltat) {
 		pid->output = pid->output > pid->output_max ? pid->output_max: pid->output < pid->output_min ? pid->output_min: pid->output;
 	}
 	return pid->output;
+}
+
+// Choose to or not to compute integral/derivative
+void PID_enableComputeIntegral(PID *pid) {
+	pid->compute_integral = true;
+}
+
+void PID_disableComputeIntegral(PID *pid) {
+	pid->compute_integral = false;
+}
+
+void PID_enableComputeDerivative(PID *pid) {
+	pid->compute_derivative = true;
+}
+
+void PID_disableComputeDerivative(PID *pid) {
+	pid->compute_derivative = false;
 }
 
 // Max error to integrate constrain

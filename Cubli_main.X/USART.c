@@ -55,10 +55,10 @@ float parse_rx(volatile char* buffer) {
     return ret;
 }
 
-void __ISR_AT_VECTOR(_UART4_RX_VECTOR, IPL6AUTO) MotorA_rx(void) {
+void __ISR_AT_VECTOR(_UART3_RX_VECTOR, IPL6AUTO) MotorA_rx(void) {
     static unsigned int r;
     do {
-        r = U4RXREG & 0xFF;
+        r = U3RXREG & 0xFF;
         if(r == '\n') {
             rx_buffer_A[rx_buffer_index_A] = '\0';
             rx_buffer_index_A = 0;
@@ -66,12 +66,12 @@ void __ISR_AT_VECTOR(_UART4_RX_VECTOR, IPL6AUTO) MotorA_rx(void) {
         } else {
             rx_buffer_A[rx_buffer_index_A++] = r;
         }        
-    }while(U4STAbits.URXDA);    
+    }while(U3STAbits.URXDA);    
     
-    if(U4STAbits.OERR)
-        U4STAbits.OERR = 0;
+    if(U3STAbits.OERR)
+        U3STAbits.OERR = 0;
     
-    IFS5bits.U4RXIF = 0;
+    IFS4bits.U3RXIF = 0;
 }
 
 void __ISR_AT_VECTOR(_UART2_RX_VECTOR, IPL6AUTO) MotorB_rx(void) {
@@ -93,10 +93,10 @@ void __ISR_AT_VECTOR(_UART2_RX_VECTOR, IPL6AUTO) MotorB_rx(void) {
     IFS4bits.U2RXIF = 0;
 }
 
-void __ISR_AT_VECTOR(_UART5_RX_VECTOR, IPL6AUTO) MotorC_rx(void) {
+void __ISR_AT_VECTOR(_UART4_RX_VECTOR, IPL6AUTO) MotorC_rx(void) {
     static unsigned int r;
     do {
-        r = U5RXREG & 0xFF;
+        r = U4RXREG & 0xFF;
         if(r == '\n') {
             rx_buffer_C[rx_buffer_index_C] = '\0';
             rx_buffer_index_C = 0;
@@ -104,12 +104,12 @@ void __ISR_AT_VECTOR(_UART5_RX_VECTOR, IPL6AUTO) MotorC_rx(void) {
         } else {
             rx_buffer_C[rx_buffer_index_C++] = r;
         }        
-    }while(U5STAbits.URXDA);    
+    }while(U4STAbits.URXDA);    
     
-    if(U5STAbits.OERR)
-        U5STAbits.OERR = 0;
+    if(U4STAbits.OERR)
+        U4STAbits.OERR = 0;
     
-    IFS5bits.U5RXIF = 0;
+    IFS5bits.U4RXIF = 0;
 }
 
 void USART1_init(unsigned long int baud_rate) {
@@ -158,7 +158,7 @@ void USART1_init(unsigned long int baud_rate) {
 void USART2_init(unsigned long int baud_rate) {
     TRISBbits.TRISB7 = 1;
     TRISBbits.TRISB6 = 0;
-    U3MODEbits.ON = 0;
+    U2MODEbits.ON = 0;
     CFGCONbits.IOLOCK = 0;
     U2RXRbits.U2RXR = 0b0111;	// RB7
     RPB6Rbits.RPB6R = 0b0010;	// RB6
@@ -184,8 +184,8 @@ void USART2_init(unsigned long int baud_rate) {
 }
 
 void USART3_init(unsigned long int baud_rate) {
-    TRISBbits.TRISB3 = 1;
-    TRISBbits.TRISB5 = 0;
+    TRISGbits.TRISG7 = 1;
+    TRISGbits.TRISG8 = 0;
     U3MODEbits.ON = 0;
     CFGCONbits.IOLOCK = 0;
     U3RXRbits.U3RXR = 0b0001;	// RG7
@@ -202,11 +202,12 @@ void USART3_init(unsigned long int baud_rate) {
     U3STAbits.UTXEN = 1;
     
     IFS4bits.U3RXIF = 0;
-    IEC4bits.U3RXIE = 0;
+    IEC4bits.U3RXIE = 1;
     IPC39bits.U3RXIP = 6;
     IPC39bits.U3RXIS = 0; 
     
     IEC4bits.U3TXIE = 0;
+	IFS4bits.U3TXIF = 0;
     
     U3MODEbits.ON = 1; 
 }
@@ -214,7 +215,7 @@ void USART3_init(unsigned long int baud_rate) {
 void USART4_init(unsigned long int baud_rate) {
     TRISBbits.TRISB14 = 1;
     TRISBbits.TRISB8 = 0;
-    U3MODEbits.ON = 0;
+    U4MODEbits.ON = 0;
     CFGCONbits.IOLOCK = 0;
     U4RXRbits.U4RXR = 0b0010;	// RB14
     RPB8Rbits.RPB8R = 0b0010;	// RB8
@@ -242,7 +243,7 @@ void USART4_init(unsigned long int baud_rate) {
 void USART5_init(unsigned long int baud_rate) {
     TRISBbits.TRISB3 = 0;
     TRISBbits.TRISB10 = 1;
-    U3MODEbits.ON = 0;
+    U5MODEbits.ON = 0;
     CFGCONbits.IOLOCK = 0;
     U5RXRbits.U5RXR = 0b1000;	// RB5
     RPG6Rbits.RPG6R = 0b0011;	// RG6
@@ -273,9 +274,9 @@ void USART5_init(unsigned long int baud_rate) {
 void USART6_init(unsigned long int baud_rate) {
 //    TRISBbits.TRISB14 = 1;
 //    TRISBbits.TRISB8 = 0;
-//    U3MODEbits.ON = 0;
+//    U6MODEbits.ON = 0;
 //    CFGCONbits.IOLOCK = 0;
-//    U4RXRbits.U4RXR = 0b0010;
+//    U6RXRbits.U4RXR = 0b0010;
 //    RPB8Rbits.RPB8R = 0b0010;
 //    CFGCONbits.IOLOCK = 1;
     
@@ -350,8 +351,9 @@ void USART_write_int(unsigned char port, int a) {
 
     for(tens = 1; tens <= a; tens *= 10);
     tens /= 10;
-    for(; tens > 0; tens /= 10)
-        USART_send(port, ((a / tens) % 10) + 48);
+    for(; tens > 0; tens /= 10) {
+        USART_send(port, ((a / tens) % 10) + '0');
+	}
 }
 
 void USART_write_float(unsigned char port, double a, unsigned char right) {
@@ -365,11 +367,11 @@ void USART_write_float(unsigned char port, double a, unsigned char right) {
     } 
     //else USART_send(port, '+');
     
-    if(a > 1.0) {
-        for(tens = 1, t = a; tens < t; tens *= 10);
+    if(a >= 1.0) {
+        for(tens = 1, t = a; tens <= t; tens *= 10);
         tens /= 10;
         for(; tens > 0; tens /= 10)
-            USART_send(port, ((t / tens) % 10) + 48);
+            USART_send(port, ((t / tens) % 10) + '0');
     } else {
         USART_send(port, '0');
     }

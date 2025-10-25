@@ -5,9 +5,9 @@
 #include "MPU6050.h"
 
 #define UART_XBee 1
-#define UART_A 4
-#define UART_B 2
-#define UART_C 5
+#define UART_A 3
+#define UART_B 4
+#define UART_C 2
 #define ACC_LOOP_TIME 2000 // 2000
 
 extern char xbee_mode;

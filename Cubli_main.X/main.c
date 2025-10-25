@@ -58,9 +58,9 @@ void main() {
 //    timer6_init(312500.0);  // XBee tx timer - 312.5kHz
     
     USART1_init(115200);	// XBee
-    USART2_init(250000);	// ESC_B
-	USART3_init(250000);	// ESC_C
-    USART4_init(250000);	// ESC_A
+    USART2_init(115200);	// ESC_B
+	USART3_init(115200);	// ESC_A
+    USART4_init(115200);	// ESC_C
 //    USART5_init(115200);	// ESP
     
     delay_ms(200);    
@@ -68,8 +68,6 @@ void main() {
 	
 	LDO_ESP = 0;
 	LDO_XBEE = 1;
-	
-	while(1);
     
     //Set PID gains
 //    PIDSet(&motorA, 275, 0, 45);
@@ -91,7 +89,7 @@ void main() {
 //    USART_send_str(UART_C, "T\r"); 
     delay_ms(1000);
     CalibrateGyro();
-    ResetQuaternion(q);    
+    ResetQuaternion(q);
         
     for(i = 0; i < 2000; i++) {
         StartDelayCounter();
@@ -150,7 +148,7 @@ void main() {
             corner = get_corner(pitch_angle, roll_angle, 20.0);
             
             edge_balance = balance_edge(pitch_angle, roll_angle, acc_loop_time, gyro_filt, &motorA, &motorB, &motorC);
-            corner_balance = balance_corner(q, acc_loop_time, gyro_filt);
+//            corner_balance = balance_corner(q, acc_loop_time, gyro_filt);
         }
                   
         if(ms_counter() > 25) {

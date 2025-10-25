@@ -37,12 +37,15 @@ void __ISR_AT_VECTOR(_UART3_RX_VECTOR, IPL3SOFT) UART_DIN(void) {
 				overflow = true;
 				rx_buffer_index = 0;
 			}
-		}        
-	}while(U3STAbits.URXDA);    
+		}
+		if(U3STAbits.OERR) {
+			U3STAbits.OERR = 0;
+		}
+	}while(U3STAbits.URXDA);
 	
-//    if(U3STAbits.OERR) {
-//        U3STAbits.OERR = 0;
-//    }
+	if(U3STAbits.OERR) {
+		U3STAbits.OERR = 0;
+	}
 	
 	IFS1bits.U3RXIF = 0; 
 }
@@ -63,7 +66,7 @@ void USART3_init(unsigned long int baud_rate) {
 	U3STAbits.ADDR = 0;
 	U3STAbits.UTXISEL = 0;
 	U3STAbits.UTXINV = 0;
-	U3STAbits.URXISEL = 0;
+	U3STAbits.URXISEL = 0; // 1
 	U3STAbits.URXEN = 1;
 	U3STAbits.UTXEN = 1;
 	
@@ -77,7 +80,7 @@ void USART3_init(unsigned long int baud_rate) {
 	U3MODEbits.BRGH = 0;
 	U3MODEbits.PDSEL = 0;
 	U3MODEbits.STSEL = 0;
-	U3MODEbits.RUNOVF = 1;
+	U3MODEbits.RUNOVF = 0;
 	
 	IFS1bits.U3RXIF = 0;
 	IPC15bits.U3RXIP = 3;

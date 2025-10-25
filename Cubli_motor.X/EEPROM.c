@@ -9,6 +9,7 @@
 #define EEPROM_BOARD_ID_ADDR 0x04
 #define EEPROM_MOTOR_OFFSET_ADDR 0x14
 #define EEPROM_MOTOR_POLEPAIRS_ADDR 0x18
+#define EEPROM_MOTOR_POLARITY_ADDR 0x1C
 #define EEPROM_PID_ANGLE_ADDR 0x22
 #define EEPROM_PID_RPM_ADDR 0x28
 #define EEPROM_PID_FOC_IQ_ADDR 0x34
@@ -18,6 +19,7 @@
 uint8_t eeprom_board_id;
 float eeprom_zero_offset;
 uint8_t eeprom_pole_pairs;
+uint8_t eeprom_motor_polarity;
 float eeprom_encoder_calib_data[32];
 float eeprom_pid_angle[3];
 float eeprom_pid_rpm[3];
@@ -117,6 +119,8 @@ void EEPROM_readAll() {
 
 	eeprom_zero_offset = EEPROM_readFloat(EEPROM_MOTOR_OFFSET_ADDR);
 	eeprom_pole_pairs = EEPROM_read(EEPROM_MOTOR_POLEPAIRS_ADDR);
+	
+	eeprom_motor_polarity = EEPROM_read(EEPROM_MOTOR_POLARITY_ADDR);
 
 	eeprom_pid_angle[0] = EEPROM_readFloat(EEPROM_PID_ANGLE_ADDR);
 	eeprom_pid_angle[1] = EEPROM_readFloat(EEPROM_PID_ANGLE_ADDR + 4);

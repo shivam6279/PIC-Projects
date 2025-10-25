@@ -26,7 +26,7 @@
 #define MHZ(x) x * 1000000.0f
 #define KHZ(x) x * 1000.0f
 
-float save_data[1500][10];
+//float save_data[1500][10];
 
 /* 
  * UART CODES:
@@ -101,11 +101,11 @@ int main() {
 	mode = MODE_POWER;
 
 	USART3_init(250000);    
-	timer2_init(KHZ(1));	// ms delay - P = 3
-	timer3_init(0);			// us delay - P = 7
-	timer4_init(KHZ(25));	// FOC      - P = 6
-	timer5_init(50);		// Speaker  - P = 2
-	timer6_init(500);		// RPM      - P = 4
+	timer2_init(KHZ(1));	// ms delay		- P = 3
+	timer3_init(0);			// sensorless	- P = 7
+	timer4_init(KHZ(25));	// FOC			- P = 6
+	timer5_init(50);		// Speaker		- P = 2
+	timer6_init(500);		// RPM			- P = 4
 //	timer7_init(KHZ(25));	// SPI data request
 	timer8_init(0);			// Sensorless
 	
@@ -118,7 +118,7 @@ int main() {
 //	MotorShort(1);
 	MotorOff();
 	
-	interpolate_encoder_lut(encoder_calib_data, 12);
+//	interpolate_encoder_lut(encoder_calib_data, 12);
 	
 	ENC_VCC = 0;
 	delay_ms(200);
@@ -296,27 +296,32 @@ int main() {
 			FOC_TIMER_ON = 1;
 		}
 		
-		// if(auto_stop) {
-		// 	if(ms_counter3() > 1000) {
-		// 		SetPower(0);
-		// 	}
-		// }
+		 if(auto_stop) {
+		 	if(ms_counter3() > 200) {
+		 		SetPower(0);
+		 	}
+		 }
+		
+		if(U3STAbits.OERR) {
+			U3STAbits.OERR = 0;
+		}
 		
 		if(ms_counter2() >= 2) {
 			reset_ms_counter2();
-//			USART3_write_float(GetRPM(), 2);
-//			USART3_send_str(", ");
+//			USART3_write_float(GetPower(), 4);
+			USART3_write_float(GetRPM(), 2);
+			USART3_send_str(", ");
 //			USART3_write_float(GetRPM_der(), 2);
 //			USART3_send_str(", ");
 			USART3_write_float(foc_iq, 5);
 			USART3_send_str(", ");
 			USART3_write_float(foc_id, 5);
-			USART3_send_str(", ");
+//			USART3_send_str(", ");
 //			USART3_write_float(pid_focId.output, 2);
 //			USART3_send_str(", ");
 //			USART3_write_float(GetPower(), 2);
 //			USART3_send_str(", ");
-			USART3_write_float(pid_focId.output, 5);
+//			USART3_write_float(pid_focId.output, 5);
 //			USART3_write_float(sqrt(pid_focIq.output*pid_focIq.output + pid_focId.output*pid_focId.output), 5);
 			USART3_send('\n');
 		}
